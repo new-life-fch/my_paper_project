@@ -25,6 +25,12 @@
 知识库:
 `D:\solo-paper\PDF论文知识库`，论文为PDF格式，内容较长，不推荐阅读
 
+项目代码:
+`D:\solo-paper\attention-probe-rag`，所有代码编写和修改都在这里进行，临时脚本也写在此目录。禁止在临时工作目录中写项目代码。
+
+远程服务器项目目录:
+`/root/shared-nvme/my_paper_project`，代码通过 git 推送到 https://github.com/new-life-fch/my_paper_project.git
+
 ---
 
 ## 二、项目定位

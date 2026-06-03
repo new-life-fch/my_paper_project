@@ -202,10 +202,12 @@ def run_probe_training(train_act, val_act, test_act, train_labels, val_labels,
         per_head_train[i].update(per_head_val[i])
         per_head_train[i].update(per_head_test[i])
 
-    # Log top heads
+    # Re-sort by val ROC-AUC (per_head_train was sorted by train ROC-AUC)
+    per_head_train.sort(key=lambda x: x.get("val_roc_auc", 0), reverse=True)
+
+    # Log top heads (by val ROC-AUC, consistent with head selection)
     logging.info("  Top-10 heads (by val ROC-AUC):")
-    sorted_by_val = sorted(per_head_train, key=lambda x: x.get("val_roc_auc", 0), reverse=True)
-    for i, r in enumerate(sorted_by_val[:10]):
+    for i, r in enumerate(per_head_train[:10]):
         logging.info(f"    #{i+1}: Layer {r['layer']}, Head {r['head']} "
                      f"(val_auc={r.get('val_roc_auc', 0):.3f}, "
                      f"test_auc={r.get('test_roc_auc', 0):.3f}, "
@@ -230,12 +232,11 @@ def run_probe_training(train_act, val_act, test_act, train_labels, val_labels,
 
     # Stage 2: Ensemble probes with varying top-k
     logging.info("Stage 2: Training ensemble probes...")
-    # Sort by val performance for head selection
-    head_order = sorted(per_head_train, key=lambda x: x.get("val_roc_auc", 0), reverse=True)
+    # per_head_train is already sorted by val ROC-AUC
 
     ensemble_results = []
     for k in top_k_values:
-        selected = [r["head_idx"] for r in head_order[:k]]
+        selected = [r["head_idx"] for r in per_head_train[:k]]
 
         # Train ensemble on train split
         probe, train_metrics = train_ensemble_probe(
