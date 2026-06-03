@@ -1,0 +1,13 @@
+build/
+dist/
+public/
+*.egg-info/
+.installed.cfg
+.vscode
+__pycache__/
+.DS_Store
+**/.DS_Store
+.nfs*
+nnsight.log
+src/nnsight/_c/**.so
+src/nnsight/_version.py
