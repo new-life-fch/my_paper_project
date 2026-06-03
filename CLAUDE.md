@@ -49,6 +49,32 @@
 远程服务器项目目录:
 `/root/shared-nvme/my_paper_project`，代码通过 git 推送到 https://github.com/new-life-fch/my_paper_project.git
 
+### 1.4 服务器网络配置
+
+服务器访问外网（GitHub、HuggingFace、PyPI）时可能需要配置代理加速。
+
+**代理加速设置（按需开启）：**
+```bash
+export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+export http_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
+```
+
+**取消代理：**
+```bash
+unset http_proxy https_proxy no_proxy
+```
+
+**加速覆盖域名：** .github.com, .githubusercontent.com, .huggingface.co, .pypi.org, .pythonhosted.org 等。
+
+**pip 国内源（备用）：**
+```bash
+pip config set global.index-url https://mirrors.bfsu.edu.cn/pypi/web/simple
+pip config set global.trusted-host mirrors.bfsu.edu.cn
+```
+
+**注意：** 遇到网络超时/下载慢时优先尝试开启代理，再考虑换 pip 源。
+
 ---
 
 ## 二、项目定位
