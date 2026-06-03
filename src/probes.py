@@ -71,8 +71,6 @@ def train_per_head_probes(activations, labels, n_layers, n_heads, head_dim,
             y_prob = probe.predict_proba(X)[:, 1]
 
             acc = accuracy_score(labels, y_pred)
-            f1 = f1_score(labels, labels, average="binary", zero_division=0)
-            # Recompute f1 properly
             f1 = f1_score(labels, y_pred, average="binary", zero_division=0)
 
             try:
