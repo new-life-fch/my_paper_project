@@ -100,13 +100,31 @@ my_paper_project/
 
 ## 当前任务 / 下一步
 
-### 下一步：运行 M1+M2 初始验证实验
+### 🔬 关键发现（2026-06-27，300q 运行）：当前方法不泛化
 
-模型下载曾因 xet 协议被中断，重跑命令：
+50q→300q 后，可靠测试集（45 query）暴露真相：
+- **per-head `corr(val_auc, test_auc) = 0.028`**（672 头）→ 按 val 选头 ≈ 随机，无法迁移到 test。
+- top-10/20/50/100 ensemble 全部 train_auc≈1.0、val_auc≈0.76、**test_auc≈0.49（随机）**。
+- 50q 当时 test=0.60 是小测试集（仅 8 query）假象。
+- 根因：单个 ~220 样本 split 上 per-head AUC 标准误（~0.075）> per-head 信号（~0.05-0.10），672 头排序 = 多重比较陷阱；ensemble 12800 维/1044 样本严重过拟合。
+
+### 修复方向（方法论层面，不是单纯加数据）
+
+1. **激活缓存到磁盘**（基础设施）→ 提取一次，秒级迭代探针方法。
+2. **StandardScaler**（当前缺失！）→ LR 对尺度敏感，原始激活各维尺度差异大，惩罚被不公平施加。
+3. **交叉验证选头**（k 折平均 AUC）替代单 split 选头。
+4. **整体 L2 探针**（不选头，672×128 全激活 + 强 L2）+ **stacking**（per-head OOF 分数→meta 探针，降维 12800→≤672）。
+5. 同一批缓存激活上对比所有变体，数据驱动选最优。
+
+### 然后：跨方法论对比（用户指示 2026-06-27）
+
+不止 scheme A/B，而是**整个方法论 vs 同领域其他方法**，目标=优于 RAG reranker。
+计划基线：cross-encoder（ms-marco-MiniLM-L-6-v2）、BM25、dense bi-encoder、**LLM-prompt 相关性判断（同模型，关键对照）**。
+调研来源：`docs/文献调研报告` + 联网。允许用 Workflow 做并行文献调研。
+
+### 历史命令（重跑实验）
 ```bash
-export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export http_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export HF_HUB_DISABLE_XET=1
+export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1  # 模型已缓存
 cd /root/shared-nvme/my_paper_project
 python -u initial_validation.py --n-queries 50 --scheme both
 ```
