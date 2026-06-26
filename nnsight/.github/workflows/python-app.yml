@@ -1,0 +1,48 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pillow
+        pip install ./
+    - name: Test with pytest
+      run: |
+        pytest \
+          tests/test_lm.py \
+          tests/test_tiny.py \
+          tests/test_0516_features.py \
+          tests/test_debug.py \
+          tests/test_memory_cleanup.py \
+          tests/test_multiple_wrappers.py \
+          tests/test_source.py \
+          tests/test_envoys.py \
+          tests/test_iter_edge_cases.py \
+          tests/test_transform.py \
+          tests/test_local_recursion.py \
+          tests/test_local_mutual_recursion.py \
+          tests/test_mutual_recursion.py \
+          tests/test_local_env.py \
+          tests/test_local_simulation.py \
+          --device cpu

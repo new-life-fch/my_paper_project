@@ -1,0 +1,37 @@
+2026-06-05 00:06:31,089 [INFO] ============================================================
+2026-06-05 00:06:31,089 [INFO] Attention-Probe-RAG: Initial Validation Pipeline
+2026-06-05 00:06:31,089 [INFO] ============================================================
+2026-06-05 00:06:31,089 [INFO] Config: {
+  "model": "meta-llama/Llama-3.2-3B",
+  "n_queries": 50,
+  "max_passages": 5,
+  "max_length": 512,
+  "top_k": [
+    10,
+    20,
+    50,
+    100
+  ],
+  "scheme": "both",
+  "dtype": "float16",
+  "output_dir": "./results/initial_validation",
+  "seed": 42,
+  "timestamp": "2026-06-05T00:06:31.080322"
+}
+2026-06-05 00:06:34,672 [INFO] Loading model: meta-llama/Llama-3.2-3B (dtype=torch.float16)
+2026-06-05 00:06:34,672 [INFO]   This may take several minutes on first run (model download)...
+2026-06-05 00:06:35,530 [INFO] HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/main/config.json "HTTP/1.1 200 OK"
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-06-05 00:06:35,856 [INFO] HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-06-05 00:06:36,240 [INFO] HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-3.2-3B/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-06-05 00:06:36,554 [INFO] HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-3.2-3B/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-06-05 00:06:37,873 [INFO] HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-3.2-3B "HTTP/1.1 200 OK"
+2026-06-05 00:06:38,344 [INFO] HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/main/config.json "HTTP/1.1 200 OK"
+2026-06-05 00:06:39,156 [INFO] HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-3.2-3B/revision/main "HTTP/1.1 200 OK"
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]2026-06-05 00:06:39,907 [INFO] HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/13afe5124825b4f3751f836b40dafda64c1ed062/model-00002-of-00002.safetensors "HTTP/1.1 302 Found"
+2026-06-05 00:06:39,913 [INFO] HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/13afe5124825b4f3751f836b40dafda64c1ed062/model-00001-of-00002.safetensors "HTTP/1.1 302 Found"
+2026-06-05 00:06:40,217 [INFO] HTTP Request: GET https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/13afe5124825b4f3751f836b40dafda64c1ed062/model-00002-of-00002.safetensors "HTTP/1.1 302 Found"
+2026-06-05 00:06:40,674 [INFO] HTTP Request: GET https://huggingface.co/meta-llama/Llama-3.2-3B/resolve/13afe5124825b4f3751f836b40dafda64c1ed062/model-00001-of-00002.safetensors "HTTP/1.1 302 Found"
+2026-06-05 00:06:41,607 [INFO] HTTP Request: GET https://cas-bridge.xethub.hf.co/xet-bridge-us/66eaf084b3b3239188f66fa7/2efcbf1243b4e0f0d3ea1bc484e73c2222193b82ed5d0c96d54d79e2742fe18f?Expires=1780592800&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jYXMtYnJpZGdlLnhldGh1Yi5oZi5jby94ZXQtYnJpZGdlLXVzLzY2ZWFmMDg0YjNiMzIzOTE4OGY2NmZhNy8yZWZjYmYxMjQzYjRlMGYwZDNlYTFiYzQ4NGU3M2MyMjIyMTkzYjgyZWQ1ZDBjOTZkNTRkNzllMjc0MmZlMThmKiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc4MDU5MjgwMH19fV19&Signature=MEYCIQDk7Yj-ZOLvw-6BkwdfZufVZ6lowTVbjncOErKPOK4hVAIhAJATwOQKdNSFK2lSuFvqRKrFHEUP8u7FqFkom1nuI14v&Key-Pair-Id=K1LYXO563TGWFU&X-Xet-Cas-Uid=68a01c21b146d76eed981ad6&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model-00002-of-00002.safetensors%3B+filename%3D%22model-00002-of-00002.safetensors%22%3B&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=cas%2F20260604%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260604T160640Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e31dadc4775ad099b512f6be0af7b18397efcedebb42e863cca9a179d50379a8 "HTTP/1.1 200 OK"
+2026-06-05 00:06:42,474 [INFO] HTTP Request: GET https://cas-bridge.xethub.hf.co/xet-bridge-us/66eaf084b3b3239188f66fa7/8cf80ce616d3b357e45cf840fa9a63913e9ade947a61065a51f2cacb2dd845b8?Expires=1780592800&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jYXMtYnJpZGdlLnhldGh1Yi5oZi5jby94ZXQtYnJpZGdlLXVzLzY2ZWFmMDg0YjNiMzIzOTE4OGY2NmZhNy84Y2Y4MGNlNjE2ZDNiMzU3ZTQ1Y2Y4NDBmYTlhNjM5MTNlOWFkZTk0N2E2MTA2NWE1MWYyY2FjYjJkZDg0NWI4KiIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc4MDU5MjgwMH19fV19&Signature=MEUCIGsLWjSuLFgfGCbH50oI1ZElHvH%7EOO8yG6En6SCfrjm2AiEA2v5C8TRWTCsqOW48m1kIfPnRq7sJyv%7EQYYWwjTjGq4s_&Key-Pair-Id=K1LYXO563TGWFU&X-Xet-Cas-Uid=68a01c21b146d76eed981ad6&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model-00001-of-00002.safetensors%3B+filename%3D%22model-00001-of-00002.safetensors%22%3B&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=cas%2F20260604%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260604T160640Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=519b7270f529ba9d91f610a09db22fe1db4c40ac57953363c9dbdc009f89d82e "HTTP/1.1 200 OK"
+Terminated
