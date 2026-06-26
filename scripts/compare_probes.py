@@ -103,7 +103,8 @@ def evaluate(name, ytr, str_, yva, sva, yte, ste, log):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", default="results/cache/q500")
-    ap.add_argument("--scheme", default="last_token", choices=["last_token", "pooling"])
+    # scheme = the .pt filename prefix in the cache dir (last_token/pooling, or attn/resid)
+    ap.add_argument("--scheme", default="last_token")
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
