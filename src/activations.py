@@ -45,11 +45,15 @@ def extract_activations_last_token(model, samples, n_layers, n_heads, head_dim,
     for sample in tqdm(samples, desc="Extracting (last_token)"):
         prompt = _build_prompt(sample["query"], sample["passage"])
 
+        # Define list in function scope (vars assigned INSIDE a trace block
+        # are not visible outside it in nnsight 0.7.0); .save() proxies
+        # appended here are populated after the block exits.
+        head_acts_list = []
         with model.trace(prompt):
-            head_acts_list = []
             for layer_idx in range(n_layers):
                 # Access layers in forward-pass order (critical for nnsight)
-                attn_out = model.model.layers[layer_idx].self_attn.o_proj.output[0]
+                # o_proj is nn.Linear; its .output is already [B, S, H]
+                attn_out = model.model.layers[layer_idx].self_attn.o_proj.output
                 B, S, H = attn_out.shape
 
                 # Reshape to [B, S, n_heads, head_dim] and extract last token
@@ -109,10 +113,12 @@ def extract_activations_pooling(model, samples, n_layers, n_heads, head_dim,
         if passage_start >= passage_end:
             passage_start = max(1, passage_end - 1)
 
+        # Define list in function scope (see note in last_token variant)
+        head_acts_list = []
         with model.trace(prompt):
-            head_acts_list = []
             for layer_idx in range(n_layers):
-                attn_out = model.model.layers[layer_idx].self_attn.o_proj.output[0]
+                # o_proj is nn.Linear; its .output is already [B, S, H]
+                attn_out = model.model.layers[layer_idx].self_attn.o_proj.output
                 B, S, H = attn_out.shape
 
                 # Reshape and mean-pool over passage token range

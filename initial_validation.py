@@ -81,11 +81,12 @@ def load_model(model_name, torch_dtype=torch.float16):
     logging.info(f"Loading model: {model_name} (dtype={torch_dtype})")
     logging.info("  This may take several minutes on first run (model download)...")
 
+    # transformers 5.x deprecated `torch_dtype` in favor of `dtype`
     model = LanguageModel(
         model_name,
         device_map="auto",
         dispatch=True,
-        torch_dtype=torch_dtype,
+        dtype=torch_dtype,
     )
 
     n_layers = model.config.num_hidden_layers
@@ -114,22 +115,24 @@ def sanity_check(model, n_layers, n_heads, head_dim):
     logging.info(f"  Prompt: {test_prompt[:80]}...")
 
     with model.trace(test_prompt):
-        attn_out = model.model.layers[0].self_attn.o_proj.output[0]
+        # o_proj is nn.Linear; its .output is already [B, S, H] (no tuple to unpack)
+        attn_out = model.model.layers[0].self_attn.o_proj.output
+        full_shape = attn_out.shape.save()  # only .save()-ed values persist outside trace
         B, S, H = attn_out.shape
         per_head = attn_out.view(B, S, n_heads, head_dim)
-        shape_info = (B, S, n_heads, head_dim)
-        last_token_shape = per_head[0, -1, :, :].shape
         saved = per_head[0, -1, :, :].detach().cpu().save()
 
-    logging.info(f"  Input tokens: B={shape_info[0]}, S={shape_info[1]}")
-    logging.info(f"  o_proj.output[0] shape: [{B}, {S}, {H}]")
+    # Outside the trace block: reference ONLY saved values
+    B, S, H = tuple(full_shape)
+    logging.info(f"  Input tokens: B={B}, S={S}")
+    logging.info(f"  o_proj.output shape: [{B}, {S}, {H}]")
     logging.info(f"  Reshaped to: [{B}, {S}, {n_heads}, {head_dim}]")
-    logging.info(f"  Last token per-head shape: {last_token_shape}")
-    logging.info(f"  Saved tensor shape: {saved.shape}")
+    logging.info(f"  Last token per-head shape: {tuple(saved.shape)}")
+    logging.info(f"  Saved tensor shape: {tuple(saved.shape)}")
     logging.info(f"  Sample values (head 0, first 5 dims): {saved[0, :5].tolist()}")
 
-    assert saved.shape == (n_heads, head_dim), \
-        f"Shape mismatch! Expected ({n_heads}, {head_dim}), got {saved.shape}"
+    assert tuple(saved.shape) == (n_heads, head_dim), \
+        f"Shape mismatch! Expected ({n_heads}, {head_dim}), got {tuple(saved.shape)}"
 
     logging.info("  Sanity check PASSED!")
     del saved

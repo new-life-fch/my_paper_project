@@ -22,9 +22,38 @@
 | Git 仓库 | https://github.com/new-life-fch/my_paper_project.git |
 | GPU | RTX 3090 24GB |
 | Python | 3.12.3 |
-| PyTorch | 2.7.0 (CUDA 12.8) |
-| Transformers | 5.10.1 |
+| PyTorch | 2.7.0a0 (NVIDIA 构建版, CUDA 可用) |
+| Transformers | 5.3.0 |
+| datasets | 3.6.0（必须 3.x：1.x 缺 IterableDataset、4.x 移除 trust_remote_code）|
 | nnsight | 0.7.0 |
+| sentence-transformers | 5.6.0 |
+| seaborn | 0.13.2 |
+
+> 2026-06-27 实测：当前容器为**全新环境**，仅 torch/sklearn/numpy/matplotlib 预装。
+> transformers/datasets/sentence-transformers/nnsight/accelerate/seaborn 均为本次新装。
+> （故 WORK_STATUS 历史「依赖已就绪」对新容器不成立，每次新容器都需重装。）
+
+---
+
+## ⚠️ 环境踩坑（会在新容器复现，重要）
+
+**系统级 pip 约束把 dill 钉死在 0.3.9 → 直接 `pip install datasets` 会装成远古的 1.1.1。**
+
+- 容器有 `PIP_CONSTRAINT=/etc/pip/constraint.txt`，其中 `dill==0.3.9`。
+- 现代 `datasets`（2.x/3.x）要求 `dill<0.3.9`，pip 解析器因此**静默回退**到 2020 年的
+  `datasets 1.1.1`（仅 147KB），它缺 `IterableDataset`，连带 `sentence-transformers` 都无法 import，且无法加载 MS MARCO。
+- **解法**：装 datasets 时临时清空约束 —
+  ```bash
+  PIP_CONSTRAINT="" pip install 'datasets>=3.0,<4'
+  ```
+  这会让 dill 降到 0.3.8、multiprocess 降到 0.70.16。仅 lightning-thunder（PyTorch 编译工具，
+  本项目不用）受影响，对本项目无副作用。
+- 安装其它包用代理即可（见下）：
+  ```bash
+  export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+  export http_proxy="$https_proxy"
+  pip install transformers sentence-transformers nnsight accelerate seaborn
+  ```
 
 ---
 
