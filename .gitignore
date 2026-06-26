@@ -17,6 +17,13 @@ results/
 .vscode/
 *.swp
 
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets / local env
+.env
+.env.local
+
 # OS
 .DS_Store
 
