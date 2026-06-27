@@ -87,6 +87,9 @@
 | `scripts/extract_instruct.py` | **激活提取器**：用 instruct prompt 在 answer-token 处提取 attn（per-head）+ resid（每层残差）双位点激活，缓存为 float16 .pt。输出 `results/cache/q500_instruct/{attn,resid}_{train,val,test}.pt` + `meta.json` | A 的数据来源生产者 |
 | `scripts/llm_judge.py` | **输出端基线**：同模型同 prompt，读 answer-token 处 `P("yes")` vs `P("no")` 输出概率，零训练。输出 `results/cache/q500_judge/judge_*.pt`（scores/labels/query_ids） | internals>output 的「输出端、零训练」对照 |
 | `scripts/internals_vs_output.py` | **A 的核心实验**：在同一缓存上比较 ①LLM-judge(输出,0训练) ②最终层 hidden 探针(输出表示,训练) ③逐层残差探针(找信号最强层) ④注意力头探针(本方法)。输出逐层 AUC 曲线 + 四者对比，落 `results/internals_vs_output.json` | 跑它复现第 3.2 节结果 |
+| `scripts/run_model.sh` | **多模型驱动**：`bash scripts/run_model.sh <hf_model_id> <tag>` 串联 extract_instruct→llm_judge→internals_vs_output，输出 `results/cache/{tag}_instruct`、`{tag}_judge`、`internals_vs_output_{tag}.json`。模型无关（脚本动态读 n_layers/n_heads） | 多模型复现 gap 用 |
+| `scripts/plot_layer_signal.py` | **论文主图生成器**：从 `{tag}_instruct` 缓存计算并出三联图（A 逐层 resid AUC 深度曲线+judge 基线+峰值/输出层标注；B per-head AUC 热力图 layer×head；C head 视角 vs layer 视角+top-k head 层分布直方图）。落 `results/figures/{tag}_layer_signal.{png,json}`。`--cache --judge-cache --tag --topk` | 跑它出信号层定位图 |
+| `scripts/aggregate_models.py` | **多模型汇总**：扫描所有 `internals_vs_output_<tag>.json`，输出对比表（judge/final/best_resid/attn + peak_frac + internal_edge=best_internal−final + train_edge=final−judge + holds 判定），落 `results/multimodel_summary.json` | 多模型实验汇总用 |
 | `scripts/sweep_topk.py` | 探针超参敏感性扫描（top-k∈{5..200}×raw/scaled×whole-L2×mean-probe），证明结论对调参稳健 | 已证调参不改变结论，按需复用 |
 | `scripts/compare_probes.py` | 6 种探针方法论对比（baseline 选头 / StandardScaler / CV 选头 / whole-L2 / stacking / mean-probe），数据驱动选最优探针架构 | 探针架构消融 |
 | `src/data.py` | `load_ms_marco()` 造 (query,passage,label) 三元组；`split_by_query()` 按 query_id 70/15/15 切（防泄露） | |
@@ -102,17 +105,20 @@
 
 ## 六、当前进度 / 下一步（实时维护，压缩前必更新）
 
-### 当前进度（worktree 初始化时，第 0 次压缩）
+### 当前进度（第 1 次会话推进，2026-06-27）
 
 - ✅ 主线敲定为 internals>output；核心对照实验已通过（commit a296676，结果见 3.2）。
 - ✅ 缓存就绪并软链共享：`results/cache/`→ 主仓库（q500_instruct 含 attn+resid 双位点、q500_judge 含输出概率）。
-- ✅ 逐层信号定位初步完成：L12 峰值 0.632、输出层衰减到 0.593。
+- ✅ 本工作区复现核心结果无误：judge 0.535 → final-layer 0.593 → L12 0.632 → attn-head 0.685（`results/internals_vs_output.json`）。
+- ✅ **论文主图已出**（下一步 #2 完成）：`scripts/plot_layer_signal.py` 产出三联图 `results/figures/llama32_3b_layer_signal.png`（A 逐层 resid AUC 深度曲线+judge 基线+峰值/输出层标注；B per-head AUC 热力图；C head 视角 vs layer 视角）。厘清了 head/layer 差异：3B 上 top-20 heads 集中在 **L10-16**（中后段），与 resid 峰值 L12 一致——之前"晚期层 L25-27"的线索未在本 instruct 缓存复现。
+- 🔄 **多模型复现进行中**（下一步 #1）：LLaMA-3.1-8B 完整流水线后台运行（`results/logs/llama31_8b.log`，模型下载中 ~12MB/s）。已就绪的工具链：`scripts/run_model.sh <model> <tag>`（串联 extract→judge→analyze，模型无关，无需改原脚本，`extract_instruct.py`/`llm_judge.py` 本就支持 `--model`）；`scripts/aggregate_models.py`（汇总各 `internals_vs_output_<tag>.json` 成对比表，含 internal_edge/train_edge 拆解与"层级是否成立"判定，落 `results/multimodel_summary.json`）。8B 完成后接 Mistral-7B-v0.3。
+- 磁盘充裕（/root/shared-nvme 147G 空闲），HF token 验证可访问 Llama-3.1-8B / Mistral-7B-v0.3 / Qwen2.5-7B（均 gated 但有权限）。
 
 ### 下一步（论文化，按优先级）
 
-1. **多模型复现 gap**（验证普适性）：在 LLaMA-3.1-8B、Mistral-7B-v0.3 上复现「内部探针 > 输出端探针 > judge」的层级。**注意磁盘**：8B/7B 模型下载前先 `df -h` 确认空间，不足则向用户报告。需新写或泛化 `extract_instruct.py` 支持 `--model`。
-2. **信号层定位图**（论文主图）：逐层 attn-head 与 resid 探针 AUC 曲线、top heads 的层分布（前期线索：集中在晚期层 L25-27，但中层残差 L12 解码最强——需厘清 head 视角 vs layer 视角的差异并解释）。
-3. **机制解释实验**：为什么信号到输出被衰减？候选假设——(a) RLHF/对齐使模型倾向保守拒答；(b) 相关性信号未被路由到输出 token。可设计干预（如对 judge prompt 变体、base vs instruct 模型对比）验证。
+1. 🔄 **多模型复现 gap**（验证普适性，进行中）：在 LLaMA-3.1-8B、Mistral-7B-v0.3 上复现「内部探针 > 输出端探针 > judge」的层级。工具链已就绪（`run_model.sh`/`aggregate_models.py`）。8B 后台跑中，完成后接 Mistral。**关键看命门对照线**（见关键风险）：8B 上 final-layer 探针是否仍显著低于 attn-head 探针。
+2. ✅ **信号层定位图**（论文主图，已完成）：`scripts/plot_layer_signal.py`。3B 已出图，多模型缓存就绪后对每个模型出同款图即可。
+3. **机制解释实验**：为什么信号到输出被衰减？候选假设——(a) RLHF/对齐使模型倾向保守拒答；(b) 相关性信号未被路由到输出 token。可设计干预（如对 judge prompt 变体、base vs instruct 模型对比）验证。注：本主线用的 LLaMA-3.2-3B 与 3.1-8B 均为 **base** 模型，若再加 instruct 版对比可直接验证假设 (a)。
 4. **gap 的鲁棒性**：多 prompt 框架（换 instruct 模板）下复现 gap，排除「特定 prompt 造成 judge 偏弱」的质疑。可调一个更强的 judge（few-shot / 校准阈值）作为更公平的输出端上界。
 
 ### 预期实验结果（写论文前的假设，需实验证实）
