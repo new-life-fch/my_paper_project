@@ -8,9 +8,15 @@
 ## 最后更新
 
 - 日期：2026-06-27
-- 第几次压缩：第 4 次（整理为基准）
-- 会话摘要（精炼）：执行了一次项目整理 /init。归档三份中文源文档到 `docs/`，删除冗余/垃圾文件（`.project-memory.md` 旧副本、空文件 `0`、`experiment.log`、`.ipynb_checkpoints/`），重写 `README.md` 与 `CLAUDE.md` 为精炼准确版本并指向 `docs/`。核对了实现计划与代码的三处冲突并做出决策（见下）。
-- 历史摘要（前 3 次压缩，已提炼）：环境全部就绪（Python 3.12.3, torch 2.7.0, CUDA 12.8, nnsight 0.7.0, transformers 5.10.1）。LLaMA-3.2-3B 为 gated 模型、license 已审批；首次实验运行因模型下载（xet 协议与代理不兼容）被 `Terminated`，需用 `HF_HUB_DISABLE_XET=1` 重跑。requirements.txt 已放宽版本约束。`torch_dtype` 在 transformers 5.x 已 deprecated，应改用 `dtype`（代码中仍传 torch_dtype，见待办）。
+- 第几次压缩：第 5 次
+- 会话摘要（精炼）：完成「方法不泛化」的全套修复 + 跨方法对比 + 跨域实验。核心剧情：
+  (1) 同域 MS MARCO 探针**输给** cross-encoder（0.685 < 0.759），raw 同域精度路堵死；
+  (2) 数据效率曲线单调上升无平台 → 数据效率是**弱论点**；
+  (3) 跨域 SciFact 探针**反超**（0.964 > 0.858 > BM25 0.669）→ 论点重定位为「**跨域鲁棒性**」；
+  (4) 关键发现：prompt 框架（instruction + answer-token）比探针架构更重要（0.634→0.685）；
+  (5) EvidITI 已核实为本人前作（fengchenhui@nuaa），引用合规。
+- ⚠️ **复查发现的公平性漏洞**（本次会话）：跨域实验里探针在 SciFact 上重训过、而 cross-encoder 零适配 → 0.964 混淆了「迁移能力强」与「多看了目标域标注」。审稿人必揪。→ 下一步用「零样本迁移」补干净对比（见下）。
+- 历史摘要（前 4 次压缩，已提炼）：环境全部就绪（Python 3.12.3, torch 2.7.0, CUDA 12.8, nnsight 0.7.0, transformers 5.x）。LLaMA-3.2-3B license 已审批、模型已缓存（xet 卸载、HF_HUB_DISABLE_XET=1 后 classic-HTTP 下载成功）。执行过一次 /init 项目整理（归档 docs/、重写 README/CLAUDE、核对三处冲突）。`torch_dtype`→`dtype` 已修复。
 
 ---
 
@@ -100,35 +106,54 @@ my_paper_project/
 
 ## 当前任务 / 下一步
 
-### 🔬 关键发现（2026-06-27，300q 运行）：当前方法不泛化
+### 📊 已建成的实验资产（缓存 + 脚本 + 结果）
 
-50q→300q 后，可靠测试集（45 query）暴露真相：
-- **per-head `corr(val_auc, test_auc) = 0.028`**（672 头）→ 按 val 选头 ≈ 随机，无法迁移到 test。
-- top-10/20/50/100 ensemble 全部 train_auc≈1.0、val_auc≈0.76、**test_auc≈0.49（随机）**。
-- 50q 当时 test=0.60 是小测试集（仅 8 query）假象。
-- 根因：单个 ~220 样本 split 上 per-head AUC 标准误（~0.075）> per-head 信号（~0.05-0.10），672 头排序 = 多重比较陷阱；ensemble 12800 维/1044 样本严重过拟合。
+**磁盘缓存**（`results/cache/`，float16 .pt，提取一次秒级迭代探针）：
+- `q500/`：原始 prompt `"Q:/P:"`，scheme A/B，500 queries。
+- `q500_instruct/`：instruct prompt + answer-token，**attn + resid 双位点**，672 头。← 同域主用
+- `q500_judge/`：LLM-judge 的 P(yes)/P(no) logits。
+- `scifact_ood/`：BeIR/SciFact，BM25 top-20 候选池，3000/1200/1800 triples，instruct-attn。
 
-### 修复方向（方法论层面，不是单纯加数据）
+**脚本**（`scripts/`）：
+- `extract_and_cache.py` / `extract_instruct.py`：抽激活缓存（后者 instruct + 双位点）。
+- `compare_probes.py`：6 种探针方法论对比（baseline/scaler/CV选头/whole-L2/stacking/mean）。
+- `llm_judge.py` + `compare_methods.py`：probe vs llm_judge vs cross_encoder vs bm25（同域，per-query MRR/NDCG/Recall）。
+- `data_efficiency.py`：探针 test AUC vs #train-queries 曲线。
+- `build_ood_scifact.py` + `compare_ood.py`：跨域 SciFact 实验。
 
-1. **激活缓存到磁盘**（基础设施）→ 提取一次，秒级迭代探针方法。
-2. **StandardScaler**（当前缺失！）→ LR 对尺度敏感，原始激活各维尺度差异大，惩罚被不公平施加。
-3. **交叉验证选头**（k 折平均 AUC）替代单 split 选头。
-4. **整体 L2 探针**（不选头，672×128 全激活 + 强 L2）+ **stacking**（per-head OOF 分数→meta 探针，降维 12800→≤672）。
-5. 同一批缓存激活上对比所有变体，数据驱动选最优。
+**关键结果**（已提交）：
+| 实验 | probe | cross_encoder | bm25 | llm_judge | 结论 |
+|------|-------|---------------|------|-----------|------|
+| 同域 MS MARCO (AUC) | 0.685 | **0.759** | 0.543 | 0.535 | 探针**输**（对手主场）|
+| 跨域 SciFact (AUC) | **0.964** | 0.858 | 0.669 | — | 探针**反超**（但有漏洞，见下）|
 
-### 然后：跨方法论对比（用户指示 2026-06-27）
+### 🎯 论点重定位（稳定）
 
-不止 scheme A/B，而是**整个方法论 vs 同领域其他方法**，目标=优于 RAG reranker。
-计划基线：cross-encoder（ms-marco-MiniLM-L-6-v2）、BM25、dense bi-encoder、**LLM-prompt 相关性判断（同模型，关键对照）**。
-调研来源：`docs/文献调研报告` + 联网。允许用 Workflow 做并行文献调研。
+四点优势里：raw 同域精度（输）、数据效率（弱，曲线无平台）已被排除；
+**唯一硬贡献 = 跨域鲁棒性**：通用 LLM 上的线性探针 vs MS-MARCO 专用 reranker，换领域时探针更稳。
+工程属性（零部署/非侵入）作辅助卖点，不作主实验。
+
+### ⏭️ 下一步：补「零样本迁移」干净对比（进行中）
+
+**动机**：跨域 0.964 里探针在 SciFact 重训过、cross-encoder 没有 → 不公平，混淆「迁移」与「适配」。
+**做法**：新脚本 `scripts/zeroshot_transfer.py` —
+- 探针：在 **MS MARCO**（q500_instruct）上选头 + 训 ensemble，**零适配**直接打分 SciFact test。
+- cross-encoder：同样零适配（已有 0.858）。
+- 若「MS MARCO 训的探针零样本套 SciFact 仍 ≥ cross-encoder」→ 公平性无懈可击，这才是能写进论文的主结果。
+- 特征对齐：两缓存同模型/同 prompt/同 672 头，训一边测一边即可。
+- ⚠️ 注意 train/test 来自不同缓存，需重新 fit；选头仍只用 MS MARCO 的 val（不碰 SciFact 任何标注）。
+
+**之后**（按优先级）：
+1. 查 SciFact 候选池构造偏差（正例=真摘要 vs 负例=BM25召回，会不会学到表面文本特征）。
+2. 第 2 个领域复现（FiQA / NFCorpus），确认不是 SciFact 巧合。
+3. 论文初稿。
 
 ### 历史命令（重跑实验）
 ```bash
-export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1  # 模型已缓存
+export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存；跑 cross-encoder 需临时联网代理
 cd /root/shared-nvme/my_paper_project
-python -u initial_validation.py --n-queries 50 --scheme both
+python scripts/compare_ood.py --cache results/cache/scifact_ood --topk 20
 ```
-验证标准（M2，最关键）：探针准确率 / ROC-AUC 显著高于随机基线。若不显著，核心假设不成立，需换方向（MLP 层激活 / 残差流）。
 
 ---
 
@@ -151,3 +176,8 @@ python -u initial_validation.py --n-queries 50 --scheme both
 | 2026-06-04 | ITI 方法论提取 + CLAUDE.md 校正 + Bug 修复 + 环境搭建 | ✅ |
 | 2026-06-05 | LLaMA license 审批 + 依赖安装 + 文件同步 | ✅ |
 | 2026-06-27 | 项目整理：归档 docs/、清理冗余、重写 README/CLAUDE、核对冲突 | ✅ |
+| 2026-06-27 | 磁盘缓存基础设施 + 6 种探针方法论对比（修复不泛化） | ✅ |
+| 2026-06-27 | instruct-prompt + 双位点抽取（prompt 框架是关键增益） | ✅ |
+| 2026-06-27 | 跨方法对比 + LLM-judge baseline（同域探针输 reranker） | ✅ |
+| 2026-06-27 | 数据效率曲线（弱论点）+ 跨域 SciFact（探针反超，待补公平对比） | ✅ |
+| 2026-06-27 | EvidITI 核实为本人前作，引用合规 | ✅ |
