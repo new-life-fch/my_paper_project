@@ -1,167 +1,155 @@
-# CLAUDE.md
+# CLAUDE.md — 工作区 A：Internals > Output（探针主线）
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-> 项目：Attention-Probe-RAG | 语言：回复与文档优先用中文 | 状态：进行中（Phase 1 可行性验证）
+> 本工作区是 git worktree（分支 `paper-A`），与工作区 B（`paper-B`，cheap-adaptation）**物理隔离**。
+> 主仓库 `/root/shared-nvme/my_paper_project`（main 分支）保留全部历史，请勿在此改动它。
+> 语言：回复与文档优先用中文。状态：主线已验证，进入论文化实验阶段。
 
 ---
 
-## ⚡ 当前研究定位与后续步骤（2026-06-27 重大转向，必读）
+## 〇、这个工作区是干什么的（一句话）
 
-经系统实验，**原定位「探针在 RAG 重排上优于 cross-encoder」已被证伪**（详见下表），项目转向新主线。
-实验事实（均已提交，强 baseline = `BAAI/bge-reranker-v2-m3`）：
+证明并刻画一个发现：**LLM 内部激活编码了「检索文档是否与 query 相关」的信号，但这个信号在传向输出的过程中被衰减，导致模型「嘴上」（输出 logits）表达不出来**。一句话口号：**Internals know more than the model can say.**
 
-| 对比 | 探针 | 强 reranker (bge-v2-m3) | 判定 |
-|------|------|------------------------|------|
-| 同域 MS MARCO (AUC) | 0.685 | 0.753 | 探针**输**（调 top-k 5~200 均不翻盘）|
-| SciFact 零样本（都不碰SciFact标注）| 0.795 | 0.921 | 探针**输更惨**；强 reranker 跨域不降反升 |
-| SciFact 探针适配 vs reranker 零样本 | 0.964 | 0.921 | 仅 +0.043 且**不公平**（探针偷看标注）|
-
-已排除的可能性：① baseline 太弱（换 SOTA 仍输）；② 探针没调参（top-k/scaler/whole-L2 全扫过，最优仍 0.685）；
-③ 加数据能救（数据效率曲线单调缓升，外推 2000q≈0.72 仍 <0.753）；④ SciFact 0.964 是池构造捷径（长度等表面特征 AUC≈0.49，已排除，0.964 是真信号但来自「适配」非「迁移」）。
-
-**→ 新主线（按优先级，分支决策见下）：**
-
-1. **【先做】扩展 2~3 个 BEIR 领域**（FiQA 金融 / NFCorpus 医学 / TREC-COVID）跑零样本+适配，
-   确认：(a) 零样本探针是否各域都输强 reranker；(b)「适配增益」是否各域普遍存在。据此结果再在 2/3 间选定。
-2. **【分支 A】internals > output 路线**：核心发现 = 同模型同 prompt，探针读注意力头激活 AUC 0.685 ≫
-   LLM-judge 读输出 logits 0.535。论点「模型内部编码的相关性信号，其输出表达不出来」。
-   **必补对照**：训一个「只读输出端（last hidden / logits）」的探针，证明赢的是「读内部」而非「被训练」。
-   多模型/多 prompt 复现 0.15 gap + 信号层定位（晚期层 L25-27）。**便宜，不需微调。**
-3. **【分支 B】cheap-adaptation 路线**：押注「廉价线性适配 > reranker」，需 **LoRA 微调 bge reranker** 作公平对手
-   （同样喂目标域标注），比较「探针重训一层 vs reranker LoRA」的精度/算力代价。**费时，需 GPU 微调。**
-
-> 分支 A 与 B 是二选一或先后关系：**A 便宜先探**，若 A 的 gap 在输出端对照下站得住 → 以 A 为论文主线；
-> 若 A 被对照削弱 → 再押 B。每完成一步更新 `WORK_STATUS.md`。
+这是一篇**可解释性 / 探针（probing）方向**的论文，不是「做一个更好的 RAG reranker」。务必记住：**本主线不声称探针在重排精度上打赢 reranker（那个已被证伪，见第四节废弃方案）。** 本主线的价值在于「内部 vs 输出」的科学发现与机制刻画。
 
 ---
 
 ## 一、会话规则（每次新会话必读）
 
-### 1.1 会话压缩后恢复流程（强制）
-
-每次会话被压缩后，**立即执行**，不得跳过：
-1. 重新读入本文件 `CLAUDE.md`（全文）
-2. 读入 `WORK_STATUS.md`（实时工作状态）
-3. 根据 `WORK_STATUS.md` 的「当前任务/下一步」恢复上下文，继续未完成的工作
-
-### 1.2 会话压缩前保存状态（强制）
-
-在上下文接近上限或预判将被压缩前，**主动更新 `WORK_STATUS.md`**：当前任务及进度、下一步具体操作（含命令/路径）、重要中间结论与踩坑、环境状态。每次写入时把上一次的内容提炼精简并标注「第几次压缩」，避免新旧信息混淆。
-
-### 1.3 禁止胡编乱造
-
-所有文献信息、技术结论必须可溯源。不确定的信息标注「未确认」或「推断」。EvidITI 已核实为真实论文（PDF 全文在知识库），且第一作者 Chenhui Feng (NUAA) 与本项目作者同一身份，应作为**本人前作**引用（同 ITI 谱系，但 EvidITI 做干预/steering，本项目做检索筛选）。CrAM、ADR 来自外部检索而非知识库。
+1. **会话压缩后恢复**：立即重读本文件全文，根据第六节「当前进度 / 下一步」恢复上下文继续。
+2. **会话压缩前保存**：在上下文接近上限前，主动把进度更新到第六节（标注「第几次压缩」，精简旧内容）。本工作区**不用单独的 WORK_STATUS.md**，状态直接维护在本文件第六节。
+3. **禁止胡编**：所有文献信息、技术结论必须可溯源，不确定的标「未确认 / 推断」。
+4. **诚实优先**：这个项目的全部价值建立在诚实归因上。实验若推翻当前结论，如实记录并更正本文件与 memory，不得粉饰（前期正是靠这个原则发现「探针打不过 reranker」）。
 
 ---
 
-## 二、项目目标与思路
+## 二、作者授予的权限与工作方式（沿用主仓库）
 
-**研究方向：** RAG 检索阶段优化 —— 基于注意力头激活的文档相关性探针。
-
-**核心假设（最关键，待 M2 验证）：** LLM 注意力头激活能编码「检索片段是否与 query 相关」的信号。若 M2 探针准确率不显著高于随机基线，核心假设不成立，需换方向（如 MLP 层激活 / 残差流）。
-
-**方法流程：**
-```
-检索片段 → (query, passage) 拼接 → LLM 前向推理(仅 forward，不 generate)
-        → 提取注意力头激活 → 探针二分类 → 保留相关片段
-```
-
-**方法论来源：** ITI（Inference-Time Intervention, Li et al. 2023, NeurIPS Spotlight）。借鉴其「提取激活 → per-head 探针 → 选头」范式，但做了三处迁移：目标 truthfulness→**文档相关性**；应用 干预生成→**检索后筛选**；新增 **ensemble 分类阶段**（产出统一相关性分数，ITI 无此步）。灵感论文 EvidITI 将 ITI 用于 RAG 干预。
-
-**差异化（论文创新点）：** 语义同源（探针与生成器共享表示空间，无外部模型语义鸿沟）、数据效率高（数百条标注即可训逻辑回归）、零额外模型部署、非侵入式（只读激活不改权重）。核心优势论证点是这四点，**不是计算量优势**。
-
-**期望产出：** 一篇学术论文 + 开源代码仓库。预期结果：探针分类指标（accuracy/F1/ROC-AUC）显著高于随机，且端到端 Recall@k 不劣于（理想情况优于）cross-encoder baseline（`ms-marco-MiniLM-L-6-v2`），同时论证同源/数据效率优势。
+- **完全自主权**：已获授权自主迭代，不要因小决策频繁打断用户；里程碑处提交 git。
+- **可下载**：所需 skills / 数据集 / 模型可下载，但**不下载超大模型**（磁盘未扩容；当前已缓存 LLaMA-3.2-3B，够用；8B 级别需先确认磁盘）。
+- **可用后台任务 / 并行**：长实验用后台跑；独立任务可并行。
+- **HF token**：用户已提供（如失效向用户索取）。`huggingface-cli` 在本环境损坏，用 Python `huggingface_hub.login()` API。
+- **提交规范**：里程碑式提交，message 写清「做了什么 + 结论」，带 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`。提交前留意不要把 `results/`（已 gitignore）或密钥提交进去。
 
 ---
 
-## 三、常用命令
+## 三、敲定的方案：主线论点与已验证的核心结果
 
+### 3.1 核心论点（三段式）
+
+1. **存在性**：用线性探针读 LLaMA-3.2-3B 在 answer-token 处的注意力头激活，能判断 (query, passage) 相关性，AUC 0.685，**显著高于**让模型直接输出判断的 LLM-judge（0.535，≈随机）。
+2. **归因（关键对照，已通过）**：这个优势主要来自「读内部」而非「被训练」。把 +0.15 的总 gap 拆解：
+   - 训练一个**只读输出表示**（最终层 hidden）的探针只到 **0.593**（训练贡献 +0.058）；
+   - 读**内部**（中层残差 / 注意力头）到 0.632 / 0.685（读内部额外贡献 +0.092，是训练贡献的 1.6 倍）。
+3. **机制**：相关性信号沿网络深度的可解码性**中部（L12）最高（0.632），向输出层单调衰减（0.593）** → 信号在内部已形成，但在抵达 logits 前被稀释/抑制。
+
+### 3.2 已验证结果（截至 worktree 创建，commit a296676）
+
+| 读取位置 | 训练 | test AUC | 数据来源 |
+|---|---|---|---|
+| 输出 logits（LLM-judge）| 否 | 0.535 | `results/cache/q500_judge` |
+| 最终层 hidden（输出表示）| 是 | 0.593 | `internals_vs_output.py` |
+| 中层残差 L12（内部最优）| 是 | 0.632 | 同上 |
+| 注意力头探针（本方法）| 是 | 0.685 | 同上 |
+
+数据集：MS MARCO v1.1，500 queries，instruct prompt + answer-token，按 query 70/15/15 切分（防泄露）。
+模型：LLaMA-3.2-3B（28 层 / 24 头 / head_dim 128 / 共 672 头）。
+
+### 3.3 prompt 与提取约定（固定，勿随意改）
+
+- instruct prompt：`"Document: {passage}\nQuestion: {query}\nIs the document relevant to the question? Answer:"`，取 **answer token（末位）** 激活。
+- 注意力头激活：nnsight `model.trace()` 内逐层取 `model.model.layers[i].self_attn.o_proj.output`，reshape `[B,S,n_heads,head_dim]` 取末位 token。
+- 残差流：`resid` 缓存为每层 decoder layer 输出 `[N, 28, 3072]`。
+- transformers 5.x：`o_proj.output` 已是 `[B,S,H]`，**不要再 `[0]` 索引**；nnsight 变量声明放 `with model.trace()` 块外、用 `.save()`。
+
+---
+
+## 四、方案探索史与**废弃方案**（重要：避免重走弯路）
+
+本项目最初定位是「基于注意力头探针的 RAG 检索优化，目标打赢 cross-encoder reranker」。经系统实验，**原定位被证伪**，逐条记录已死的路，**A 分支不要再碰**：
+
+1. **❌「探针重排精度优于 reranker」**：同域 MS MARCO 探针 0.685 < 强 reranker `bge-reranker-v2-m3` 0.753。**调参无用**（top-k 5~200、StandardScaler、whole-L2、mean-probe 全扫过，最优仍 0.685；且 StandardScaler 在注意力头探针上反而有害）。**加数据无用**（数据效率曲线单调缓升，外推 2000q≈0.72 仍 <0.753）。→ 不要再试图用探针在重排榜上赢 reranker。
+2. **❌「探针天生跨域鲁棒」**：零样本迁移（MS MARCO 探针→新域）SciFact 0.795 / FiQA 0.627，**两域都输**给 reranker 零样本（0.921 / 0.789）。强 reranker 跨域不降反升。→ 「跨域天生强」已死。**跨域 / 适配相关的一切归 B 分支**，A 分支不做跨域。
+3. **❌「数据效率高」**：曲线显示探针要更多数据才涨，不是少样本优势。→ 不作卖点。
+4. **⚠️ 曾经的假结论**：早期 SciFact 探针 0.964「反超」reranker，是**不公平对比**（探针在 SciFact 重训、reranker 零适配）造成的假象，已被 zeroshot_transfer 推翻。**勿引用 0.964 作为 A 的证据。**
+
+**A 分支唯一保留并深耕的，是「internals > output」这一可解释性发现**（第三节），它与重排精度、跨域都无关，是独立成立的科学结论。
+
+> 与 B 分支的边界：B 做「廉价领域适配 vs LoRA 微调 reranker」的实用价值论证。**A 不碰跨域、不碰 reranker 对比、不碰适配**。
+
+---
+
+## 五、脚本说明（本工作区保留的脚本，各自干什么）
+
+| 脚本 | 作用 | 备注 |
+|---|---|---|
+| `scripts/setup_env.sh` | 环境安装 + 验证（torch/nnsight/transformers/sklearn/datasets 版本与 CUDA） | 新容器首次必跑 |
+| `scripts/extract_instruct.py` | **激活提取器**：用 instruct prompt 在 answer-token 处提取 attn（per-head）+ resid（每层残差）双位点激活，缓存为 float16 .pt。输出 `results/cache/q500_instruct/{attn,resid}_{train,val,test}.pt` + `meta.json` | A 的数据来源生产者 |
+| `scripts/llm_judge.py` | **输出端基线**：同模型同 prompt，读 answer-token 处 `P("yes")` vs `P("no")` 输出概率，零训练。输出 `results/cache/q500_judge/judge_*.pt`（scores/labels/query_ids） | internals>output 的「输出端、零训练」对照 |
+| `scripts/internals_vs_output.py` | **A 的核心实验**：在同一缓存上比较 ①LLM-judge(输出,0训练) ②最终层 hidden 探针(输出表示,训练) ③逐层残差探针(找信号最强层) ④注意力头探针(本方法)。输出逐层 AUC 曲线 + 四者对比，落 `results/internals_vs_output.json` | 跑它复现第 3.2 节结果 |
+| `scripts/sweep_topk.py` | 探针超参敏感性扫描（top-k∈{5..200}×raw/scaled×whole-L2×mean-probe），证明结论对调参稳健 | 已证调参不改变结论，按需复用 |
+| `scripts/compare_probes.py` | 6 种探针方法论对比（baseline 选头 / StandardScaler / CV 选头 / whole-L2 / stacking / mean-probe），数据驱动选最优探针架构 | 探针架构消融 |
+| `src/data.py` | `load_ms_marco()` 造 (query,passage,label) 三元组；`split_by_query()` 按 query_id 70/15/15 切（防泄露） | |
+| `src/activations.py` | nnsight 激活提取底层（last_token / pooling 两方案，o_proj.output reshape 成 per-head） | |
+| `src/probes.py` | 两阶段探针：Stage1 per-head L1 逻辑回归选头，Stage2 top-k 拼接 L2 ensemble | |
+| `src/evaluation.py` | 可视化：per-head ROC-AUC 热力图、top-k 曲线 | 画论文图用 |
+| `initial_validation.py` | 早期 M1+M2 主入口（编排 load_model→sanity_check→提激活→训探针→方案对比），含 `sanity_check()` 验证 nnsight 激活 shape | 参考用，新实验优先用 scripts/ 下专用脚本 |
+| `scripts/download_model.sh` | classic-HTTP 断点续传下载 LLaMA-3.2-3B（`HF_HUB_DISABLE_XET=1`，hf_xet 须卸载） | 模型已缓存则跳过 |
+
+> 已删除的脚本（属于 B 分支或废弃方案，A 不需要）：`build_ood*.py`、`compare_ood.py`、`zeroshot_transfer.py`、`strong_reranker.py`、`compare_methods.py`、`data_efficiency.py`、`extract_and_cache.py`（旧 plain prompt 提取器，已被 extract_instruct 取代）。
+
+---
+
+## 六、当前进度 / 下一步（实时维护，压缩前必更新）
+
+### 当前进度（worktree 初始化时，第 0 次压缩）
+
+- ✅ 主线敲定为 internals>output；核心对照实验已通过（commit a296676，结果见 3.2）。
+- ✅ 缓存就绪并软链共享：`results/cache/`→ 主仓库（q500_instruct 含 attn+resid 双位点、q500_judge 含输出概率）。
+- ✅ 逐层信号定位初步完成：L12 峰值 0.632、输出层衰减到 0.593。
+
+### 下一步（论文化，按优先级）
+
+1. **多模型复现 gap**（验证普适性）：在 LLaMA-3.1-8B、Mistral-7B-v0.3 上复现「内部探针 > 输出端探针 > judge」的层级。**注意磁盘**：8B/7B 模型下载前先 `df -h` 确认空间，不足则向用户报告。需新写或泛化 `extract_instruct.py` 支持 `--model`。
+2. **信号层定位图**（论文主图）：逐层 attn-head 与 resid 探针 AUC 曲线、top heads 的层分布（前期线索：集中在晚期层 L25-27，但中层残差 L12 解码最强——需厘清 head 视角 vs layer 视角的差异并解释）。
+3. **机制解释实验**：为什么信号到输出被衰减？候选假设——(a) RLHF/对齐使模型倾向保守拒答；(b) 相关性信号未被路由到输出 token。可设计干预（如对 judge prompt 变体、base vs instruct 模型对比）验证。
+4. **gap 的鲁棒性**：多 prompt 框架（换 instruct 模板）下复现 gap，排除「特定 prompt 造成 judge 偏弱」的质疑。可调一个更强的 judge（few-shot / 校准阈值）作为更公平的输出端上界。
+
+### 预期实验结果（写论文前的假设，需实验证实）
+
+- 多模型上「内部 > 输出端 > judge」层级**应稳定复现**（gap 量级可能随模型变化）。
+- 信号峰值层**应在网络中后段**；输出层解码能力**应低于峰值层**（这是机制论点的关键，若不成立则论点削弱）。
+- 若某模型上输出端探针追平内部探针 → 如实记录，可能说明该结论与模型对齐方式有关。
+
+### 关键风险
+
+- 若「输出端探针（最终层 hidden）」在更强训练 / 更多数据下追平注意力头探针，则「internals>output」会退化为「训练>不训练」，主线受损。**这是 A 分支的命门**，多模型实验要重点盯这条对照线。
+
+---
+
+## 七、环境（新容器必看，会复现的坑）
+
+| 项 | 值 |
+|---|---|
+| 工作区目录 | `/root/shared-nvme/paper_A_internals`（分支 paper-A） |
+| GPU | RTX 3090 24GB | Python 3.12 | torch 2.7 | nnsight 0.7.0 | transformers 5.x | datasets 3.6.0 |
+
+**会复现的坑：**
+1. **新容器依赖需重装**：仅 torch/sklearn/numpy/matplotlib 预装，需装 transformers/datasets/sentence-transformers/nnsight/accelerate/seaborn。
+2. **dill pip 约束**：`/etc/pip/constraint.txt` 把 dill 钉死 0.3.9，直接 `pip install datasets` 会静默装成远古 1.1.1。解法：`PIP_CONSTRAINT="" pip install 'datasets>=3.0,<4'`。
+3. **hf_xet 与代理不兼容**：下载大文件卡死。解法：`pip uninstall hf_xet` + `export HF_HUB_DISABLE_XET=1`。
+4. **代理**（下载 HF/PyPI 慢时）：
+   ```bash
+   export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+   export http_proxy="$https_proxy"
+   export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
+   export HF_HUB_DISABLE_XET=1
+   ```
+5. **缓存是软链**：`results/cache` → 主仓库真实目录。删 worktree 前勿 `rm -rf` 跟随软链误删主缓存。
+
+**常用命令：**
 ```bash
-# 环境安装 + 验证（torch / nnsight / transformers / sklearn / datasets 版本与 CUDA）
-bash scripts/setup_env.sh
-huggingface-cli login            # LLaMA 为 gated 模型，需先在 HF 接受 license
-
-# M1+M2 主验证实验（本地直接跑）
-python initial_validation.py --model meta-llama/Llama-3.2-3B --n-queries 50 --scheme both
-
-# 服务器运行（封装了代理 + HF_HUB_DISABLE_XET=1，下载大文件必须）
-bash run_experiment.sh
+cd /root/shared-nvme/paper_A_internals
+export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存
+python scripts/internals_vs_output.py --cache results/cache/q500_instruct   # 复现核心结果
 ```
-
-主入口参数：`--n-queries`、`--scheme {last_token,pooling,both}`、`--top-k`（ensemble 选头数，可多值如 `10 20 50 100`）、`--dtype {float16,bfloat16,float32}`、`--max-length`、`--output-dir`、`--seed`。
-
-无独立测试套件；`initial_validation.py` 内置 `sanity_check()` 作为 nnsight 联调自检（验证激活 shape）。结果输出到 `results/initial_validation/`：`validation.log`、`config.json`、`per_head_results_*.csv`、`*.png`。
-
-**网络代理（下载 HF/GitHub/PyPI 慢或超时时按需开启）：**
-```bash
-export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export http_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
-# HF 新版默认 xet 协议下载与代理不兼容，大文件下载必须：
-export HF_HUB_DISABLE_XET=1
-```
-
----
-
-## 四、代码架构
-
-数据从 `initial_validation.py` 串起四个 `src/` 模块，理解大局需看它如何编排（这是单文件读不出的「big picture」）：
-
-```
-initial_validation.py   # 编排者：load_model → sanity_check → 数据 → 按 scheme 循环{提激活 → 训探针 → 评估} → 方案对比
-src/data.py             # load_ms_marco(): MS MARCO v1.1 → (query,passage,label) 三元组
-                        # split_by_query(): 按 query_id 切 70/15/15，同一 query 不跨 split（防泄露）
-src/activations.py      # extract_activations_last_token() / _pooling()：用 nnsight model.trace() 逐层取
-                        #   o_proj.output，reshape [B,S,n_heads,head_dim]。返回 [N,n_layers,n_heads,head_dim]
-                        # reshape_for_probes(): 压成 [N, n_total_heads, head_dim] 供探针用
-src/probes.py           # 两阶段探针（核心）：
-                        #   Stage 1 train_per_head_probes(): 每个头独立 L1 逻辑回归
-                        #   Stage 2 train_ensemble_probe(): top-k 头激活拼接 → L2 逻辑回归 → 最终分类
-src/evaluation.py       # 可视化：per-head ROC-AUC 热力图、top-k 曲线、方案 A/B 对比
-```
-
-**关键约束 / 易错点：**
-- **激活提取依赖 nnsight 的 forward-pass 访问顺序**：必须按 `layers[0..L]` 顺序在 `model.trace()` 内访问 `o_proj.output`，否则 nnsight 报错。
-- **两阶段探针的指标流向**：Stage 1 per-head 探针在 train 上训练，在 **val** 上评估并据此排序选 top-k 头（避免用 train 指标选头造成乐观偏差）；Stage 2 在 train 上训 ensemble，在 val/test 上评估。改动选头逻辑时注意 train/val 指标不要混用。
-- **类别不均衡**：MS MARCO 正样本天然偏少，实际接近 1:4，靠 `class_weight="balanced"` + 以 ROC-AUC（非 accuracy）为主指标处理。
-- **prompt 模板**：`"Q: {query}\nP: {passage}"`（见 `src/activations.py:_build_prompt`）。
-- 探针训练在 CPU 即可（逻辑回归），仅激活提取需 GPU。
-
-**框架选型：** 主用 nnsight 0.7.0（`model.trace()` + `.save()`，见 `nnsight/CLAUDE.md` 使用指南）；fallback 为 transformers `output_hidden_states`（仅 hidden states，拿不到 head 级激活）；保底参考 ITI 原仓库 honest_llama（仅适配 LLaMA-1，需改写）。
-
----
-
-## 五、模型与数据集
-
-| 阶段 | 模型 | 配置 | VRAM | 用途 |
-|------|------|------|------|------|
-| Phase 1 | LLaMA-3.2-3B | 28 层 / 24 头 / head_dim 128 / 共 672 头 | ~6GB | 可行性验证 + 方案 A/B 对比 |
-| Phase 2 | LLaMA-3.1-8B | 32 层 / 32 头 / head_dim 128 / 共 1024 头 | ~16GB | 主实验 |
-| Phase 2 | Mistral-7B-v0.3 | 32 层 / 32 头 / 共 1024 头 | ~15GB | 跨架构泛化 |
-
-实验环境：本机单卡 RTX 3090 24GB。数据集：MS MARCO v1.1（`microsoft/ms_marco`，`is_selected` 1/0 为天然正负标注）。Phase 1 = 500 queries（冒烟用 50），Phase 2 = 2000 queries，按 query 维度 70/15/15 切分。
-
----
-
-## 六、里程碑
-
-| M | 内容 | 验证标准 |
-|---|------|---------|
-| M1 | 环境 + 数据准备 | nnsight 与 LLaMA-3.2-3B 联调通过（打印激活 shape） |
-| **M2** | 激活提取 + 探针训练 | **探针准确率/ROC-AUC 显著 > 随机（最关键验证点）** |
-| M3 | 方案 A（末位 token）vs B（池化）对比 | 确定最终激活提取方案 |
-| M4 | 端到端 RAG + cross-encoder 对比 | Recall@k 对比表（需补 `rerank_with_probe` 端到端代码） |
-| M5 | 扩展 8B + 跨模型 | 泛化性验证 |
-
----
-
-## 七、参考文档（`docs/`）
-
-详细内容已归档，需要时查阅，**不必每次通读**：
-- `docs/实现计划-Attention-Probe-RAG.md` —— 完整伪代码 + 实验设计（顶部有 2026-06-27 校正说明，标注了与现行代码的三处差异）
-- `docs/RAG检索优化文献调研报告.md` —— 17 篇论文逐篇分析 + 数据集/模型调研
-- `docs/讨论总结-研究思路梳理.md` —— 最初的研究思路与优势论述
-- `nnsight/CLAUDE.md` —— nnsight 框架使用指南
-
-> ⚠️ **文档与代码冲突时以代码为源真相**。已知三处（详见实现计划顶部校正说明 + `WORK_STATUS.md`）：prompt 模板、数据正负比、Stage 1 选头指标（ROC-AUC 为现行，accuracy 方案待补充以做对比）。发现新冲突时向用户提出由其定夺。
