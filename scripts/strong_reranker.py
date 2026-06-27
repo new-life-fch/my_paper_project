@@ -82,7 +82,9 @@ def report_one(tag, scores, labels, qids, probe_ref):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--which", choices=["msmarco", "scifact", "both"], default="both")
+    ap.add_argument("--which", choices=["msmarco", "scifact", "both", "cache"], default="both")
+    ap.add_argument("--cache", default=None,
+                    help="with --which cache: score an OOD cache dir's test split (triples.json)")
     ap.add_argument("--out", default="results/strong_reranker.json")
     args = ap.parse_args()
 
@@ -112,6 +114,16 @@ def main():
         out["results"]["scifact"] = report_one(
             "SciFact (test, zero-shot for reranker)", s, labels, qids,
             "zeroshot=0.795 | adapted=0.964 (old CE=0.858)")
+
+    if args.which == "cache":
+        assert args.cache, "--cache required with --which cache"
+        sp = json.load(open(os.path.join(args.cache, "triples.json")))["test"]
+        labels = np.array([t["label"] for t in sp]); qids = np.array([t["query_id"] for t in sp])
+        pairs = [[t["query"], t["passage"]] for t in sp]
+        s = rerank_scores(model, tok, pairs)
+        out["results"][os.path.basename(args.cache)] = report_one(
+            f"{args.cache} (test, zero-shot for reranker)", s, labels, qids,
+            "see zeroshot/adapted json for probe")
 
     json.dump(out, open(args.out, "w"), indent=2)
     print(f"\nSaved: {args.out}")
