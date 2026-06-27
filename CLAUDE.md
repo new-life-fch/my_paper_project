@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 1.3 禁止胡编乱造
 
-所有文献信息、技术结论必须可溯源。不确定的信息标注「未确认」或「推断」。知识库 PDF 中 EvidITI 仅据标题推断（未获全文）；CrAM、ADR 来自外部检索而非知识库。
+所有文献信息、技术结论必须可溯源。不确定的信息标注「未确认」或「推断」。EvidITI 已核实为真实论文（PDF 全文在知识库），且第一作者 Chenhui Feng (NUAA) 与本项目作者同一身份，应作为**本人前作**引用（同 ITI 谱系，但 EvidITI 做干预/steering，本项目做检索筛选）。CrAM、ADR 来自外部检索而非知识库。
 
 ---
 
