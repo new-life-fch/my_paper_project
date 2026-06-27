@@ -122,8 +122,9 @@
 | Mistral-7B-v0.3 (base) | 32 | 0.531 | 0.602 | 0.671(L12) | 0.603 | 0.39 | **+0.069** | +0.071 | ✅ |
 | LLaMA-3.2-3B-Inst | 28 | 0.597 | 0.607 | 0.704(L12) | 0.725 | 0.44 | **+0.118** | +0.010 | ✅ |
 | LLaMA-3.1-8B-Inst | 32 | 0.603 | 0.585 | 0.666(L15) | 0.746 | 0.48 | **+0.161** | **−0.018** | ✅ |
+| Mistral-7B-Inst-v0.3 | 32 | 0.621 | 0.618 | 0.662(L12) | 0.667 | 0.39 | **+0.049** | **−0.003** | ✅ |
 
-**命门安全**：5/5 模型 best_resid(内部) > final-layer(输出)，"内部 > 输出"核心论点全部成立。
+**命门安全**：✅ **6/6 模型 best_resid(内部) > final-layer(输出)**，"内部 > 输出"核心论点在 3 尺寸/2 家族/base+instruct 全部成立。队列已全部完成（queue end 17:20），总报告见 `results/REPORT.md`。
 
 **⚠️ 跨架构发现（Mistral，重要诚实记录）**：Mistral 上 attn-head 探针 **0.603 反而低于 best_resid 0.671**，是首次 attn-head 不是最强内部读取器；且 internal_edge(+0.069) ≈ train_edge(+0.071)。原因已查实：Mistral 的 **head_layer_max 在 L0-L10 全是 0.50**（前 11 层单 head 无相关性信号），最强单 head 仅 0.62——单个注意力头携带的信号比 LLaMA 弱得多，但残差流(L12=0.671)仍清晰编码。**结论**：①核心论点"内部>输出"靠 best_resid 在 4/4 上稳健成立；②但"本方法=attn-head 探针"的强度依赖架构，不是普适最强读取器。**论文应以 best_resid（残差流最优层）作为"内部"的代表证据，attn-head 作为 LLaMA 系上更强的补充，而非唯一卖点。** Mistral 的 top heads 集中在晚期 L25-31（LLaMA 在中层 L10-16）——这是真实架构差异，值得在论文讨论。
 
@@ -137,7 +138,7 @@
 对齐(instruct)在两个尺寸上的一致三效应：① **judge 上升**（输出端嘴上判断变强，对齐确实提升输出表达）；② **train_edge 下降→趋零/转负**（对齐已把信号推进输出表示，"训练读最终层 hidden"几乎无增量；8B-Inst 甚至 −0.018，即训练探针反不如直接读 judge）；③ **internal_edge 上升**（内部−输出 gap **反而扩大**）。
 → 论点强化为：**对齐让模型"说得更准"(judge↑)，却让"内部知道的 vs 能说出的"差距更大(internal_edge↑)**。不是"对齐压制输出"，而是相关性信号在内部始终更充分；对齐只是改善了输出端的读出，并未让输出追平内部。（待 Mistral-Inst 验证跨架构）
 
-🔄 队列进行中：Mistral-7B-Instruct-v0.3 下载中(~11.3G/14G，最后一个)。系统盘稳定 6%。完成后将自动生成 results/REPORT.md。
+✅ 队列全部完成（6 模型 base+instruct）。三配对 base→inst 趋势：judge 全部↑(3/3)、train_edge 全部↓趋零/转负(3/3)、internal_edge LLaMA 系↑/Mistral 略↓但仍正。Mistral-Inst 也确认 train_edge 转负(−0.003)、judge 升到 0.621。总报告 `results/REPORT.md` 已生成（git -f 入库）。系统盘稳定 6%。
 
 ### 下一步（论文化，按优先级）
 

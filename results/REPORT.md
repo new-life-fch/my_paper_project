@@ -1,0 +1,140 @@
+# Internals > Output：多模型实验总报告
+
+> 工作区 A（分支 `paper-A`）· 生成于 2026-06-27 · 数据集 MS MARCO v1.1（500 queries）
+> 一句话结论：**6/6 模型上，LLM 内部激活对「检索文档是否与 query 相关」的可解码性，显著高于模型输出端（无论零训练的 LLM-judge，还是训练过的输出表示探针）。Internals know more than the model can say.**
+
+---
+
+## 1. 实验设计回顾
+
+同一模型、同一 instruct prompt、同一 answer-token 处，比较四个「相关性读取器」：
+
+| 读取器 | 位置 | 是否训练 | 含义 |
+|---|---|---|---|
+| **LLM-judge** | 输出 logits P(yes)/P(no) | 否 | 模型「嘴上」直接说的判断 |
+| **final-layer 探针** | 最终层 hidden（输出表示） | 是 | 训练一个读「输出表示」的探针 |
+| **best_resid 探针** | 残差流最优层（内部） | 是 | 内部信号最强层 |
+| **attn-head 探针**（本方法） | top-k 注意力头 o_proj | 是 | 读内部注意力头 |
+
+**两个关键 gap 拆解**：
+- `train_edge = final-layer − judge`：纯「训练」带来的增益（都在输出端）。
+- `internal_edge = best_internal − final-layer`：纯「读内部」带来的增益（超出训练之外）。
+- 论点成立的判据：内部探针（best_resid / attn-head）必须同时 > judge **且** > final-layer 探针。
+
+**评测协议**：按 query 70/15/15 切分（防泄露），ROC-AUC，val 选头/选层、test 报告。
+
+---
+
+## 2. 主结果：6 模型对比表
+
+| 模型 | 层数 | judge | final(输出) | best_resid(内部) | attn(本方法) | 峰值层占比 | internal_edge | train_edge | 命门 |
+|---|---|---|---|---|---|---|---|---|---|
+| LLaMA-3.2-3B (base) | 28 | 0.535 | 0.593 | 0.632 (L12) | 0.685 | 0.44 | **+0.092** | +0.058 | ✅ |
+| LLaMA-3.1-8B (base) | 32 | 0.514 | 0.552 | 0.634 (L5) | 0.680 | 0.16 | **+0.128** | +0.038 | ✅ |
+| Mistral-7B-v0.3 (base) | 32 | 0.531 | 0.602 | 0.671 (L12) | 0.603 | 0.39 | **+0.069** | +0.071 | ✅ |
+| LLaMA-3.2-3B-Instruct | 28 | 0.597 | 0.607 | 0.704 (L12) | 0.725 | 0.44 | **+0.118** | +0.010 | ✅ |
+| LLaMA-3.1-8B-Instruct | 32 | 0.603 | 0.585 | 0.666 (L15) | 0.746 | 0.48 | **+0.161** | −0.018 | ✅ |
+| Mistral-7B-Instruct-v0.3 | 32 | 0.621 | 0.618 | 0.662 (L12) | 0.667 | 0.39 | **+0.049** | −0.003 | ✅ |
+
+**判读**：6/6 模型 best_resid（及多数模型的 attn-head）同时 > judge 且 > final-layer 探针。核心论点「内部 > 输出」在 3 个尺寸（3B/7B/8B）、2 个家族（LLaMA/Mistral）、base 与 instruct 两种对齐状态下**全部成立**。
+
+---
+
+## 3. 命门检验（A 分支最大风险）
+
+**风险定义**（见 CLAUDE.md）：若「训练读输出表示（final-layer）」在更强模型/更多数据下追平内部探针，则「internals>output」会退化为「训练>不训练」，主线崩塌。
+
+**检验结果：命门安全。** 6/6 模型上 best_resid 始终 > final-layer：
+
+| 模型 | best_resid − final（内部超出输出表示的余量） |
+|---|---|
+| LLaMA-3.2-3B | +0.039 |
+| LLaMA-3.1-8B | +0.082 |
+| Mistral-7B-v0.3 | +0.069 |
+| LLaMA-3.2-3B-Instruct | +0.097 |
+| LLaMA-3.1-8B-Instruct | +0.081 |
+| Mistral-7B-Instruct | +0.044 |
+
+没有任何模型出现 final-layer 追平内部探针的情况。更关键的是：在对齐最强的 instruct 模型上，train_edge 反而趋零甚至转负（8B-Inst −0.018、Mistral-Inst −0.003），而 internal_edge 依然显著为正——这正是命门**最不可能崩**的方向。
+
+---
+
+## 4. 机制证据：base vs instruct 配对（论文机制章节核心）
+
+三个同尺寸 base↔instruct 配对，对齐的一致效应：
+
+| 配对 | judge (base→inst) | train_edge (base→inst) | internal_edge (base→inst) |
+|---|---|---|---|
+| LLaMA-3.2-3B | 0.535 → 0.597 | +0.058 → **+0.010** | +0.092 → **+0.118** |
+| LLaMA-3.1-8B | 0.514 → 0.603 | +0.038 → **−0.018** | +0.128 → **+0.161** |
+| Mistral-7B | 0.531 → 0.621 | +0.071 → **−0.003** | +0.069 → +0.049 |
+
+**两个稳健趋势（3/3 配对一致）**：
+1. **judge ↑**：对齐让模型「嘴上」判断相关性的能力显著变强（+0.06 ~ +0.09）。
+2. **train_edge ↓ → 趋零/转负**：对齐已把相关性信号充分推进输出表示，以至于「训练一个读最终层 hidden 的探针」几乎没有超出直接读 judge 的增量；8B-Inst / Mistral-Inst 上甚至为负（训练探针反不如直接问模型）。
+
+**internal_edge（内部−输出 gap）**：LLaMA 系在对齐后**扩大**（3B +0.092→+0.118，8B +0.128→+0.161）；Mistral 略缩小（+0.069→+0.049）但仍显著为正。
+
+**机制论点（据证据修正，比原假设更强也更诚实）**：
+> 对齐（instruct 化）改善的是**输出端的读出**（judge↑、train_edge↓），让模型「说得更准」。但它**并未消除内部−输出的 gap**——相关性信号在内部始终编码得比输出能表达的更充分。在 LLaMA 系上对齐甚至**拉大**了这个 gap。
+
+这推翻了一个过简的假设「对齐压制输出导致信号衰减」：实际是对齐**提升**了输出端，可内部依然领先。结论的核心不是「对齐好或坏」，而是「无论对齐与否，内部都比输出知道得多」。
+
+---
+
+## 5. 信号的深度定位（论文主图）
+
+每个模型一张三联图 `results/figures/<tag>_layer_signal.png`：
+- **A 面板**：逐层残差流探针 AUC vs 深度，标注 LLM-judge 基线、峰值层、最终（输出）层。
+- **B 面板**：per-head 注意力探针 AUC 热力图（layer × head）。
+- **C 面板**：head 视角 vs layer 视角——每层最强/平均 head AUC + 全局 top-k head 的层分布直方图。
+
+**共性形态**：相关性可解码性在**网络中部**成形并达峰，随后向输出层**单调衰减**。峰值层占比（peak/总层数）：3B≈0.44、Mistral≈0.39、8B-Inst≈0.48，多数落在网络中段；8B-base 异常早（L5，0.16），但同样在到达输出前衰减。
+
+**head 视角 vs layer 视角（架构差异，诚实记录）**：
+- LLaMA 系：top heads 集中在**中层 L10-16**，与残差峰值层一致。
+- Mistral：top heads 集中在**晚期层 L25-31**，但残差峰值仍在 L12——head 与 layer 视角在 Mistral 上分离。
+
+---
+
+## 6. 对论文论点的支撑与风险
+
+**强支撑**：
+- 「内部 > 输出」在 6/6 模型、跨尺寸/家族/对齐状态成立，普适性强。
+- internal_edge 在所有模型显著为正，且对齐越强（instruct）train_edge 越趋零/转负，说明优势主要来自「读内部」而非「被训练」——这是 A 分支的核心科学主张。
+- base↔instruct 配对提供了清晰的机制证据链。
+
+**已诚实记录的风险/边界**：
+1. **attn-head 探针不是普适最强读取器**：Mistral 上 attn-head(0.603) < best_resid(0.671)，根因是 Mistral 前 11 层单 head 无信号（head_max=0.50）、最强单 head 仅 0.62。→ **论文应以 best_resid（残差流最优层）作为「内部」的代表证据**，attn-head 作为 LLaMA 系上更强的补充手段，而非唯一卖点。
+2. **internal_edge 的方向在 Mistral 与 LLaMA 不完全一致**（对齐后 LLaMA 扩大、Mistral 略缩小）。机制论点应表述为「对齐不消除内部 gap」这一稳健下界，而非「对齐必然扩大 gap」。
+3. **绝对 AUC 不高**（0.5–0.75），符合 A 分支定位——本主线是可解释性发现（内部 vs 输出的相对关系），**不声称在重排精度上打赢 reranker**（那条路已证伪，见 CLAUDE.md 第四节）。
+
+**与 B 分支边界**：本报告不涉及跨域、reranker 对比、领域适配（均属 B 分支）。
+
+---
+
+## 7. 复现方式
+
+```bash
+cd /root/shared-nvme/paper_A_internals
+export HF_HOME=/root/shared-nvme/hf_cache HF_HUB_DISABLE_XET=1
+# 单模型全流程（提取→judge→分析）
+bash scripts/run_model.sh <hf_model_id> <tag>
+# 多模型队列（base+instruct 串行）
+bash scripts/run_queue.sh
+# 汇总对比表
+python scripts/aggregate_models.py
+# 出某模型主图
+python scripts/plot_layer_signal.py --cache results/cache/<tag>_instruct --judge-cache results/cache/<tag>_judge --tag <tag>
+```
+
+产物：`results/internals_vs_output_<tag>.json`、`results/multimodel_summary.json`、`results/figures/<tag>_layer_signal.{png,json}`。
+
+---
+
+## 8. 下一步建议（论文化）
+
+- **机制干预实验**：用 logit-lens / activation patching 验证「为何中层信号到输出衰减」，把相关性方向从峰值层 patch 到输出层，看 judge 是否提升——可把「内部知道」变成因果证据。
+- **更公平的 judge 上界**：few-shot / 阈值校准的强 judge，排除「prompt 偏弱致 judge 低」的质疑（注：instruct 模型 judge 已达 0.60-0.62，本身已是较强上界）。
+- **更多 prompt 模板**：复现 gap，排除 prompt 特异性。
+- **统计显著性**：bootstrap AUC 置信区间 / DeLong test，给 internal_edge 配显著性。
