@@ -133,26 +133,28 @@ my_paper_project/
 **唯一硬贡献 = 跨域鲁棒性**：通用 LLM 上的线性探针 vs MS-MARCO 专用 reranker，换领域时探针更稳。
 工程属性（零部署/非侵入）作辅助卖点，不作主实验。
 
-### ⏭️ 下一步：补「零样本迁移」干净对比（进行中）
+### ⏭️ 下一步：新主线（2026-06-27 转向后，分支计划见 CLAUDE.md 顶部）
 
-**动机**：跨域 0.964 里探针在 SciFact 重训过、cross-encoder 没有 → 不公平，混淆「迁移」与「适配」。
-**做法**：新脚本 `scripts/zeroshot_transfer.py` —
-- 探针：在 **MS MARCO**（q500_instruct）上选头 + 训 ensemble，**零适配**直接打分 SciFact test。
-- cross-encoder：同样零适配（已有 0.858）。
-- 若「MS MARCO 训的探针零样本套 SciFact 仍 ≥ cross-encoder」→ 公平性无懈可击，这才是能写进论文的主结果。
-- 特征对齐：两缓存同模型/同 prompt/同 672 头，训一边测一边即可。
-- ⚠️ 注意 train/test 来自不同缓存，需重新 fit；选头仍只用 MS MARCO 的 val（不碰 SciFact 任何标注）。
+**已彻查并否定「探针优于 reranker」**（用户第 1 点的三连问全部排除）：
+- baseline 不弱：换 SOTA `bge-reranker-v2-m3`，同域 0.753 / SciFact 零样本 0.921，探针仍输（`scripts/strong_reranker.py`）。
+- 调参无用：`scripts/sweep_topk.py` 扫 top-k 5~200 × raw/scaled × whole-L2 × mean，同域最优 0.685、SciFact 最优 0.967，不翻盘。StandardScaler 同域反而有害。
+- 加数据救不了：数据效率曲线单调缓升，外推 2000q≈0.72 仍 <0.753。
+- 池偏差已排除：长度单独 AUC≈0.49、BM25 单独 0.63~0.67，远低于探针；162/3201 文档对不同 query 既正又负 → 需真 query-passage 交互。0.964 是真信号、来自「适配」非「迁移捷径」。
 
-**之后**（按优先级）：
-1. 查 SciFact 候选池构造偏差（正例=真摘要 vs 负例=BM25召回，会不会学到表面文本特征）。
-2. 第 2 个领域复现（FiQA / NFCorpus），确认不是 SciFact 巧合。
-3. 论文初稿。
+**执行顺序：**
+1. **【进行中】扩展 2~3 个 BEIR 领域**（FiQA / NFCorpus / TREC-COVID）：
+   - 复用 `build_ood_scifact.py` 的管线（改 dataset 名），跑零样本 (`zeroshot_transfer.py`) + 适配 (`compare_ood.py`) + 强 reranker (`strong_reranker.py`)。
+   - 看零样本是否各域都输、适配增益是否普遍。需 GPU 抽激活（每域 ~6000 triples，约 20-30 min）。
+2. **【分支 A，便宜先探】internals>output**：补「只读输出端」探针对照（输出特征多已缓存于 q500_judge / resid），多模型多 prompt 复现 gap，定位信号层。
+3. **【分支 B，费时】cheap-adaptation**：LoRA 微调 bge reranker 作公平对手。仅当 A 被对照削弱才押。
 
 ### 历史命令（重跑实验）
 ```bash
-export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存；跑 cross-encoder 需临时联网代理
+export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存；跑 reranker 需临时联网代理
 cd /root/shared-nvme/my_paper_project
-python scripts/compare_ood.py --cache results/cache/scifact_ood --topk 20
+python scripts/strong_reranker.py --which both          # 强 reranker baseline
+python scripts/sweep_topk.py --cache results/cache/q500_instruct   # 参数敏感性
+python scripts/zeroshot_transfer.py                     # 零样本迁移（公平 OOD）
 ```
 
 ---
