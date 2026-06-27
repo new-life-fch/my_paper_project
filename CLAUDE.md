@@ -108,11 +108,28 @@
 ### 当前进度（第 1 次会话推进，2026-06-27）
 
 - ✅ 主线敲定为 internals>output；核心对照实验已通过（commit a296676，结果见 3.2）。
-- ✅ 缓存就绪并软链共享：`results/cache/`→ 主仓库（q500_instruct 含 attn+resid 双位点、q500_judge 含输出概率）。
-- ✅ 本工作区复现核心结果无误：judge 0.535 → final-layer 0.593 → L12 0.632 → attn-head 0.685（`results/internals_vs_output.json`）。
-- ✅ **论文主图已出**（下一步 #2 完成）：`scripts/plot_layer_signal.py` 产出三联图 `results/figures/llama32_3b_layer_signal.png`（A 逐层 resid AUC 深度曲线+judge 基线+峰值/输出层标注；B per-head AUC 热力图；C head 视角 vs layer 视角）。厘清了 head/layer 差异：3B 上 top-20 heads 集中在 **L10-16**（中后段），与 resid 峰值 L12 一致——之前"晚期层 L25-27"的线索未在本 instruct 缓存复现。
-- 🔄 **多模型复现进行中**（下一步 #1）：LLaMA-3.1-8B 完整流水线后台运行（`results/logs/llama31_8b.log`，模型下载中 ~12MB/s）。已就绪的工具链：`scripts/run_model.sh <model> <tag>`（串联 extract→judge→analyze，模型无关，无需改原脚本，`extract_instruct.py`/`llm_judge.py` 本就支持 `--model`）；`scripts/aggregate_models.py`（汇总各 `internals_vs_output_<tag>.json` 成对比表，含 internal_edge/train_edge 拆解与"层级是否成立"判定，落 `results/multimodel_summary.json`）。8B 完成后接 Mistral-7B-v0.3。
-- 磁盘充裕（/root/shared-nvme 147G 空闲），HF token 验证可访问 Llama-3.1-8B / Mistral-7B-v0.3 / Qwen2.5-7B（均 gated 但有权限）。
+- ✅ 本工作区复现核心结果无误：judge 0.535 → final-layer 0.593 → L12 0.632 → attn-head 0.685。
+- ✅ **论文主图已出**：`scripts/plot_layer_signal.py` 三联图（A 逐层 resid 深度曲线+judge 基线+峰值/输出标注；B per-head 热力图；C head vs layer 视角）。3B top-20 heads 集中 **L10-16**，与 resid 峰值 L12 一致。
+- ✅ **磁盘修复**（重要）：系统盘仅 30G，HF 缓存(21G)已搬到数据盘 `/root/shared-nvme/hf_cache` 并软链回 `~/.cache/huggingface`；`HF_HOME` 固化进 `run_model.sh`/`run_queue.sh`。系统盘 72%→6%。已写记忆 `disk-layout-server.md`。
+- ✅ **5 模型队列已就绪并自主跑**：`scripts/run_queue.sh`（串行 base+instruct，单模型失败不阻塞，每个完成后自动 aggregate+出图）。检查点 cron（每小时:37）自主分析。
+
+#### 多模型结果（截至本次，命门检验 + 机制对照）
+
+| 模型 | L | judge | final(输出表示) | best_resid(内部) | attn(本方法) | peak层占比 | internal_edge | train_edge | holds |
+|---|---|---|---|---|---|---|---|---|---|
+| LLaMA-3.2-3B (base) | 28 | 0.535 | 0.593 | 0.632(L12) | 0.685 | 0.44 | **+0.092** | +0.058 | ✅ |
+| LLaMA-3.1-8B (base) | 32 | 0.514 | 0.552 | 0.634(L5) | 0.680 | 0.16 | **+0.128** | +0.038 | ✅ |
+| LLaMA-3.2-3B-Inst | 28 | 0.597 | 0.607 | 0.704(L12) | 0.725 | 0.44 | **+0.118** | +0.010 | ✅ |
+
+**命门安全**：3/3 模型 internal_edge > train_edge，且 internal_edge 在 8B 上(+0.128)比 3B 更大——内部效应是训练效应的 ~3.4 倍，主线随规模增大反而更强，未削弱。
+
+**机制对照（base vs instruct，关键发现，3B 同尺寸对比）**：
+- judge 0.535→**0.597**（instruct 嘴上判断变强，对齐确实提升输出端表达）；
+- train_edge 0.058→**0.010**（几乎归零：instruct 上"训练读输出表示"已无增量，对齐已把信号推进输出表示）；
+- **但 internal_edge 仍高 +0.118，best_resid 飙到 0.704**——内部信号依然远超输出能表达的。
+- → 论点比原假设更强：**不是"对齐压制输出"，而是无论是否对齐，内部始终比输出知道得多**。对齐改善了输出端、缩小了"训练 gap"，却没消除"内部 gap"。
+
+🔄 队列进行中：Mistral-7B-v0.3 (base) 下载中(~5G/14G)，之后 8B-Inst、Mistral-Inst。系统盘稳定 6%。
 
 ### 下一步（论文化，按优先级）
 

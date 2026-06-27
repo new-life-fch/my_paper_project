@@ -17,10 +17,15 @@ ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RES = os.path.join(ROOT, "results")
 
 NAMES = {
+    # base models
     "llama32_3b": "LLaMA-3.2-3B",
     "llama31_8b": "LLaMA-3.1-8B",
     "mistral_7b": "Mistral-7B-v0.3",
     "qwen25_7b": "Qwen2.5-7B",
+    # instruct models (mechanism control: alignment -> signal decay?)
+    "llama32_3b_instruct": "LLaMA-3.2-3B-Inst",
+    "llama31_8b_instruct": "LLaMA-3.1-8B-Inst",
+    "mistral_7b_instruct": "Mistral-7B-Inst-v0.3",
 }
 
 
