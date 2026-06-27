@@ -13,6 +13,9 @@ OUT="results/internals_vs_output_${TAG}.json"
 
 # proxy only needed while downloading; harmless once cached
 export HF_HUB_DISABLE_XET=1
+# IMPORTANT: system disk is only 30G; force HF cache onto the data mount.
+# (see CLAUDE.md §七 / memory disk-layout-server)
+export HF_HOME="${HF_HOME:-/root/shared-nvme/hf_cache}"
 # Proxy is needed while downloading; inherit from environment if set.
 # Set https_proxy before calling this script if your environment requires it:
 #   export https_proxy="http://user:pass@host:port"
