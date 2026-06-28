@@ -172,10 +172,17 @@
 >
 > **下一步执行计划（复查后，压缩上下文后继续）**：按优先级补实验 → ①**8B/instruct 因果 steering**（`causal_steer.py` 已通用，换 --model/--cache/--tag 即可，验证因果非 3B 特有）；②**第二个 in-domain relevance 数据集**（非跨域！如 TREC-DL / Natural Questions relevance，证 gap 非 MS MARCO 特有，需写新 data loader 或扩 `src/data.py`）；③**更强 judge 上界**（few-shot judge，堵"prompt 偏弱"质疑，改 `llm_judge.py` 加 few-shot 模板）。每步完成后更新 REPORT + main.tex + 提交。
 
+> ✅ **三项补实验全部完成（2026-06-29，第六节第 4 次推进，commits 25d878b/c41e572/c0a3b23/5e8aed2）**：复查后的三项补实验已跑通、写进 REPORT §11.1/§12/§13、整合进 main.tex、PDF 重编译通过。
+> - **① 8B/instruct 因果 steering（REPORT §11.1）**：同一 probe-free 协议跑 LLaMA-3.1-8B base+instruct。三变体(3B/8B base/8B inst)一致：消融臂 P(yes) 单调崩(8B-inst 最剧 **0.871→0.003**)、唯独 internal 方向保持 AUC、final 摧毁 AUC、random 平。8B-inst 消融最剧 = 对齐把信号与输出判断耦合更紧（与扩样本 internal_edge 缩小同机制）。因果非 3B 特有。结果 `results/causal_steer_llama31_8b{,_instruct}_q1500.json`、图 `figures/causal_steer_8b_{base,inst}.png`。
+> - **② 第二 in-domain 数据集 FiQA（REPORT §12）**：`src/data.py::load_beir_relevance` + `scripts/run_fiqa.sh` + extract/judge 加 `--dataset beir:fiqa` 旗标。LLaMA-3.2-3B 同域重训+重测(1500q，225 test query，**非跨域**)。**best_resid−judge=+0.253**(比 MS MARCO 大)、**internal_edge=+0.0165 CI[0.010,0.024] p=0.0 强形式显著**、attn−final +0.017 显著。诚实记：FiQA 极度线性可分(final 0.976 近天花板)故 internal_edge 薄但显著，主导通道是 train_edge(+0.237)；与 MS MARCO 互补。`significance.py` 加 `--only` 过滤 + FiQA 条目。结果 `results/significance_fiqa.json`、`internals_vs_output_llama32_3b_fiqa.json`。
+> - **③ few-shot judge 上界（REPORT §13）**：`scripts/llm_judge_fewshot.py`（4 exemplar 仅取 train，无泄露）。3B-base MS MARCO 1500q：零样本 0.545 → 4-shot **0.566**（+0.021），仍远低 best_resid 0.632/attn 0.685。证 gap 非 prompt 工程可填平。结果 `results/cache/llama32_3b_q1500_judge_fs4/meta.json`。
+> - **论文现状**：main.tex 已含三补实验，Limitations 更新为"因果三变体 + 两个 in-domain 数据集"。后续可选：FiQA 上也跑 8B/instruct、Mistral 因果、投稿目标会议定稿。
+
+
 1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
-3. ⬜ **更公平的强 judge 上界**：few-shot / 阈值校准 judge，堵"prompt 偏弱致 judge 低"质疑（instruct judge 已达 0.60-0.62，本身较强）。
-4. ⬜ **第二个 in-domain relevance 数据集**（非跨域！）：证明 gap 不是 MS MARCO 特有。注意与 B 分支跨域迁移区分——这里是同域重训另一个 relevance 集。
+3. ✅ **更公平的强 judge 上界（已完成 2026-06-29，REPORT §13）**：few-shot judge（`llm_judge_fewshot.py`，4 exemplar 仅取 train）。3B-base 零样本 0.545→4-shot 0.566，仍远低内部探针，证 gap 非 prompt 工程可填平。
+4. ✅ **第二个 in-domain relevance 数据集（已完成 2026-06-29，REPORT §12）**：FiQA 同域重训+重测（`load_beir_relevance` + `run_fiqa.sh`）。best_resid−judge +0.253、internal_edge +0.0165 显著。与跨域(B 分支)严格区分。
 5. ✅ **信号层定位图**（论文主图，已完成）：`scripts/plot_layer_signal.py`，6 模型已出图。
 6. ✅ **统计显著性**（已完成）：`scripts/significance.py`，query 聚类 bootstrap + val 选层，结果见 REPORT §9。
 
