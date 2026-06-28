@@ -75,14 +75,17 @@ def boot_auc(y, s, qids, n_boot, rng):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--boot", type=int, default=5000)
+    ap.add_argument("--suffix", default="", help="cache suffix, e.g. _q1500 -> looks for <cdir>_q1500_instruct")
     ap.add_argument("--out", default="results/significance.json")
     args = ap.parse_args()
     rng = np.random.default_rng(42)
 
     report = []
     for tag, name, cdir in MODELS:
-        ic = f"results/cache/{cdir}_instruct"
-        jc = f"results/cache/{cdir}_judge"
+        # scaleup caches are tag-based (<tag>_q1500_*); legacy 500q base-3B uses cdir=q500
+        base = tag if args.suffix else cdir
+        ic = f"results/cache/{base}{args.suffix}_instruct"
+        jc = f"results/cache/{base}{args.suffix}_judge"
         if not os.path.isdir(ic):
             print(f"skip {tag}: no cache {ic}"); continue
         print(f"\n=== {name} ({tag}) ===")

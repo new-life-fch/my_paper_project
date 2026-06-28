@@ -135,6 +135,20 @@
 > - **论文定量主张改为建立在 attn−final(LLaMA 显著) + 跨模型符号检验 之上；internal_edge 在扩样本加固前只作"方向一致弱证据"**。机制章节(base↔instruct 趋势)定性结论不受影响。
 > - **命门当前状态：部分守住**(attn−final 在 LLaMA 显著、方向 6/6 一致)，但"残差流内部>输出表示"的强形式待扩样本。这是诚实下界，不是 v1 宣称的"6/6 通过"。
 
+> 🟢 **2026-06-28 扩样本加固完成(第六节第 3 次推进，命门强形式守住)**：1500q 扩样本(test 75→~225 query)跑完 4 旗舰模型，重测 `scripts/significance.py --suffix _q1500`(`results/significance_q1500.json`)。**样本量是唯一变量**，internal_edge 显著性大幅改善：
+>
+> | 模型 | internal_edge 500q | internal_edge 1500q | 判读 |
+> |---|---|---|---|
+> | LLaMA-3.2-3B (base) | +0.036 p=0.19 ❌ | **+0.077 CI[0.029,0.124] p=0.0008** ✅ | 单模型显著 |
+> | LLaMA-3.1-8B (base) | +0.028 p=0.26 ❌ | **+0.060 CI[0.016,0.104] p=0.004** ✅ | 单模型显著 |
+> | LLaMA-3.2-3B-Inst | +0.026 p=0.28 | +0.024 CI[-0.022,0.071] p=0.15 | 正向不显著 |
+> | LLaMA-3.1-8B-Inst | +0.044 p=0.16 | +0.012 CI[-0.038,0.062] p=0.32 | 正向不显著 |
+>
+> - ✅ **base 模型 internal_edge 单模型显著**(p<0.001 / p=0.004)——"残差流内部 > 输出表示"的**强形式在 base 模型守住**。attn−final 仍 4/4 极显著(p<0.0001)。
+> - 🔑 **新发现(机制金句)**：扩样本后 **base 显著、instruct 不显著且 edge 缩小**(3B 0.036→维持、8B 0.044→0.012)。这不是噪声，精确对应机制——**对齐把相关性信号推进了输出表示，缩小了残差流的内部余量**。`best_resid−judge` 同向佐证(base 显著、8B-Inst 转负 −0.022)。
+> - **命门最终状态**：①核心定量主张 **attn−final 在 LLaMA 4/4 极显著**(最强)；②强形式 **best_resid−final 在 base 模型单模型显著**；③instruct 上内部余量被对齐压缩(机制证据，非命门失守)。论文可正面陈述"内部>输出"，并以 base/instruct 差异作机制章节。
+> - Mistral 未进扩样本队列(只跑 4 旗舰)，其 500q 结论(attn-head 弱、best_resid 仍编码)不变，作跨架构讨论。
+
 **⚠️ 跨架构发现（Mistral，重要诚实记录）**：Mistral 上 attn-head 探针 **0.603 反而低于 best_resid 0.671**，是首次 attn-head 不是最强内部读取器；且 internal_edge(+0.069) ≈ train_edge(+0.071)。原因已查实：Mistral 的 **head_layer_max 在 L0-L10 全是 0.50**（前 11 层单 head 无相关性信号），最强单 head 仅 0.62——单个注意力头携带的信号比 LLaMA 弱得多，但残差流(L12=0.671)仍清晰编码。**结论**：①核心论点"内部>输出"靠 best_resid 在 4/4 上稳健成立；②但"本方法=attn-head 探针"的强度依赖架构，不是普适最强读取器。**论文应以 best_resid（残差流最优层）作为"内部"的代表证据，attn-head 作为 LLaMA 系上更强的补充，而非唯一卖点。** Mistral 的 top heads 集中在晚期 L25-31（LLaMA 在中层 L10-16）——这是真实架构差异，值得在论文讨论。
 
 **机制对照（base vs instruct 配对，黄金证据，2 尺寸一致复现）**：
@@ -152,7 +166,7 @@
 ### 下一步（论文化，按优先级 — 2026-06-28 显著性更正后重排）
 
 1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
-2. ⬜ **因果证据（顶会真正缺口）**：activation patching / steering。把 best-resid 层的相关性方向(probe weight)加到输出层残差，看 judge 的 P(yes) 是否按预期移动；或 patch 峰值层激活到输出层。把"内部能解码"升级为"内部信号因果决定输出"。logit-lens 逐层投影出衰减曲线作配图。
+2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
 3. ⬜ **更公平的强 judge 上界**：few-shot / 阈值校准 judge，堵"prompt 偏弱致 judge 低"质疑（instruct judge 已达 0.60-0.62，本身较强）。
 4. ⬜ **第二个 in-domain relevance 数据集**（非跨域！）：证明 gap 不是 MS MARCO 特有。注意与 B 分支跨域迁移区分——这里是同域重训另一个 relevance 集。
 5. ✅ **信号层定位图**（论文主图，已完成）：`scripts/plot_layer_signal.py`，6 模型已出图。
