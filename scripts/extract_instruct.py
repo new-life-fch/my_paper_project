@@ -73,12 +73,21 @@ def main():
     ap.add_argument("--max-length", type=int, default=512)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--out", default="results/cache/q500_instruct")
+    ap.add_argument("--dataset", default="ms_marco",
+                    help="ms_marco | beir:fiqa | beir:scifact")
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
 
-    samples = load_ms_marco(n_queries=args.n_queries,
-                            max_passages_per_query=args.max_passages, seed=args.seed)
+    if args.dataset.startswith("beir:"):
+        from src.data import load_beir_relevance
+        samples = load_beir_relevance(args.dataset.split(":", 1)[1],
+                                      n_queries=args.n_queries,
+                                      max_passages_per_query=args.max_passages,
+                                      seed=args.seed)
+    else:
+        samples = load_ms_marco(n_queries=args.n_queries,
+                                max_passages_per_query=args.max_passages, seed=args.seed)
     train_s, val_s, test_s = split_by_query(samples, seed=args.seed)
     splits = {"train": train_s, "val": val_s, "test": test_s}
 

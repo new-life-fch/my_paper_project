@@ -72,6 +72,80 @@ def load_ms_marco(n_queries: int = 100, max_passages_per_query: int = 5, seed: i
     return samples
 
 
+def load_beir_relevance(name: str = "fiqa", n_queries: int = 1500,
+                        max_passages_per_query: int = 5, seed: int = 42):
+    """
+    Load a BeIR relevance dataset (e.g. fiqa, scifact) and build
+    (query_id, query, passage, label) triples with the SAME schema as
+    load_ms_marco, so the whole extraction/probe pipeline works unchanged.
+
+    This is for the SECOND in-domain relevance experiment: a probe is trained
+    AND tested within this dataset (no cross-domain transfer — that dead plan
+    lives in workspace B). Goal: show the internals>output gap is not specific
+    to MS MARCO.
+
+    qrels mark only positives; negatives are sampled from corpus passages not
+    judged relevant for that query (standard relevance-set construction).
+    """
+    print(f"Loading BeIR/{name} relevance dataset...")
+    corpus = load_dataset(f"BeIR/{name}", "corpus", trust_remote_code=True)["corpus"]
+    queries = load_dataset(f"BeIR/{name}", "queries", trust_remote_code=True)["queries"]
+    qrels_all = load_dataset(f"BeIR/{name}-qrels", trust_remote_code=True)
+    # Pool qrels across splits (we re-split by query ourselves downstream).
+    import itertools
+    qrels = list(itertools.chain.from_iterable(qrels_all[s] for s in qrels_all))
+
+    # id -> text maps
+    cid2text = {str(r["_id"]): (r["text"] or "") for r in corpus}
+    qid2text = {str(r["_id"]): (r["text"] or "") for r in queries}
+    all_cids = list(cid2text.keys())
+
+    # positives grouped by query
+    pos_by_q = {}
+    for r in qrels:
+        if int(r["score"]) <= 0:
+            continue
+        q = str(r["query-id"]); c = str(r["corpus-id"])
+        if q in qid2text and c in cid2text:
+            pos_by_q.setdefault(q, []).append(c)
+
+    rng = random.Random(seed)
+    qids = [q for q in pos_by_q if pos_by_q[q]]
+    rng.shuffle(qids)
+    qids = qids[:n_queries]
+
+    samples = []
+    n_pos_per = max(1, max_passages_per_query // 2)
+    for q in qids:
+        pos_cids = pos_by_q[q][:n_pos_per]
+        pos_set = set(pos_by_q[q])
+        n_neg = max_passages_per_query - len(pos_cids)
+        # sample negatives not judged relevant for this query
+        negs = []
+        tries = 0
+        while len(negs) < n_neg and tries < n_neg * 20:
+            c = rng.choice(all_cids)
+            if c not in pos_set:
+                negs.append(c)
+            tries += 1
+        # numeric query_id for downstream torch.tensor(query_ids)
+        try:
+            qid_num = int(q)
+        except ValueError:
+            qid_num = abs(hash(q)) % (10 ** 9)
+        for c in pos_cids:
+            samples.append({"query_id": qid_num, "query": qid2text[q],
+                            "passage": cid2text[c], "label": 1})
+        for c in negs:
+            samples.append({"query_id": qid_num, "query": qid2text[q],
+                            "passage": cid2text[c], "label": 0})
+
+    print(f"Built {len(samples)} samples from {len(qids)} queries "
+          f"(pos: {sum(s['label'] for s in samples)}, "
+          f"neg: {sum(1 for s in samples if s['label'] == 0)})")
+    return samples
+
+
 def split_by_query(samples, train_ratio=0.7, val_ratio=0.15, seed=42):
     """
     Split samples by query_id to prevent data leakage.

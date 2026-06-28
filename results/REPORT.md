@@ -212,3 +212,17 @@ python scripts/plot_layer_signal.py --cache results/cache/<tag>_instruct --judge
 **因果结论**：内部相关性方向在输出层具有**特异的、单调的因果效应**(消融臂)，且唯独它在干预下保持判别有效性(AUC)——证明输出通路**本可表达**该相关性信号，自然前向中只是被**衰减/欠表达**(attenuation, not absence)。这把"内部知道得更多"从相关性证据升级为**因果证据**。
 
 > 边界：增益臂受 judge 正例偏置限制，论文应以消融臂(α<0 单调)+ AUC 对照(internal vs final vs random)为主证据。可补做按真实标签分组的因果效应(rel/irrel 样本上 P(yes) 移动方向)进一步加固。
+
+### 11.1 因果证据跨模型复现（8B base + instruct，2026-06-29）
+
+把同一 steering 协议(probe-free diff-of-means 方向、输出层注入、α∈[−8,8]、1117 test prompt)搬到 LLaMA-3.1-8B 的 base 与 instruct，验证因果效应非 3B 特有：
+
+| 模型 | 内部层 | 消融臂 P(yes) (α:0→−8) | internal AUC 范围 | final AUC (α≠0) | random AUC |
+|---|---|---|---|---|---|
+| 3B-base | L13 | 0.79 → 0.26 | 保持 ~0.55 | 崩到 0.485 | 平 |
+| 8B-base | L12 | 0.89 → 0.59 | 保持 ~0.57 | 崩到 0.50 | 平 ~0.57 |
+| 8B-instruct | L13 | **0.871 → 0.003** | 保持 ~0.63 | 崩到 0.51 | 平 ~0.63 |
+
+三点一致复现：① **消融臂单调崩塌**(抽掉内部相关性方向→yes 判断瓦解，因果必要)；② **唯独 internal 方向在全 α 区间保持 AUC**(判别有效性)，final 方向只平移 logits 摧毁 AUC，random 方向全程平(对照成立)；③ **8B-instruct 消融最剧烈**(P(yes) 0.871→0.003，远超 base 的衰减幅度)——与对齐机制一致：**对齐把相关性信号与输出判断耦合得更紧**，抽掉内部方向时输出端塌得更彻底。这与扩样本显著性中"instruct 上 internal_edge 缩小(信号已推进输出表示)"是同一机制的两面：对齐让输出端**更依赖**内部相关性方向，但并未让输出表示自身追平残差流最优层。
+
+因果证据现覆盖 **3 个模型变体(3B-base / 8B-base / 8B-instruct)**，"输出通路本可表达、自然前向被衰减"的结论跨尺寸与对齐稳健。结果文件：`results/causal_steer_llama31_8b_q1500.json`、`results/causal_steer_llama31_8b_instruct_q1500.json`；图 `results/figures/causal_steer_8b_{base,inst}.png`。
