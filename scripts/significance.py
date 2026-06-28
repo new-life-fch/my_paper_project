@@ -59,17 +59,25 @@ def load(cache, scheme, split):
             d.get("query_ids"))
 
 
-def boot_auc(y, s, qids, n_boot, rng):
-    """Query-clustered bootstrap AUCs for one fixed score vector."""
+def boot_indices(qids, n_boot, rng):
+    """Pre-generate query-clustered bootstrap row-index sets (shared across readers
+    so that edge = AUC(reader_hi) - AUC(reader_lo) is a PAIRED difference: both
+    readers are scored on the SAME resampled queries each iteration). Paired
+    differencing cancels the large positive covariance between correlated readers,
+    giving correct (tighter) CIs than independent resampling."""
     qids = np.asarray(qids)
     uq = np.unique(qids)
     idx_by_q = {q: np.where(qids == q)[0] for q in uq}
-    out = np.empty(n_boot)
-    for b in range(n_boot):
+    sets = []
+    for _ in range(n_boot):
         sampq = rng.choice(uq, size=len(uq), replace=True)
-        idx = np.concatenate([idx_by_q[q] for q in sampq])
-        out[b] = auc(y[idx], s[idx])
-    return out
+        sets.append(np.concatenate([idx_by_q[q] for q in sampq]))
+    return sets
+
+
+def boot_auc(y, s, idx_sets):
+    """AUCs for one fixed score vector over pre-generated bootstrap index sets."""
+    return np.array([auc(y[idx], s[idx]) for idx in idx_sets])
 
 
 def main():
@@ -127,11 +135,13 @@ def main():
         m_attn = lr().fit(feats(Atr), ytr)
         s_attn = m_attn.predict_proba(feats(Ate))[:, 1]
 
-        # query-clustered bootstrap on frozen scores ----------------------
-        bj = boot_auc(yte, s_judge, qte, args.boot, rng)
-        bf = boot_auc(yte, s_fin,   qte, args.boot, rng)
-        bb = boot_auc(yte, s_best,  qte, args.boot, rng)
-        ba = boot_auc(yte, s_attn,  qte, args.boot, rng)
+        # query-clustered PAIRED bootstrap: one shared set of resampled queries,
+        # all readers scored on it -> edges are paired differences.
+        idx_sets = boot_indices(qte, args.boot, rng)
+        bj = boot_auc(yte, s_judge, idx_sets)
+        bf = boot_auc(yte, s_fin,   idx_sets)
+        bb = boot_auc(yte, s_best,  idx_sets)
+        ba = boot_auc(yte, s_attn,  idx_sets)
 
         def ci(b):
             return [round(float(np.percentile(b, 2.5)), 3), round(float(np.percentile(b, 97.5)), 3)]
