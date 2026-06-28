@@ -126,6 +126,15 @@
 
 **命门安全**：✅ **6/6 模型 best_resid(内部) > final-layer(输出)**，"内部 > 输出"核心论点在 3 尺寸/2 家族/base+instruct 全部成立。队列已全部完成（queue end 17:20），总报告见 `results/REPORT.md`。
 
+> 🔴 **2026-06-28 显著性更正(诚实优先，第六节第 2 次推进)**：上表是**点估计**，未做 CI。补做 **query 聚类 bootstrap(5000)+val 选层**(`scripts/significance.py`，结果 `results/significance.json`，已写进 REPORT §9)后，命门判读**必须收紧**：
+> - ❌ 上表 `internal_edge`(best_resid−final，如 +0.092)含两个乐观偏差(**在 test 上 argmax 选层** + **未按 query 聚类**，test 仅 ~75 query 致 CI 假性收窄)。严格 CI 下 **6/6 模型 internal_edge 单独都不显著**(95%CI 全跨 0，p(≤0)>0.15)。
+> - ✅ 真正**单模型显著**的是 **attn-head − final**：LLaMA 4/4 显著(p≤0.016，效应 +0.09~+0.16)；Mistral 不显著(+0.002，与已记录架构差异一致)。
+> - ✅ **best_resid − judge**(训练内部 > 零样本输出)：base 模型单独显著。
+> - ✅ **跨模型符号检验**：attn−final / best_resid−judge / internal_edge 均 6/6 方向一致(二项检验 p=0.016)；train_edge 仅 4/6(p=0.34，instruct 转负，正是对齐机制信号)。
+> - **根因 = test query 太少(~75)**。已启动 **1500-query 扩样本**(`scripts/run_scaleup.sh`，4 个旗舰模型，后台跑)，test→~225 query，CI 宽度预计减半，待确认 internal_edge 能否达单模型显著。
+> - **论文定量主张改为建立在 attn−final(LLaMA 显著) + 跨模型符号检验 之上；internal_edge 在扩样本加固前只作"方向一致弱证据"**。机制章节(base↔instruct 趋势)定性结论不受影响。
+> - **命门当前状态：部分守住**(attn−final 在 LLaMA 显著、方向 6/6 一致)，但"残差流内部>输出表示"的强形式待扩样本。这是诚实下界，不是 v1 宣称的"6/6 通过"。
+
 **⚠️ 跨架构发现（Mistral，重要诚实记录）**：Mistral 上 attn-head 探针 **0.603 反而低于 best_resid 0.671**，是首次 attn-head 不是最强内部读取器；且 internal_edge(+0.069) ≈ train_edge(+0.071)。原因已查实：Mistral 的 **head_layer_max 在 L0-L10 全是 0.50**（前 11 层单 head 无相关性信号），最强单 head 仅 0.62——单个注意力头携带的信号比 LLaMA 弱得多，但残差流(L12=0.671)仍清晰编码。**结论**：①核心论点"内部>输出"靠 best_resid 在 4/4 上稳健成立；②但"本方法=attn-head 探针"的强度依赖架构，不是普适最强读取器。**论文应以 best_resid（残差流最优层）作为"内部"的代表证据，attn-head 作为 LLaMA 系上更强的补充，而非唯一卖点。** Mistral 的 top heads 集中在晚期 L25-31（LLaMA 在中层 L10-16）——这是真实架构差异，值得在论文讨论。
 
 **机制对照（base vs instruct 配对，黄金证据，2 尺寸一致复现）**：
@@ -140,22 +149,25 @@
 
 ✅ 队列全部完成（6 模型 base+instruct）。三配对 base→inst 趋势：judge 全部↑(3/3)、train_edge 全部↓趋零/转负(3/3)、internal_edge LLaMA 系↑/Mistral 略↓但仍正。Mistral-Inst 也确认 train_edge 转负(−0.003)、judge 升到 0.621。总报告 `results/REPORT.md` 已生成（git -f 入库）。系统盘稳定 6%。
 
-### 下一步（论文化，按优先级）
+### 下一步（论文化，按优先级 — 2026-06-28 显著性更正后重排）
 
-1. 🔄 **多模型复现 gap**（验证普适性，进行中）：在 LLaMA-3.1-8B、Mistral-7B-v0.3 上复现「内部探针 > 输出端探针 > judge」的层级。工具链已就绪（`run_model.sh`/`aggregate_models.py`）。8B 后台跑中，完成后接 Mistral。**关键看命门对照线**（见关键风险）：8B 上 final-layer 探针是否仍显著低于 attn-head 探针。
-2. ✅ **信号层定位图**（论文主图，已完成）：`scripts/plot_layer_signal.py`。3B 已出图，多模型缓存就绪后对每个模型出同款图即可。
-3. **机制解释实验**：为什么信号到输出被衰减？候选假设——(a) RLHF/对齐使模型倾向保守拒答；(b) 相关性信号未被路由到输出 token。可设计干预（如对 judge prompt 变体、base vs instruct 模型对比）验证。注：本主线用的 LLaMA-3.2-3B 与 3.1-8B 均为 **base** 模型，若再加 instruct 版对比可直接验证假设 (a)。
-4. **gap 的鲁棒性**：多 prompt 框架（换 instruct 模板）下复现 gap，排除「特定 prompt 造成 judge 偏弱」的质疑。可调一个更强的 judge（few-shot / 校准阈值）作为更公平的输出端上界。
+1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
+2. ⬜ **因果证据（顶会真正缺口）**：activation patching / steering。把 best-resid 层的相关性方向(probe weight)加到输出层残差，看 judge 的 P(yes) 是否按预期移动；或 patch 峰值层激活到输出层。把"内部能解码"升级为"内部信号因果决定输出"。logit-lens 逐层投影出衰减曲线作配图。
+3. ⬜ **更公平的强 judge 上界**：few-shot / 阈值校准 judge，堵"prompt 偏弱致 judge 低"质疑（instruct judge 已达 0.60-0.62，本身较强）。
+4. ⬜ **第二个 in-domain relevance 数据集**（非跨域！）：证明 gap 不是 MS MARCO 特有。注意与 B 分支跨域迁移区分——这里是同域重训另一个 relevance 集。
+5. ✅ **信号层定位图**（论文主图，已完成）：`scripts/plot_layer_signal.py`，6 模型已出图。
+6. ✅ **统计显著性**（已完成）：`scripts/significance.py`，query 聚类 bootstrap + val 选层，结果见 REPORT §9。
 
 ### 预期实验结果（写论文前的假设，需实验证实）
 
-- 多模型上「内部 > 输出端 > judge」层级**应稳定复现**（gap 量级可能随模型变化）。
-- 信号峰值层**应在网络中后段**；输出层解码能力**应低于峰值层**（这是机制论点的关键，若不成立则论点削弱）。
-- 若某模型上输出端探针追平内部探针 → 如实记录，可能说明该结论与模型对齐方式有关。
+- 扩样本后 **attn−final 应继续单模型显著**（LLaMA），CI 收窄；internal_edge 有望达单模型显著但不保证（效应仅 +0.03 量级）。
+- 因果干预：沿 best-resid 相关性方向 steer 应单调改变 judge P(yes)，若无因果效应则机制论点削弱。
+- 信号峰值层应在网络中后段、输出层解码能力低于峰值层（已在点估计上观察到，待 CI 确认深度趋势显著）。
 
-### 关键风险
+### 关键风险（2026-06-28 更新）
 
-- 若「输出端探针（最终层 hidden）」在更强训练 / 更多数据下追平注意力头探针，则「internals>output」会退化为「训练>不训练」，主线受损。**这是 A 分支的命门**，多模型实验要重点盯这条对照线。
+- **命门(最大风险)**：「输出端探针（final-layer hidden）」追平内部探针 → 退化为「训练>不训练」。**当前状态(严格 CI)**：attn−final 在 LLaMA 4/4 单模型显著、6/6 方向一致守住强形式；但 best_resid−final(残差流形式)单模型不显著、仅方向一致——**部分守住，扩样本中**。盯 `significance.py` 输出。
+- **过度宣称风险(已发生并已更正)**：v1 报告只报点估计、未做 CI，把 +0.092 当显著结论。教训：**任何 edge 主张必须配 query 聚类 bootstrap CI**，cron 自动分析不得只报点估计。
 
 ---
 

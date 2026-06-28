@@ -1,0 +1,422 @@
+[
+  {
+    "tag": "llama32_3b",
+    "model": "LLaMA-3.2-3B",
+    "n_layers": 28,
+    "best_layer_val": 13,
+    "auc": {
+      "judge": {
+        "point": 0.535,
+        "ci95": [
+          0.475,
+          0.596
+        ]
+      },
+      "final": {
+        "point": 0.592,
+        "ci95": [
+          0.536,
+          0.65
+        ]
+      },
+      "best_resid": {
+        "point": 0.628,
+        "ci95": [
+          0.571,
+          0.685
+        ]
+      },
+      "attn": {
+        "point": 0.685,
+        "ci95": [
+          0.624,
+          0.748
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0356,
+        "ci95": [
+          -0.045,
+          0.117
+        ],
+        "p_le0": 0.1934
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.0577,
+        "ci95": [
+          -0.025,
+          0.14
+        ],
+        "p_le0": 0.085
+      },
+      "attn-final": {
+        "mean": 0.0939,
+        "ci95": [
+          0.008,
+          0.176
+        ],
+        "p_le0": 0.0164
+      },
+      "best_resid-judge": {
+        "mean": 0.0933,
+        "ci95": [
+          0.009,
+          0.176
+        ],
+        "p_le0": 0.0146
+      }
+    }
+  },
+  {
+    "tag": "llama31_8b",
+    "model": "LLaMA-3.1-8B",
+    "n_layers": 32,
+    "best_layer_val": 9,
+    "auc": {
+      "judge": {
+        "point": 0.514,
+        "ci95": [
+          0.453,
+          0.579
+        ]
+      },
+      "final": {
+        "point": 0.552,
+        "ci95": [
+          0.492,
+          0.613
+        ]
+      },
+      "best_resid": {
+        "point": 0.581,
+        "ci95": [
+          0.518,
+          0.644
+        ]
+      },
+      "attn": {
+        "point": 0.68,
+        "ci95": [
+          0.616,
+          0.743
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0282,
+        "ci95": [
+          -0.058,
+          0.114
+        ],
+        "p_le0": 0.2628
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.037,
+        "ci95": [
+          -0.049,
+          0.126
+        ],
+        "p_le0": 0.2046
+      },
+      "attn-final": {
+        "mean": 0.1281,
+        "ci95": [
+          0.039,
+          0.215
+        ],
+        "p_le0": 0.0012
+      },
+      "best_resid-judge": {
+        "mean": 0.0652,
+        "ci95": [
+          -0.022,
+          0.151
+        ],
+        "p_le0": 0.077
+      }
+    }
+  },
+  {
+    "tag": "mistral_7b",
+    "model": "Mistral-7B-v0.3",
+    "n_layers": 32,
+    "best_layer_val": 21,
+    "auc": {
+      "judge": {
+        "point": 0.531,
+        "ci95": [
+          0.474,
+          0.592
+        ]
+      },
+      "final": {
+        "point": 0.601,
+        "ci95": [
+          0.546,
+          0.659
+        ]
+      },
+      "best_resid": {
+        "point": 0.621,
+        "ci95": [
+          0.559,
+          0.681
+        ]
+      },
+      "attn": {
+        "point": 0.603,
+        "ci95": [
+          0.543,
+          0.666
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0193,
+        "ci95": [
+          -0.065,
+          0.102
+        ],
+        "p_le0": 0.3202
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.07,
+        "ci95": [
+          -0.014,
+          0.152
+        ],
+        "p_le0": 0.05
+      },
+      "attn-final": {
+        "mean": 0.0018,
+        "ci95": [
+          -0.081,
+          0.087
+        ],
+        "p_le0": 0.4824
+      },
+      "best_resid-judge": {
+        "mean": 0.0893,
+        "ci95": [
+          0.003,
+          0.172
+        ],
+        "p_le0": 0.021
+      }
+    }
+  },
+  {
+    "tag": "llama32_3b_instruct",
+    "model": "LLaMA-3.2-3B-Inst",
+    "n_layers": 28,
+    "best_layer_val": 9,
+    "auc": {
+      "judge": {
+        "point": 0.597,
+        "ci95": [
+          0.535,
+          0.66
+        ]
+      },
+      "final": {
+        "point": 0.606,
+        "ci95": [
+          0.544,
+          0.672
+        ]
+      },
+      "best_resid": {
+        "point": 0.633,
+        "ci95": [
+          0.569,
+          0.695
+        ]
+      },
+      "attn": {
+        "point": 0.725,
+        "ci95": [
+          0.667,
+          0.784
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0262,
+        "ci95": [
+          -0.063,
+          0.114
+        ],
+        "p_le0": 0.2832
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.0093,
+        "ci95": [
+          -0.078,
+          0.099
+        ],
+        "p_le0": 0.419
+      },
+      "attn-final": {
+        "mean": 0.1192,
+        "ci95": [
+          0.032,
+          0.205
+        ],
+        "p_le0": 0.0034
+      },
+      "best_resid-judge": {
+        "mean": 0.0355,
+        "ci95": [
+          -0.053,
+          0.125
+        ],
+        "p_le0": 0.222
+      }
+    }
+  },
+  {
+    "tag": "llama31_8b_instruct",
+    "model": "LLaMA-3.1-8B-Inst",
+    "n_layers": 32,
+    "best_layer_val": 26,
+    "auc": {
+      "judge": {
+        "point": 0.603,
+        "ci95": [
+          0.544,
+          0.663
+        ]
+      },
+      "final": {
+        "point": 0.583,
+        "ci95": [
+          0.522,
+          0.641
+        ]
+      },
+      "best_resid": {
+        "point": 0.628,
+        "ci95": [
+          0.565,
+          0.688
+        ]
+      },
+      "attn": {
+        "point": 0.746,
+        "ci95": [
+          0.691,
+          0.801
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0437,
+        "ci95": [
+          -0.041,
+          0.13
+        ],
+        "p_le0": 0.1576
+      },
+      "train_edge(final-judge)": {
+        "mean": -0.0199,
+        "ci95": [
+          -0.105,
+          0.062
+        ],
+        "p_le0": 0.6762
+      },
+      "attn-final": {
+        "mean": 0.1636,
+        "ci95": [
+          0.081,
+          0.246
+        ],
+        "p_le0": 0.0
+      },
+      "best_resid-judge": {
+        "mean": 0.0238,
+        "ci95": [
+          -0.062,
+          0.107
+        ],
+        "p_le0": 0.2882
+      }
+    }
+  },
+  {
+    "tag": "mistral_7b_instruct",
+    "model": "Mistral-7B-Inst-v0.3",
+    "n_layers": 32,
+    "best_layer_val": 15,
+    "auc": {
+      "judge": {
+        "point": 0.621,
+        "ci95": [
+          0.562,
+          0.68
+        ]
+      },
+      "final": {
+        "point": 0.616,
+        "ci95": [
+          0.548,
+          0.684
+        ]
+      },
+      "best_resid": {
+        "point": 0.628,
+        "ci95": [
+          0.571,
+          0.685
+        ]
+      },
+      "attn": {
+        "point": 0.667,
+        "ci95": [
+          0.599,
+          0.734
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.011,
+        "ci95": [
+          -0.078,
+          0.096
+        ],
+        "p_le0": 0.4014
+      },
+      "train_edge(final-judge)": {
+        "mean": -0.0048,
+        "ci95": [
+          -0.095,
+          0.085
+        ],
+        "p_le0": 0.5444
+      },
+      "attn-final": {
+        "mean": 0.0506,
+        "ci95": [
+          -0.044,
+          0.146
+        ],
+        "p_le0": 0.1476
+      },
+      "best_resid-judge": {
+        "mean": 0.0062,
+        "ci95": [
+          -0.075,
+          0.089
+        ],
+        "p_le0": 0.4502
+      }
+    }
+  }
+]
