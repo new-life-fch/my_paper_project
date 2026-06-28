@@ -226,3 +226,31 @@ python scripts/plot_layer_signal.py --cache results/cache/<tag>_instruct --judge
 三点一致复现：① **消融臂单调崩塌**(抽掉内部相关性方向→yes 判断瓦解，因果必要)；② **唯独 internal 方向在全 α 区间保持 AUC**(判别有效性)，final 方向只平移 logits 摧毁 AUC，random 方向全程平(对照成立)；③ **8B-instruct 消融最剧烈**(P(yes) 0.871→0.003，远超 base 的衰减幅度)——与对齐机制一致：**对齐把相关性信号与输出判断耦合得更紧**，抽掉内部方向时输出端塌得更彻底。这与扩样本显著性中"instruct 上 internal_edge 缩小(信号已推进输出表示)"是同一机制的两面：对齐让输出端**更依赖**内部相关性方向，但并未让输出表示自身追平残差流最优层。
 
 因果证据现覆盖 **3 个模型变体(3B-base / 8B-base / 8B-instruct)**，"输出通路本可表达、自然前向被衰减"的结论跨尺寸与对齐稳健。结果文件：`results/causal_steer_llama31_8b_q1500.json`、`results/causal_steer_llama31_8b_instruct_q1500.json`；图 `results/figures/causal_steer_8b_{base,inst}.png`。
+
+## 12. 第二个 IN-DOMAIN 关系数据集（FiQA，2026-06-29）
+
+为证 internals>output 的 gap **非 MS MARCO 特有**，在 BeIR/FiQA 上**同域重训+重测**(LLaMA-3.2-3B base，1500 query，225 test query；`scripts/run_fiqa.sh` + `src/data.py::load_beir_relevance`)。**这是同域实验，不是跨域迁移**(跨域零样本迁移是已废弃的 B 分支方案，见 CLAUDE.md §四)——探针在 FiQA 训练集上训练、在 FiQA 测试集上评估，与 MS MARCO 协议完全一致。
+
+配对 query 聚类 bootstrap(5000)显著性(`results/significance_fiqa.json`)：
+
+| reader | FiQA AUC (CI95) | MS MARCO 3B-base (1500q) |
+|---|---|---|
+| judge（输出 logits，0 训练）| 0.739 [0.709,0.768] | ~0.535 |
+| final-layer hidden（输出表示，训练）| 0.976 [0.967,0.984] | ~0.593 |
+| best resid（内部，L14，训练）| 0.993 [0.989,0.996] | 0.632 |
+| attn-head（本方法）| 0.994 [0.990,0.997] | 0.685 |
+
+| edge | FiQA mean CI95 p(≤0) | 判读 |
+|---|---|---|
+| **best_resid − judge**（内部 vs 模型嘴上说）| **+0.253** [0.224,0.283] p=0.0 | 头条 gap 比 MS MARCO 更大 |
+| train_edge（final − judge）| +0.237 [0.208,0.267] p=0.0 | 显著 |
+| **internal_edge（best_resid − final）**| **+0.0165** [0.010,0.024] p=0.0 | **强形式显著** |
+| attn − final | +0.0174 [0.010,0.025] p=0.0 | 显著 |
+
+**诚实的双重观察**：
+- ✅ **大命题更夸张地复现**：内部表示(0.99)远超模型**嘴上能说的**(judge 0.739)，"internals know more than the model can say"的 gap = **+0.25**(best_resid−judge)，比 MS MARCO 还大。核心论点跨数据集稳健。
+- ⚠️ **子结构按数据集变化(诚实记录)**：FiQA 上相关性**极度线性可分**(各层 resid AUC 0.78→0.99)，导致**输出表示本身已近天花板**(final 0.976)，故 **internal_edge 虽显著但很薄(+0.0165)**；FiQA 上主导通道是 **train_edge(+0.237)** 而非 internal_edge。MS MARCO 恰相反(judge 弱、final 低、internal_edge 是主要贡献之一)。两数据集互补：MS MARCO 体现"读内部 > 读输出表示"，FiQA 体现"训练读出 >> 零样本输出 judge"，但**共同点是模型输出端(judge)始终远落后于内部可解码性**——这正是 internals>output 的本质。
+- ✅ **深度衰减仍成立**：峰值 L14(0.993) > 输出层 L28(0.977)。
+- ✅ **强形式 internal_edge 在 FiQA 单模型显著**(p=0.0，CI 不跨 0)，与 MS MARCO 扩样本 base 模型一致。
+
+→ 论文应把 FiQA 作为**跨数据集稳健性证据**：核心 gap(best_resid−judge)在两个独立 relevance 集上都大且显著；同时**诚实陈述** internal_edge 的大小依赖数据集的线性可分度(FiQA 薄、MS MARCO 厚)，不夸大为普适常数。结果文件 `results/internals_vs_output_llama32_3b_fiqa.json`、`results/significance_fiqa.json`。

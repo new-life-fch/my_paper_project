@@ -1,0 +1,72 @@
+[
+  {
+    "tag": "llama32_3b_fiqa",
+    "model": "LLaMA-3.2-3B FiQA",
+    "n_layers": 28,
+    "best_layer_val": 14,
+    "auc": {
+      "judge": {
+        "point": 0.739,
+        "ci95": [
+          0.709,
+          0.768
+        ]
+      },
+      "final": {
+        "point": 0.976,
+        "ci95": [
+          0.967,
+          0.984
+        ]
+      },
+      "best_resid": {
+        "point": 0.993,
+        "ci95": [
+          0.989,
+          0.996
+        ]
+      },
+      "attn": {
+        "point": 0.994,
+        "ci95": [
+          0.99,
+          0.997
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0165,
+        "ci95": [
+          0.01,
+          0.024
+        ],
+        "p_le0": 0.0
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.2368,
+        "ci95": [
+          0.208,
+          0.267
+        ],
+        "p_le0": 0.0
+      },
+      "attn-final": {
+        "mean": 0.0174,
+        "ci95": [
+          0.01,
+          0.025
+        ],
+        "p_le0": 0.0
+      },
+      "best_resid-judge": {
+        "mean": 0.2533,
+        "ci95": [
+          0.224,
+          0.283
+        ],
+        "p_le0": 0.0
+      }
+    }
+  }
+]

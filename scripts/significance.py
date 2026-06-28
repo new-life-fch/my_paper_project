@@ -39,6 +39,8 @@ MODELS = [
     ("llama32_3b_instruct", "LLaMA-3.2-3B-Inst",   "llama32_3b_instruct"),
     ("llama31_8b_instruct", "LLaMA-3.1-8B-Inst",   "llama31_8b_instruct"),
     ("mistral_7b_instruct", "Mistral-7B-Inst-v0.3","mistral_7b_instruct"),
+    # second IN-DOMAIN relevance dataset (FiQA, trained+tested in-domain)
+    ("llama32_3b_fiqa",     "LLaMA-3.2-3B FiQA",   "llama32_3b_fiqa"),
 ]
 
 
@@ -85,11 +87,15 @@ def main():
     ap.add_argument("--boot", type=int, default=5000)
     ap.add_argument("--suffix", default="", help="cache suffix, e.g. _q1500 -> looks for <cdir>_q1500_instruct")
     ap.add_argument("--out", default="results/significance.json")
+    ap.add_argument("--only", default="", help="comma-separated tags to run (default: all)")
     args = ap.parse_args()
     rng = np.random.default_rng(42)
 
+    only = set(t for t in args.only.split(",") if t)
     report = []
     for tag, name, cdir in MODELS:
+        if only and tag not in only:
+            continue
         # scaleup caches are tag-based (<tag>_q1500_*); legacy 500q base-3B uses cdir=q500
         base = tag if args.suffix else cdir
         ic = f"results/cache/{base}{args.suffix}_instruct"
