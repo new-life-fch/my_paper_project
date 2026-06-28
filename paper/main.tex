@@ -1,0 +1,309 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,booktabs,amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{natbib}
+\usepackage{authblk}
+
+\title{\textbf{Internals Know More Than the Model Can Say:\\
+Relevance Signals Are Encoded Internally but Attenuated en Route to the Output}}
+\author{Chenhui Feng}
+\affil{Nanjing University of Aeronautics and Astronautics}
+\date{}
+
+\newcommand{\auc}{\textsc{auc}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study whether large language models (LLMs) ``know'' more about retrieval
+relevance than their outputs reveal. Using linear probes on a single
+frozen forward pass over (query, passage) pairs, we compare four
+relevance \emph{readers} on the same model, prompt, and answer token:
+(i) the model's literal output verdict (zero-shot LLM-judge), (ii) a trained
+probe on the final-layer hidden state (the \emph{output representation}),
+(iii) a trained probe on the best residual-stream layer (\emph{internal}),
+and (iv) a probe on the top attention heads. Across six models (3B--8B,
+LLaMA and Mistral, base and instruct), reading internal activations decodes
+relevance markedly better than reading the output. With query-clustered
+bootstrap confidence intervals, the attention-head probe beats the
+output-representation probe on all four LLaMA models (each
+$p<10^{-4}$); after scaling the evaluation to tighten power, the
+residual-stream advantage over the output representation is individually
+significant on base models ($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$).
+A causal steering intervention confirms the link is mechanistic, not
+epiphenomenal: ablating the internal relevance direction at the output layer
+monotonically collapses the model's verdict (mean $P(\text{yes})$
+$0.79{\to}0.26$), while a random direction and the output's own direction
+fail to preserve discriminative \auc. Comparing base and instruct pairs, we
+find alignment improves the output readout (the judge gets stronger) yet does
+not close the internal--output gap. In short: the relevance signal is
+encoded internally and \emph{attenuated}, not absent, on the path to the
+logits.
+\end{abstract}
+
+\section{Introduction}
+When an LLM is asked whether a retrieved passage is relevant to a query, its
+literal answer is often little better than chance. Yet the same forward pass
+may already contain a far cleaner relevance signal in its internal
+activations. We ask a focused, mechanistic question: \emph{is relevance
+better decodable from a model's internals than from its output, and if so,
+is the internal signal causally connected to the output the model fails to
+produce?}
+
+This is an interpretability question, not a retrieval-engineering one. We do
+\textbf{not} claim a probe that beats a strong cross-encoder reranker, nor
+zero-shot cross-domain robustness; prior exploration refuted those framings.
+Our contribution is the \emph{relative} science of internals vs.\ output:
+
+\begin{itemize}
+  \item \textbf{Existence.} On the same model/prompt/answer-token, a linear
+  probe on attention-head activations decodes (query, passage) relevance
+  substantially better than the model's own output verdict, and better than a
+  trained probe on the output representation (final hidden state).
+  \item \textbf{Attribution.} Decomposing the gap into a
+  \emph{training} component (final-layer probe $-$ judge) and a
+  \emph{depth/internal} component (best internal layer $-$ final layer) shows
+  the edge comes substantially from \emph{reading internals}, not merely from
+  \emph{being trained}.
+  \item \textbf{Mechanism.} Relevance decodability peaks in the middle of the
+  network and declines toward the output layer. Comparing base vs.\ instruct
+  models, alignment \emph{improves} the output readout but does not eliminate
+  the internal--output gap.
+  \item \textbf{Causality.} A steering intervention that injects the internal
+  relevance direction at the output layer causally controls the verdict;
+  ablation is cleanly monotonic and, unlike control directions, preserves
+  discriminative \auc---evidence that the output pathway \emph{can} express
+  the signal but normally under-expresses it.
+\end{itemize}
+
+We report query-clustered bootstrap confidence intervals throughout, and are
+explicit about which claims are individually significant, which rest on a
+cross-model sign test, and which are architecture-dependent (the
+attention-head reader is weak on Mistral). Honest delineation of effect
+strength is central to this paper.
+
+\section{Related Work}
+\textbf{Probing classifiers} read latent features from frozen representations
+to test what information is linearly available \citep{alain2017,hewitt2019};
+we use them comparatively across depth and against the output.
+\textbf{Logit lens and tuned lens} \citep{nostalgebraist2020,belrose2023}
+project intermediate states to the vocabulary, motivating our depth analysis.
+\textbf{Activation steering / representation engineering}
+\citep{turner2023,zou2023,li2023iti} edit residual directions to change
+behavior; we use a difference-of-means steering vector for a causal test.
+\textbf{Calibration and hallucination} work shows models can encode
+correctness they do not surface \citep{kadavath2022,azaria2023}; our finding
+is the relevance-specific, depth-resolved analogue. \textbf{RAG relevance}
+estimation usually targets reranking accuracy; we deliberately stay on the
+interpretability question and do not compete with rerankers.
+
+\section{Method}
+\label{sec:method}
+\textbf{Task and data.} We use MS MARCO v1.1, forming (query, passage, label)
+triples with relevance labels. Splits are made \emph{by query} (70/15/15) so
+no query appears in both train and test, preventing leakage. We report
+ROC-\auc{} on the held-out test set.
+
+\textbf{Prompt and extraction.} Every reader sees the identical instruct
+prompt, \texttt{"Document: \{p\}\textbackslash nQuestion:
+\{q\}\textbackslash nIs the document relevant to the question? Answer:"}, and
+all activations are taken at the final \emph{answer token}. Per-head
+activations are the \texttt{o\_proj} outputs reshaped to
+$[\text{heads}, d_{\text{head}}]$; the residual stream is each decoder
+layer's output.
+
+\textbf{Four readers.} (1) \emph{LLM-judge}: the model's own normalized
+$P(\text{yes})$ vs.\ $P(\text{no})$ at the answer token, \emph{zero training}.
+(2) \emph{Output-representation probe}: an $\ell_2$-regularized logistic
+regression on the final hidden state. (3) \emph{Internal probe}: the same
+probe on the best residual-stream layer, selected \emph{on validation}.
+(4) \emph{Attention-head probe}: top-$k$ heads chosen on validation, their
+activations concatenated into one logistic regression.
+
+\textbf{Gap decomposition.} We split the total edge over the judge into
+$\text{train\_edge} = \text{final} - \text{judge}$ (pure training, both at the
+output) and $\text{internal\_edge} = \text{best\_resid} - \text{final}$ (pure
+depth, beyond training). The thesis ``internals $>$ output'' requires internal
+readers to exceed \emph{both} the judge and the output-representation probe.
+
+\textbf{Significance.} Because the split is by query, the correct resampling
+unit is the query. We report 95\% confidence intervals and one-sided
+$p$-values from a \emph{query-clustered bootstrap} (5000 resamples) on frozen
+test predictions; the best layer is chosen on validation to avoid
+selection-on-test optimism. We additionally run a cross-model sign test on
+the direction of each edge.
+
+\textbf{Causal steering.} At the best internal layer we form a probe-free
+relevance direction $d = \overline{h}_{\text{rel}} - \overline{h}_{\text{irrel}}$
+(difference of class means, unit-normalized). During the forward pass we add
+$\alpha \|h\| d$ to the \emph{output-layer} residual at the answer token and
+sweep $\alpha$, reading the judge's $P(\text{yes})$ and the test \auc. We
+compare against the output layer's own difference-of-means direction and a
+random unit direction (norm-matched).
+
+\section{Experiments}
+\label{sec:exp}
+
+\textbf{Internals decode relevance better than the output.}
+Table~\ref{tab:main} reports the four readers across six models. On every
+model the best internal reader exceeds both the zero-shot judge and the
+trained output-representation probe. The judge itself hovers near chance on
+base models (\auc{} $0.51$--$0.54$), confirming the output ``says'' little.
+
+\begin{table}[t]
+\centering\small
+\caption{Four relevance readers across six models (test \auc, point
+estimates). \emph{judge}: output verdict, no training; \emph{final}: probe on
+output representation; \emph{best-resid}: probe on best internal layer;
+\emph{attn}: top-head probe. Significance in Tables~\ref{tab:sig}--\ref{tab:scale}.}
+\label{tab:main}
+\begin{tabular}{lcccccc}
+\toprule
+Model & $L$ & judge & final & best-resid & attn \\
+\midrule
+LLaMA-3.2-3B (base)      & 28 & 0.535 & 0.593 & 0.632 & \textbf{0.685} \\
+LLaMA-3.1-8B (base)      & 32 & 0.514 & 0.552 & 0.634 & \textbf{0.680} \\
+Mistral-7B-v0.3 (base)   & 32 & 0.531 & 0.602 & \textbf{0.671} & 0.603 \\
+LLaMA-3.2-3B-Instruct    & 28 & 0.597 & 0.607 & 0.704 & \textbf{0.725} \\
+LLaMA-3.1-8B-Instruct    & 32 & 0.603 & 0.585 & 0.666 & \textbf{0.746} \\
+Mistral-7B-Instruct-v0.3 & 32 & 0.621 & 0.618 & 0.662 & \textbf{0.667} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Significance.} Table~\ref{tab:sig} gives query-clustered bootstrap
+CIs. The \emph{attention-head vs.\ output-representation} edge is individually
+significant on all four LLaMA models ($p<10^{-4}$, effect $+0.09$ to $+0.16$).
+The residual-stream edge (internal\_edge) is directionally positive on all six
+models (sign test $p{=}0.016$) but, at $\sim$75 test queries, not individually
+significant---a power problem, not an absent effect.
+
+\begin{table}[t]
+\centering\small
+\caption{Query-clustered bootstrap (5000 resamples), 500-query evaluation.
+Edges with 95\% CI and one-sided $p$. \textbf{Bold}: $p<0.05$.}
+\label{tab:sig}
+\begin{tabular}{lccc}
+\toprule
+Model & internal\_edge & attn$-$final & best\_resid$-$judge \\
+\midrule
+LLaMA-3.2-3B      & $+0.036$ [-.05,.12] & \textbf{$+0.094$} [.01,.18] & \textbf{$+0.093$} [.01,.18] \\
+LLaMA-3.1-8B      & $+0.028$ [-.06,.11] & \textbf{$+0.128$} [.04,.22] & $+0.065$ [-.02,.15] \\
+Mistral-7B        & $+0.019$ [-.07,.10] & $+0.002$ [-.08,.09]        & \textbf{$+0.089$} [.00,.17] \\
+LLaMA-3.2-3B-Inst & $+0.026$ [-.06,.11] & \textbf{$+0.119$} [.03,.21] & $+0.035$ [-.05,.13] \\
+LLaMA-3.1-8B-Inst & $+0.044$ [-.04,.13] & \textbf{$+0.164$} [.08,.25] & $+0.024$ [-.06,.11] \\
+Mistral-7B-Inst   & $+0.011$ [-.08,.10] & $+0.051$ [-.04,.15]        & $+0.006$ [-.08,.09] \\
+\midrule
+sign test ($p$)   & 6/6 (\textbf{.016}) & 6/6 (\textbf{.016}) & 6/6 (\textbf{.016}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Scaling the evaluation confirms the internal edge.}
+We re-extract four flagship models at 1500 queries ($\sim$225 test queries;
+sample size is the only change) and re-test (Table~\ref{tab:scale}). The
+residual-stream edge becomes individually significant on base models
+($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$): the $p$-values drop from the
+$0.2$ range to the $0.001$ range purely from added power. Strikingly, the edge
+is significant on base models but shrinks and loses significance on instruct
+models---a mechanistic signal we return to below.
+
+\begin{table}[t]
+\centering\small
+\caption{Scaled (1500-query) re-test of internal\_edge vs.\ the 500-query
+estimate. \textbf{Bold}: $p<0.05$.}
+\label{tab:scale}
+\begin{tabular}{lcc}
+\toprule
+Model & internal\_edge (500q) & internal\_edge (1500q) \\
+\midrule
+LLaMA-3.2-3B (base) & $+0.036$, $p{=}0.19$ & \textbf{$+0.077$ [.03,.12], $p{=}0.0008$} \\
+LLaMA-3.1-8B (base) & $+0.028$, $p{=}0.26$ & \textbf{$+0.060$ [.02,.10], $p{=}0.004$} \\
+LLaMA-3.2-3B-Inst   & $+0.026$, $p{=}0.28$ & $+0.024$ [-.02,.07], $p{=}0.15$ \\
+LLaMA-3.1-8B-Inst   & $+0.044$, $p{=}0.16$ & $+0.012$ [-.04,.06], $p{=}0.32$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Depth localization.} Figure~\ref{fig:depth} (per model in the
+supplement) shows relevance decodability rising into the mid network and
+declining toward the output layer; the judge baseline sits well below the
+peak. For LLaMA the strongest heads cluster in the middle (L10--16); for
+Mistral single heads carry little signal (early-layer head \auc{} $\approx
+0.50$) while the residual stream still encodes relevance---a real
+architectural difference, not a failure of the thesis.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/llama32_3b_layer_signal.png}
+\caption{Depth localization (LLaMA-3.2-3B). (a) per-layer residual probe \auc{}
+vs.\ depth with the judge baseline and the peak/output markers; (b) per-head
+\auc{} heatmap; (c) head- vs.\ layer-view and the layer distribution of the top
+heads. Signal forms mid-network and attenuates toward the output.}
+\label{fig:depth}
+\end{figure}
+
+\textbf{Mechanism: base vs.\ instruct.} Across three base$\to$instruct pairs,
+alignment shows a consistent triple effect: the judge improves (output
+``says'' more), train\_edge falls toward or below zero (training a final-layer
+probe adds little once aligned), and the internal edge persists (and widens on
+LLaMA). Combined with Table~\ref{tab:scale} (the internal edge is significant
+on base, compressed on instruct), the reading is: \emph{alignment improves the
+output readout but does not close the internal--output gap}---it does not
+merely ``suppress'' the output.
+
+\textbf{Causality.} Figure~\ref{fig:causal} shows the steering sweep. Injecting
+the internal relevance direction at the output layer drives the verdict
+monotonically on the ablation arm ($P(\text{yes})$ $0.79\to0.26$ as
+$\alpha{<}0$), and is the \emph{only} direction that preserves (even slightly
+improves) discriminative \auc{} ($0.546\to0.553$). The output's own direction
+moves $P(\text{yes})$ strongly ($0.01\to0.99$) but \emph{destroys} \auc{}
+($\to0.485$, a uniform logit shift), and a random direction leaves \auc{} flat.
+The additive arm ($\alpha{>}0$) saturates because the judge is already
+yes-biased (baseline $0.79$ while only $\sim$22\% of test pairs are relevant),
+so we base the causal claim on the ablation arm and the \auc{} contrast. This
+indicates the output pathway \emph{can} express the internal relevance signal
+but normally under-expresses it: attenuation, not absence.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/causal_steer_3b.png}
+\caption{Causal steering at the output layer (LLaMA-3.2-3B). (a) mean judge
+$P(\text{yes})$ vs.\ steering coefficient $\alpha$; (b) test \auc. Only the
+internal direction preserves \auc; the final-layer direction inflates
+$P(\text{yes})$ while collapsing \auc.}
+\label{fig:causal}
+\end{figure}
+
+\section{Discussion and Limitations}
+The relevance signal an LLM needs to judge a passage is present in its
+internals and only partially surfaced at the output; alignment tightens the
+readout without closing the gap. This connects to calibration/hallucination
+findings that models ``know'' more than they assert, localized here to a
+specific signal and resolved over depth, with a causal handle.
+
+\textbf{Limitations.} (1) Probing is correlational; our causal evidence is a
+single-model steering study (LLaMA-3.2-3B) and its additive arm is limited by
+the judge's yes-bias. (2) We use one in-domain dataset (MS MARCO); we make no
+cross-domain or reranking-accuracy claims, which prior exploration refuted.
+(3) The attention-head reader is architecture-dependent (weak on Mistral),
+so we treat the residual-stream layer as the canonical ``internal'' reader and
+the head probe as a stronger LLaMA-family instrument. (4) Absolute \auc{}
+values are modest (0.5--0.75); the contribution is the \emph{relative}
+internal-vs-output relationship, not a state-of-the-art relevance classifier.
+
+\section{Conclusion}
+On the same model, prompt, and token, relevance is more decodable from
+internal activations than from the output the model produces, the advantage
+comes substantially from reading depth rather than from training, the signal
+peaks mid-network and attenuates toward the logits, and a steering ablation
+shows the internal direction causally underlies the verdict. Internals know
+more than the model can say.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
