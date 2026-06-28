@@ -31,3 +31,4 @@ results/
 *.bin
 *.pt
 *.safetensors
+tools/

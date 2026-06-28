@@ -165,6 +165,9 @@
 
 ### 下一步（论文化，按优先级 — 2026-06-28 显著性更正后重排）
 
+> ✅ **论文初稿已完成（2026-06-28，commit ff53a88）**：`paper/main.tex` 6 页 PDF，tectonic 编译（静态二进制在 `tools/tectonic`，conda/mamba 均损坏故用直接下载）。7 章完整 + 4 数据表 + 2 图（深度定位三联图、因果 steering 双图）+ 9 真实文献。写作 skill 在 `.claude/skills/write-paper/SKILL.md`（封装结构方法论 + 诚实铁律 + 数据来源速查）。编译命令：`cd paper && export https_proxy=... && ../tools/tectonic main.tex`。
+> **论文待打磨项**：①因果实验目前仅 3B，可补 8B/instruct 的 steering；②单数据集，可加第二个 in-domain relevance 集；③更强 judge 上界（few-shot）；④投稿目标会议未定（结构按 NeurIPS/ICLR/ACL 可解释性短文）。
+
 1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
 3. ⬜ **更公平的强 judge 上界**：few-shot / 阈值校准 judge，堵"prompt 偏弱致 judge 低"质疑（instruct judge 已达 0.60-0.62，本身较强）。
