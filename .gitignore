@@ -32,3 +32,8 @@ results/
 *.pt
 *.safetensors
 tools/
+paper/*.aux
+paper/*.bbl
+paper/*.out
+paper/*.log
+paper/compile.log
