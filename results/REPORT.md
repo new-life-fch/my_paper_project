@@ -254,3 +254,16 @@ python scripts/plot_layer_signal.py --cache results/cache/<tag>_instruct --judge
 - ✅ **强形式 internal_edge 在 FiQA 单模型显著**(p=0.0，CI 不跨 0)，与 MS MARCO 扩样本 base 模型一致。
 
 → 论文应把 FiQA 作为**跨数据集稳健性证据**：核心 gap(best_resid−judge)在两个独立 relevance 集上都大且显著；同时**诚实陈述** internal_edge 的大小依赖数据集的线性可分度(FiQA 薄、MS MARCO 厚)，不夸大为普适常数。结果文件 `results/internals_vs_output_llama32_3b_fiqa.json`、`results/significance_fiqa.json`。
+
+## 13. 更强 judge 上界：few-shot（2026-06-29）
+
+堵"零样本 judge prompt 偏弱致输出端被低估"的审稿质疑：给同一 judge 加 **4 个平衡 in-context exemplar**(2 正 2 负，**仅取自 train split**，与探针训练同源、无 val/test 泄露；`scripts/llm_judge_fewshot.py`)，其余协议(同模型/answer-token/yes-no 打分)不变。LLaMA-3.2-3B base，MS MARCO 1500q：
+
+| judge 变体 | test AUC | vs 内部探针 |
+|---|---|---|
+| 零样本 judge | 0.545 | — |
+| **4-shot judge** | **0.566** | 仍远低于 best_resid 0.632 / attn 0.685 |
+
+few-shot 仅带来 **+0.021** 的微弱提升，**远不足以追平内部探针**(差距仍 0.07~0.12)。→ internals>output 的 gap **不是 prompt 工程能填平的**：即便给模型更强的 in-context 引导，它"嘴上"能表达的相关性判断仍显著落后于内部已编码的信号。这正面回应"judge 太弱"的质疑——输出端的瓶颈是**信号在传向输出时被衰减**(已由 §11 因果证据佐证)，而非提示不当。结果文件 `results/cache/llama32_3b_q1500_judge_fs4/meta.json`。
+
+> 备注：instruct judge 本身已较强(0.60~0.62，见 §主表)，few-shot 主要用于堵 base 模型的 prompt-too-weak 质疑；base 上 few-shot 仍 0.566 已足够说明问题。
