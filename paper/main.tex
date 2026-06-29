@@ -30,7 +30,7 @@ LLaMA and Mistral, base and instruct), reading internal activations decodes
 relevance markedly better than reading the output. With query-clustered
 bootstrap confidence intervals, the attention-head probe beats the
 output-representation probe on all four LLaMA models (each
-$p<10^{-4}$); after scaling the evaluation to tighten power, the
+$p<10^{-3}$ at the 1500-query scale); the
 residual-stream advantage over the output representation is individually
 significant on base models ($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$).
 A causal steering intervention confirms the link is mechanistic, not
@@ -197,7 +197,9 @@ Mistral-7B-Instruct-v0.3 & 32 & 0.621 & 0.616 & 0.628 & \textbf{0.667} \\
 
 \textbf{Significance.} Table~\ref{tab:sig} gives query-clustered bootstrap
 CIs. The \emph{attention-head vs.\ output-representation} edge is individually
-significant on all four LLaMA models ($p<10^{-4}$, effect $+0.09$ to $+0.16$).
+significant on all four LLaMA models (effect $+0.09$ to $+0.16$): $p\le0.016$
+at 500 queries (Table~\ref{tab:sig}) and $p<10^{-3}$ once the evaluation is
+scaled (Table~\ref{tab:scale}).
 The residual-stream edge (internal\_edge) is directionally positive on all six
 models (sign test $p{=}0.016$) but, at $\sim$75 test queries, not individually
 significant---a power problem, not an absent effect.
@@ -234,17 +236,20 @@ models---a mechanistic signal we return to below.
 
 \begin{table}[t]
 \centering\small
-\caption{Scaled (1500-query) re-test of internal\_edge vs.\ the 500-query
-estimate. \textbf{Bold}: $p<0.05$.}
+\setlength{\tabcolsep}{4.5pt}
+\caption{Scaled (1500-query) re-test vs.\ the 500-query estimate. The
+internal\_edge becomes individually significant on base models once power is
+added; the attn$-$final edge is significant on all four LLaMA models at this
+scale. \textbf{Bold}: $p<0.05$.}
 \label{tab:scale}
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
-Model & internal\_edge (500q) & internal\_edge (1500q) \\
+Model & internal\_edge (500q) & internal\_edge (1500q) & attn$-$final (1500q) \\
 \midrule
-LLaMA-3.2-3B (base) & $+0.036$, $p{=}0.19$ & \textbf{$+0.077$ [.03,.12], $p{=}0.0008$} \\
-LLaMA-3.1-8B (base) & $+0.028$, $p{=}0.26$ & \textbf{$+0.060$ [.02,.10], $p{=}0.004$} \\
-LLaMA-3.2-3B-Inst   & $+0.026$, $p{=}0.28$ & $+0.024$ [-.02,.07], $p{=}0.15$ \\
-LLaMA-3.1-8B-Inst   & $+0.044$, $p{=}0.16$ & $+0.012$ [-.04,.06], $p{=}0.32$ \\
+LLaMA-3.2-3B (base) & $+0.036$, $p{=}0.19$ & \textbf{$+0.077$ [.03,.12], $p{=}0.0008$} & \textbf{$+0.146$ [.11,.19], $p{<}10^{-3}$} \\
+LLaMA-3.1-8B (base) & $+0.028$, $p{=}0.26$ & \textbf{$+0.060$ [.02,.10], $p{=}0.004$} & \textbf{$+0.114$ [.08,.15], $p{<}10^{-3}$} \\
+LLaMA-3.2-3B-Inst   & $+0.026$, $p{=}0.28$ & $+0.024$ [-.02,.07], $p{=}0.15$ & \textbf{$+0.097$ [.06,.13], $p{<}10^{-3}$} \\
+LLaMA-3.1-8B-Inst   & $+0.044$, $p{=}0.16$ & $+0.012$ [-.04,.06], $p{=}0.32$ & \textbf{$+0.129$ [.09,.17], $p{<}10^{-3}$} \\
 \bottomrule
 \end{tabular}
 \end{table}
