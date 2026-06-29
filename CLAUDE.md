@@ -178,6 +178,15 @@
 > - **③ few-shot judge 上界（REPORT §13）**：`scripts/llm_judge_fewshot.py`（4 exemplar 仅取 train，无泄露）。3B-base MS MARCO 1500q：零样本 0.545 → 4-shot **0.566**（+0.021），仍远低 best_resid 0.632/attn 0.685。证 gap 非 prompt 工程可填平。结果 `results/cache/llama32_3b_q1500_judge_fs4/meta.json`。
 > - **论文现状**：main.tex 已含三补实验，Limitations 更新为"因果三变体 + 两个 in-domain 数据集"。后续可选：FiQA 上也跑 8B/instruct、Mistral 因果、投稿目标会议定稿。
 
+> 🔬 **全面复查 + 顶会式审稿 + 改稿（2026-06-29，第六节第 5 次推进，commits 3457979/46e97d7/65f0bdd）**：用户三连任务（①提交推送 ②复查实验缺漏/不公平/弱基线 ③审稿酌情改）。开 3 个 agent（方法学审查 + 时效性新颖性调研 + 顶会 reviewer 扮演），**全部 14 篇引用已联网核实为真实 arXiv**。reviewer 给 4/10（略低于接收线），5 个 must-fix **已全部完成**：
+> - **P1 Table 1 乐观偏差（真 bug，亲验代码）**：`internals_vs_output.py:73,78` 在 **test** 上 argmax 选层，而显著性表用 **val** 选层 → 主表数高估（8B 0.634→0.581、Mistral 0.671→0.621、3B-Inst 0.704→0.633）。已改主表为 val 选层数（取自 `significance.json`），全表口径统一。**论点仍 6/6 成立**（best_resid 仍 > final 且 > judge）。
+> - **P2 prior-work 切割（撞车，必修）**："内部>输出"非首创——口号撞 Orgad2024(2410.02707)，现象已被 Azaria2023(2304.13734)/Aiersilan2026(2606.02628,同代7-8B+中层峰值)做过。Related Work 补 5 篇必引（Orgad/Aiersilan/Chen2024(2405.02503)/Gienapp2025(2510.04633)/Burns2022）并正面切割：**净新颖性 = 首次落到 retrieval relevance + 四件套组合（深度衰减+读内部vs训练拆解+因果steering+base/instruct对齐压缩）**。refs.bib +6 条。
+> - **P3 logit-lens 无监督基线（reject-trigger，新跑实验）**：`scripts/logit_lens.py`。每层残差经模型自身 final_norm+lm_head 投词表读 P(yes)/P(no)，零训练无选层。两 base 旗舰：**Sanity 双过**（末层=judge，absdiff 0.000）；**无监督读出每层都近随机**（3B 峰 0.560@L25、8B 0.577@L30）远低于训练残差探针 0.62 → 信号在残差流但**与输出 readout 错位**，非晚层缺失。关闭"信号只是需训练读出"替代解释，与因果结果互印证。REPORT §14。结果 `results/logit_lens_llama3{2_3b,1_8b}_q1500.json`。
+> - **P4 因果措辞收口**："only internal preserves AUC" 被数据削弱（random 也平在~0.545）。改三方对照：internal **唯一同时**①单调改 verdict ②保持 AUC；final 改 verdict 但摧毁 AUC(→0.485)；random 不产生定向效应。
+> - **P5 abstract↔表格数字对齐**：`p<1e-4` 在正文无出处表（500q 是 p≈0.012-0.016，1e-4 来自 q1500 仅 REPORT）。改分级 500q p≤0.016(Tab2)→scaled p<1e-3(Tab3)，精度收紧（bootstrap=5000 下 p_le0=0 仅说明<2e-4），Table 3 加 attn-final 列作可见来源。FiQA "p≈0"→"p<1e-3"。
+> - **PDF 三次重编译均无 undefined/overfull**，14 引用全 resolved。**论文从 reject 提升到 borderline-accept 量级**（reviewer 判 ≈6）。
+> - **可选加分项（未做，用户选了只做 P3）**：加 Qwen2.5/3 模型（堵"LLaMA系特性"）、2-3 prompt 改写模板（堵 prompt-specific）、FiQA 改 BM25 hard negatives + 加第二模型、judge 阈值校准、appendix 放 6 模型全图。
+
 
 1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
