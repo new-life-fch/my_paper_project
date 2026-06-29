@@ -36,8 +36,11 @@ significant on base models ($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$).
 A causal steering intervention confirms the link is mechanistic, not
 epiphenomenal: ablating the internal relevance direction at the output layer
 monotonically collapses the model's verdict (mean $P(\text{yes})$
-$0.79{\to}0.26$), while a random direction and the output's own direction
-fail to preserve discriminative \auc. Comparing base and instruct pairs, we
+$0.79{\to}0.26$) while keeping the verdict discriminative (\auc{} $\approx
+0.55$ across the sweep). It is the only direction that does both: the output's
+own direction shifts $P(\text{yes})$ but collapses \auc{} to $0.485$ (a
+non-discriminative logit shift), and a random direction leaves \auc{} flat
+without a relevance-aligned verdict shift. Comparing base and instruct pairs, we
 find alignment improves the output readout (the judge gets stronger) yet does
 not close the internal--output gap. In short: the relevance signal is
 encoded internally and \emph{attenuated}, not absent, on the path to the
@@ -74,9 +77,9 @@ Our contribution is the \emph{relative} science of internals vs.\ output:
   the internal--output gap.
   \item \textbf{Causality.} A steering intervention that injects the internal
   relevance direction at the output layer causally controls the verdict;
-  ablation is cleanly monotonic and, unlike control directions, preserves
-  discriminative \auc---evidence that the output pathway \emph{can} express
-  the signal but normally under-expresses it.
+  ablation is cleanly monotonic and, unlike the control directions, both moves
+  the verdict and keeps it discriminative---evidence that the output pathway
+  \emph{can} express the signal but normally under-expresses it.
 \end{itemize}
 
 We report query-clustered bootstrap confidence intervals throughout, and are
@@ -95,10 +98,24 @@ project intermediate states to the vocabulary, motivating our depth analysis.
 \citep{turner2023,zou2023,li2023iti} edit residual directions to change
 behavior; we use a difference-of-means steering vector for a causal test.
 \textbf{Calibration and hallucination} work shows models can encode
-correctness they do not surface \citep{kadavath2022,azaria2023}; our finding
-is the relevance-specific, depth-resolved analogue. \textbf{RAG relevance}
-estimation usually targets reranking accuracy; we deliberately stay on the
-interpretability question and do not compete with rerankers.
+correctness they do not surface \citep{kadavath2022,azaria2023,burns2022}.
+Most relevant, \citet{orgad2024} show LLMs internally represent truthfulness
+they do not output, and concurrent work finds hallucination is linearly
+decodable from mid-layer hidden states while output-based detectors stay near
+chance \citep{aiersilan2026}. We do \emph{not} claim to be first to observe
+that internals outstrip the output; our contribution is to localize this to a
+specific, controllable signal---query--passage \emph{relevance}---and to
+characterize it quantitatively: a depth-resolved attenuation curve, a
+decomposition separating ``reading internals'' from ``being trained,'' a causal
+steering test, and a base-vs-instruct contrast. \textbf{Relevance mechanism}
+work reverse-engineers how neural rankers compute relevance via causal
+interventions on attention heads \citep{chen2024relevance}; trained classifiers
+are also known to beat prompted LLM judges at relevance \citep{gienapp2025}. We
+differ by studying a generative LLM's internal-vs-output gap on relevance rather
+than a ranker's internal circuit, and by attributing the gap to depth beyond
+training. \textbf{RAG relevance} estimation usually targets reranking accuracy;
+we deliberately stay on the interpretability question and do not compete with
+rerankers.
 
 \section{Method}
 \label{sec:method}
@@ -158,18 +175,22 @@ base models (\auc{} $0.51$--$0.54$), confirming the output ``says'' little.
 \caption{Four relevance readers across six models (test \auc, point
 estimates). \emph{judge}: output verdict, no training; \emph{final}: probe on
 output representation; \emph{best-resid}: probe on best internal layer;
-\emph{attn}: top-head probe. Significance in Tables~\ref{tab:sig}--\ref{tab:scale}.}
+\emph{attn}: top-head probe. The best residual layer and the top heads are
+selected \emph{on validation} (not on test), consistent with the significance
+analysis. On every model the best internal reader exceeds both the judge and
+the output-representation probe. Significance in
+Tables~\ref{tab:sig}--\ref{tab:scale}.}
 \label{tab:main}
 \begin{tabular}{lcccccc}
 \toprule
 Model & $L$ & judge & final & best-resid & attn \\
 \midrule
-LLaMA-3.2-3B (base)      & 28 & 0.535 & 0.593 & 0.632 & \textbf{0.685} \\
-LLaMA-3.1-8B (base)      & 32 & 0.514 & 0.552 & 0.634 & \textbf{0.680} \\
-Mistral-7B-v0.3 (base)   & 32 & 0.531 & 0.602 & \textbf{0.671} & 0.603 \\
-LLaMA-3.2-3B-Instruct    & 28 & 0.597 & 0.607 & 0.704 & \textbf{0.725} \\
-LLaMA-3.1-8B-Instruct    & 32 & 0.603 & 0.585 & 0.666 & \textbf{0.746} \\
-Mistral-7B-Instruct-v0.3 & 32 & 0.621 & 0.618 & 0.662 & \textbf{0.667} \\
+LLaMA-3.2-3B (base)      & 28 & 0.535 & 0.592 & 0.628 & \textbf{0.685} \\
+LLaMA-3.1-8B (base)      & 32 & 0.514 & 0.552 & 0.581 & \textbf{0.680} \\
+Mistral-7B-v0.3 (base)   & 32 & 0.531 & 0.601 & \textbf{0.621} & 0.603 \\
+LLaMA-3.2-3B-Instruct    & 28 & 0.597 & 0.606 & 0.633 & \textbf{0.725} \\
+LLaMA-3.1-8B-Instruct    & 32 & 0.603 & 0.583 & 0.628 & \textbf{0.746} \\
+Mistral-7B-Instruct-v0.3 & 32 & 0.621 & 0.616 & 0.628 & \textbf{0.667} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -258,10 +279,14 @@ merely ``suppress'' the output.
 \textbf{Causality.} Figure~\ref{fig:causal} shows the steering sweep. Injecting
 the internal relevance direction at the output layer drives the verdict
 monotonically on the ablation arm ($P(\text{yes})$ $0.79\to0.26$ as
-$\alpha{<}0$), and is the \emph{only} direction that preserves (even slightly
-improves) discriminative \auc{} ($0.546\to0.553$). The output's own direction
-moves $P(\text{yes})$ strongly ($0.01\to0.99$) but \emph{destroys} \auc{}
-($\to0.485$, a uniform logit shift), and a random direction leaves \auc{} flat.
+$\alpha{<}0$) while keeping the verdict discriminative (\auc{} $0.546\to0.541$,
+essentially flat). The three directions dissociate cleanly: the internal
+direction both moves the verdict \emph{and} preserves \auc; the output's own
+direction moves $P(\text{yes})$ strongly ($0.01\to0.99$) but \emph{destroys}
+\auc{} ($\to0.485$, a uniform logit shift); and a random direction leaves \auc{}
+flat ($\approx0.545$) but produces no relevance-aligned verdict shift. Only the
+internal direction does both---the diagnostic signature of a causal,
+relevance-bearing direction rather than a generic bias knob.
 The additive arm ($\alpha{>}0$) saturates because the judge is already
 yes-biased (baseline $0.79$ while only $\sim$22\% of test pairs are relevant),
 so we base the causal claim on the ablation arm and the \auc{} contrast. This
@@ -287,12 +312,15 @@ $P(\text{yes})$ while collapsing \auc.}
 \textbf{A second in-domain dataset.} To check the gap is not specific to
 MS MARCO, we retrain and re-test the readers in-domain on BeIR FiQA
 (LLaMA-3.2-3B, 1500 queries, 225 test queries; \emph{not} cross-domain
-transfer). The headline gap is even larger: the judge reaches only
+transfer). Negatives are sampled from corpus passages not judged relevant to
+the query, so FiQA negatives are easier than MS MARCO's in-passage hard
+negatives; this makes FiQA highly linearly separable and is why its
+internal\_edge is thin (see below). The headline gap is even larger: the judge reaches only
 $\auc{}=0.739$ while the best internal layer reaches $0.993$
 (best\_resid$-$judge $=+0.253$, CI $[0.224,0.283]$). FiQA relevance is highly
 linearly separable, so the output representation itself is near ceiling
 ($\auc{}=0.976$); the internal edge is correspondingly thin but still
-significant ($+0.017$, CI $[0.010,0.024]$, $p\!\approx\!0$), and depth still
+significant ($+0.017$, CI $[0.010,0.024]$, $p<10^{-3}$), and depth still
 peaks before the output (L14 $0.993$ vs.\ L28 $0.977$). The two datasets are
 complementary --- MS MARCO stresses ``reading internals beats reading the
 output representation,'' FiQA stresses ``a trained read-out far exceeds the
@@ -303,7 +331,8 @@ decodability by a wide margin.
 the weak judge to a weak prompt. Adding four balanced in-context exemplars
 (drawn only from train, no leakage) lifts the 3B base judge from
 $\auc{}=0.545$ to only $0.566$ --- still far below the internal readers
-($0.632$/$0.685$). The output bottleneck is attenuation of the signal en route
+(best-resid $0.614$, attn $0.682$ at the same 1500-query scale). The output
+bottleneck is attenuation of the signal en route
 to the logits (Fig.~\ref{fig:causal}), not prompt under-specification.
 
 \section{Discussion and Limitations}
