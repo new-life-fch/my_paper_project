@@ -138,7 +138,11 @@ $P(\text{yes})$ vs.\ $P(\text{no})$ at the answer token, \emph{zero training}.
 regression on the final hidden state. (3) \emph{Internal probe}: the same
 probe on the best residual-stream layer, selected \emph{on validation}.
 (4) \emph{Attention-head probe}: top-$k$ heads chosen on validation, their
-activations concatenated into one logistic regression.
+activations concatenated into one logistic regression. As an untrained
+output-side control we also use a \emph{logit lens}: each layer's residual is
+projected through the model's own final norm and unembedding to read
+$P(\text{yes})$ vs.\ $P(\text{no})$ at every depth, with no training and no
+label-based layer selection.
 
 \textbf{Gap decomposition.} We split the total edge over the judge into
 $\text{train\_edge} = \text{final} - \text{judge}$ (pure training, both at the
@@ -261,6 +265,23 @@ peak. For LLaMA the strongest heads cluster in the middle (L10--16); for
 Mistral single heads carry little signal (early-layer head \auc{} $\approx
 0.50$) while the residual stream still encodes relevance---a real
 architectural difference, not a failure of the thesis.
+
+\textbf{The signal is not surfaced by the model's own unembedding (logit
+lens).} One might object that mid-network decodability only reflects what a
+\emph{trained} probe can extract, not what the model could surface. We test
+this with a logit lens: at each layer we project the cached residual through
+the model's own final norm and unembedding and read the normalized
+$P(\text{yes})$ vs.\ $P(\text{no})$---an untrained, output-side reader at every
+depth. As a sanity check, the last-layer logit lens reproduces the judge
+exactly (3B and 8B: $0.545$ and $0.574$, matching the judge to within
+$<0.001$). Crucially, the logit lens stays near chance at \emph{every} depth
+(3B peak $0.560$ at L25; 8B peak $0.577$ at L30), far below the trained
+residual probe's mid-network $0.62$. So the relevance signal present in the
+residual stream is not readable through the model's vocabulary head at any
+layer: the bottleneck is not that the signal is absent from late layers but
+that it is \emph{misaligned with the output readout}, consistent with the
+causal result that the output's own direction shifts the verdict without
+preserving discriminative \auc.
 
 \begin{figure}[t]
 \centering

@@ -267,3 +267,17 @@ python scripts/plot_layer_signal.py --cache results/cache/<tag>_instruct --judge
 few-shot 仅带来 **+0.021** 的微弱提升，**远不足以追平内部探针**(差距仍 0.07~0.12)。→ internals>output 的 gap **不是 prompt 工程能填平的**：即便给模型更强的 in-context 引导，它"嘴上"能表达的相关性判断仍显著落后于内部已编码的信号。这正面回应"judge 太弱"的质疑——输出端的瓶颈是**信号在传向输出时被衰减**(已由 §11 因果证据佐证)，而非提示不当。结果文件 `results/cache/llama32_3b_q1500_judge_fs4/meta.json`。
 
 > 备注：instruct judge 本身已较强(0.60~0.62，见 §主表)，few-shot 主要用于堵 base 模型的 prompt-too-weak 质疑；base 上 few-shot 仍 0.566 已足够说明问题。
+
+## 14. logit-lens 无监督输出端基线（2026-06-29，复查 P3）
+
+堵审稿质疑"中层可解码性只是**训练探针**能读出的，而非模型自己能 surface 的；也许无监督读出处处接近随机，则'输出衰减'叙事要重述"。做 **logit lens**：把**每层**缓存残差经模型自身 final norm + lm_head 投到词表，读 answer-token 的归一化 P(yes) vs P(no)——**零训练、无标签选层**。`scripts/logit_lens.py`。两个 base 旗舰，MS MARCO 1500q：
+
+| 模型 | judge | logit-lens 末层(sanity) | logit-lens 峰值 | 训练 best_resid | 训练 attn |
+|---|---|---|---|---|---|
+| LLaMA-3.2-3B | 0.545 | **0.545**(=judge,absdiff 0.000) | 0.560 (L25) | 0.620 (L14) | 0.682 |
+| LLaMA-3.1-8B | 0.574 | **0.574**(=judge,absdiff 0.000) | 0.577 (L30) | ~0.62 | 0.676 |
+
+- ✅ **Sanity 双模型通过**：末层 logit-lens AUC = judge AUC（absdiff 0.000），证明方法实现正确（末层残差经 lm_head ≈ judge logits）。
+- 🔑 **核心结果**：**无监督 logit-lens 在每一层都接近随机**（3B 各层 0.46~0.56、峰值仅 0.560@L25；8B 峰值 0.577@L30），**远低于训练残差探针的中层 0.62**。即模型用**自己的词表投影**在**任何深度**都读不出相关性。
+- → 直接关闭替代解释：相关性信号确实在残差流中（训练探针 0.62），但**不与输出 readout 对齐**——瓶颈不是"信号在晚层缺失"，而是"信号与 vocabulary 投影方向错位"。与 §11 因果结果（输出方向只平移 logits、摧毁 AUC）互为印证。
+- 注意：logit-lens 曲线**不**像训练探针那样中部成峰（它处处低平、晚层略升），故论文只声称"无监督读出在任何深度都不显著"，不声称 logit-lens 复现了衰减形状。结果文件 `results/logit_lens_llama32_3b_q1500.json`、`results/logit_lens_llama31_8b_q1500.json`。已写入 main.tex（Method 第 4 reader 后 + Experiments 深度定位段后）。
