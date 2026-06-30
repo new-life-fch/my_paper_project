@@ -187,6 +187,15 @@
 > - **PDF 三次重编译均无 undefined/overfull**，14 引用全 resolved。**论文从 reject 提升到 borderline-accept 量级**（reviewer 判 ≈6）。
 > - **可选加分项（未做，用户选了只做 P3）**：加 Qwen2.5/3 模型（堵"LLaMA系特性"）、2-3 prompt 改写模板（堵 prompt-specific）、FiQA 改 BM25 hard negatives + 加第二模型、judge 阈值校准、appendix 放 6 模型全图。
 
+> ✅ **加第三家族 Qwen2.5-7B（2026-06-30，第六节第 6 次推进，commit 6aceb7d）**：用户判断"加个 Qwen 论文就够 CCF-B 水平"，授权下载（Apache-2.0 无需 token）。1500q 全管线跑通 base+instruct，整合进论文。
+> - **结果（val 选层，`significance_qwen_q1500.json`）**：Qwen base judge **0.652**/final 0.592/best_resid 0.655(L22)/attn 0.682；Qwen-Inst judge 0.660/final 0.610/best_resid 0.630/attn 0.670。
+> - ✅ **attn−final 两模型显著**（base +0.090 p<1e-3、inst +0.060 p=0.002）——"读头>读输出表示"扩到第三家族。
+> - ✅ **internal_edge base 显著（+0.063 p=0.0014）、inst 收缩（+0.020 n.s.）**——精确复现 LLaMA base→instruct 压缩机制。
+> - 🔑 **诚实新洞察（写进论文）**：Qwen base judge 已 0.652（远高于 LLaMA base ~0.52），train_edge 负（−0.06）→ best_resid−judge≈0。非命门失守：Qwen 预训练似已把信号推进输出方向（judge 强），但 reading heads 仍 > final 输出表示，"内部>输出表示"在 judge 已强时仍成立。是 LLaMA 对齐机制的结构镜像。
+> - ✅ logit-lens sanity 通过（末层=judge absdiff 0.000），无监督峰值 0.654 仍 << 训练探针 0.655/0.682。深度图 top-20 头集中 L17-20（比 LLaMA L10-16 偏晚）。
+> - **论文现状**：8 模型（3B-8B，LLaMA/Mistral/Qwen，base+inst）。主表+scale 表各 +2 行、新增"A third model family"段、abstract→eight models、Limitations attn-head 改"LLaMA+Qwen 显著、Mistral 弱"。PDF 干净。**工作量已达 CCF-B 投稿量级**。
+> - **仍未做的可选项**：prompt 改写鲁棒性、FiQA BM25 难负例、judge 阈值校准、appendix 8 模型全图、Qwen 因果 steering、投稿目标会议定稿。
+
 
 1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
