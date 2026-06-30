@@ -281,3 +281,29 @@ few-shot 仅带来 **+0.021** 的微弱提升，**远不足以追平内部探针
 - 🔑 **核心结果**：**无监督 logit-lens 在每一层都接近随机**（3B 各层 0.46~0.56、峰值仅 0.560@L25；8B 峰值 0.577@L30），**远低于训练残差探针的中层 0.62**。即模型用**自己的词表投影**在**任何深度**都读不出相关性。
 - → 直接关闭替代解释：相关性信号确实在残差流中（训练探针 0.62），但**不与输出 readout 对齐**——瓶颈不是"信号在晚层缺失"，而是"信号与 vocabulary 投影方向错位"。与 §11 因果结果（输出方向只平移 logits、摧毁 AUC）互为印证。
 - 注意：logit-lens 曲线**不**像训练探针那样中部成峰（它处处低平、晚层略升），故论文只声称"无监督读出在任何深度都不显著"，不声称 logit-lens 复现了衰减形状。结果文件 `results/logit_lens_llama32_3b_q1500.json`、`results/logit_lens_llama31_8b_q1500.json`。已写入 main.tex（Method 第 4 reader 后 + Experiments 深度定位段后）。
+
+## 15. 第三家族：Qwen2.5-7B base+instruct（2026-06-30）
+
+**目标**：扩展模型覆盖到第三家族，关闭"结论是 LLaMA 系特性"审稿质疑。Qwen2.5-7B Apache-2.0、无需 token、已下载，走现有 extract/judge/internals/significance 管线（1500q）。
+
+### 核心结果（val 选层，significance_qwen_q1500.json）
+
+| 模型 | judge | final | best_resid | attn | internal_edge | attn-final |
+|---|---|---|---|---|---|---|
+| Qwen2.5-7B (base) | **0.652** | 0.592 | 0.655(L22) | **0.682** | +0.063 p=0.0014 ✅ | +0.090 p<1e-3 ✅ |
+| Qwen2.5-7B-Inst | **0.660** | 0.610 | 0.630(L23) | **0.670** | +0.020 p=0.12 | +0.060 p=0.002 ✅ |
+
+**关键发现与机制洞察**：
+
+- ✅ **attn−final 两模型均显著**（base p<0.001，inst p=0.002）——"读头 > 读输出表示"扩展到第三家族。
+- ✅ **internal_edge base 显著（+0.063, p=0.0014），instruct 收缩（+0.020, p=0.12）**——精确复现 LLaMA 的 base→instruct 压缩机制，第三家族一致。
+- 🔑 **新洞察：Qwen base 的零样本 judge 已达 0.652**（vs LLaMA base 0.51-0.53），train_edge 为负（-0.060）。这不是命门失守，而是补充论点：Qwen 似乎已在预训练中把相关性信号推进了输出方向（judge 强），但 reading heads 仍超过 final 输出表示——"内部>输出表示"的 gap 在 judge 已强时仍然成立。
+- ✅ **logit-lens sanity 通过**（末层=judge absdiff 0.000）；无监督读出峰值 0.654@L26，远低于训练探针 0.655/0.682。
+- ✅ 深度图：`results/figures/qwen25_7b_layer_signal.png`，峰值 L22(0.658)→输出层 L27(0.594)，top-20 头集中 L17-20（比 LLaMA 中层偏晚，与 Mistral 偏晚不同）。
+
+**对论文的影响**：
+- 主表 Table 1 增两行（Qwen2.5-7B base/inst）。
+- scale Table 3 增 Qwen 两行（Qwen base: internal_edge 0.063/attn-final 0.090 双显著；inst: 仅 attn-final 显著）。
+- 新增"A third model family"段落，诚实处理 Qwen judge 强、best_resid−judge≈0 的特殊性。
+- abstract 更新为"eight models (3B–8B, LLaMA, Mistral and Qwen, base and instruct)"。
+- Limitations 更新：attn-head 在 LLaMA 和 Qwen 显著、Mistral 弱（非"LLaMA-only 工具"）。

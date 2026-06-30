@@ -1,0 +1,142 @@
+[
+  {
+    "tag": "qwen25_7b",
+    "model": "Qwen2.5-7B",
+    "n_layers": 28,
+    "best_layer_val": 22,
+    "auc": {
+      "judge": {
+        "point": 0.652,
+        "ci95": [
+          0.621,
+          0.683
+        ]
+      },
+      "final": {
+        "point": 0.592,
+        "ci95": [
+          0.56,
+          0.624
+        ]
+      },
+      "best_resid": {
+        "point": 0.655,
+        "ci95": [
+          0.621,
+          0.687
+        ]
+      },
+      "attn": {
+        "point": 0.682,
+        "ci95": [
+          0.648,
+          0.714
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0633,
+        "ci95": [
+          0.023,
+          0.103
+        ],
+        "p_le0": 0.0014
+      },
+      "train_edge(final-judge)": {
+        "mean": -0.0602,
+        "ci95": [
+          -0.096,
+          -0.024
+        ],
+        "p_le0": 0.9996
+      },
+      "attn-final": {
+        "mean": 0.0898,
+        "ci95": [
+          0.05,
+          0.13
+        ],
+        "p_le0": 0.0
+      },
+      "best_resid-judge": {
+        "mean": 0.0031,
+        "ci95": [
+          -0.035,
+          0.041
+        ],
+        "p_le0": 0.4394
+      }
+    }
+  },
+  {
+    "tag": "qwen25_7b_instruct",
+    "model": "Qwen2.5-7B-Inst",
+    "n_layers": 28,
+    "best_layer_val": 23,
+    "auc": {
+      "judge": {
+        "point": 0.66,
+        "ci95": [
+          0.632,
+          0.688
+        ]
+      },
+      "final": {
+        "point": 0.61,
+        "ci95": [
+          0.574,
+          0.645
+        ]
+      },
+      "best_resid": {
+        "point": 0.63,
+        "ci95": [
+          0.595,
+          0.666
+        ]
+      },
+      "attn": {
+        "point": 0.67,
+        "ci95": [
+          0.637,
+          0.702
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0202,
+        "ci95": [
+          -0.013,
+          0.054
+        ],
+        "p_le0": 0.1188
+      },
+      "train_edge(final-judge)": {
+        "mean": -0.0504,
+        "ci95": [
+          -0.088,
+          -0.014
+        ],
+        "p_le0": 0.995
+      },
+      "attn-final": {
+        "mean": 0.0595,
+        "ci95": [
+          0.021,
+          0.098
+        ],
+        "p_le0": 0.0018
+      },
+      "best_resid-judge": {
+        "mean": -0.0302,
+        "ci95": [
+          -0.067,
+          0.006
+        ],
+        "p_le0": 0.9468
+      }
+    }
+  }
+]

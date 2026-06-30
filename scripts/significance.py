@@ -41,6 +41,9 @@ MODELS = [
     ("mistral_7b_instruct", "Mistral-7B-Inst-v0.3","mistral_7b_instruct"),
     # second IN-DOMAIN relevance dataset (FiQA, trained+tested in-domain)
     ("llama32_3b_fiqa",     "LLaMA-3.2-3B FiQA",   "llama32_3b_fiqa"),
+    # third model family (Qwen2.5) — coverage beyond LLaMA/Mistral
+    ("qwen25_7b",           "Qwen2.5-7B",          "qwen25_7b"),
+    ("qwen25_7b_instruct",  "Qwen2.5-7B-Inst",     "qwen25_7b_instruct"),
 ]
 
 
