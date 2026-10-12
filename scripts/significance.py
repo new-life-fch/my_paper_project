@@ -24,6 +24,7 @@ Usage:
 import os, sys, json, argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.cache_paths import resolve_cache   # noqa: E402  (docs/CACHE_NAMING.md)
+from src.provenance import env_versions    # noqa: E402
 import numpy as np, torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -186,6 +187,12 @@ def main():
 
         rec = {
             "tag": tag, "model": name, "n_layers": n_layers, "best_layer_val": best_layer,
+            # provenance -- the bootstrap realization depends on the shared RNG
+            # stream (so `--only` changes later models' CIs) and on the numpy
+            # version; and Table 1's 500q/1500q mixing cannot be audited
+            # without n_test. Recorded since the original host was recycled.
+            "n_test": int(len(yte)), "n_boot": int(args.boot),
+            "cache": ic, "judge_cache": jc, "env": env_versions(),
             "auc": {
                 "judge":      {"point": round(float(auc(yte, s_judge)), 3), "ci95": ci(bj)},
                 "final":      {"point": round(float(auc(yte, s_fin)), 3),   "ci95": ci(bf)},

@@ -51,6 +51,13 @@ def main():
         best_layer = d["resid_best_layer"]["layer"]
         attn = d["attn_head_probe(ours)"]
         n_layers = len(d["resid_per_layer_test_auc"])
+        # ⚠️ NOTE: this `internal_edge` is NOT the paper's.
+        #   here:       max(best_resid_test, attn_test) - final
+        #   paper:      best_resid - final        (see significance.py)
+        # It takes a max over two TEST AUCs and mixes a test-argmax layer probe
+        # with a val-selected head probe, so multimodel_summary.json's
+        # "internal_edge" column and Table 1/2's are different quantities.
+        # Do not "reconcile" them by editing one side; see TODO.md P0-6.
         internal_best = max(best, attn)
         rows.append({
             "tag": tag, "model": name, "n_layers": n_layers,

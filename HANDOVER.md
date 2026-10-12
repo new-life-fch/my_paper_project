@@ -171,8 +171,20 @@ paper_A_internals/
 
 ### 2.3 数据源 (src/data.py)
 
-**`load_msmarco_dev_small(n_queries=500, seed=42, max_passages=5)`**
-- 来源：MS MARCO dev-small (6980 queries, qrels)
+**`load_ms_marco(n_queries=100, max_passages_per_query=5, seed=42)`**
+
+> 🚫 **2026-10-12 更正——本小节有两处与代码不符，别照它去"修"代码：**
+> - 函数名不是 `load_msmarco_dev_small`，而是 **`load_ms_marco`**（`src/data.py:13`）。
+> - 数据源不是 "MS MARCO **dev-small** + qrels"。代码加载的是
+>   **`load_dataset("microsoft/ms_marco", "v1.1", split="train")`**，
+>   用每条记录的 **`is_selected`** 字段造标签，**完全不读 qrels**
+>   （`src/data.py:26`、`src/data.py:44-48`）。
+> - 负例也不是随机取的：是该记录里 `is_selected == 0` 的段落，即 MS MARCO 自带的
+>   BM25 检索未选中段落（真·hard negative）。随机负例只出现在 BeIR/FiQA 加载器里。
+> - **以代码为准**。若按本文去改成 dev-small+qrels，会静默换掉整个数据集与标签口径，
+>   与 `results/` 里所有已发表的数字都无法对应。
+
+- 来源：MS MARCO v1.1 **train split**，用 `is_selected` 造标签
 - 采样：随机选 n_queries 个 query，每个 query 最多取 5 个 passage（1 rel + 4 BM25 hard neg）
 - 输出：list of dict `{"query_id", "query", "passage", "label"}`
 - 划分：按 query 分层 70/15/15 → train/val/test (保证同 query 的样本在同一 split)

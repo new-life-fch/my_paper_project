@@ -99,10 +99,16 @@
   这和 `CLAUDE.md` §6 里"改成配对后**结论完全不变**"的说法也对不上：配对确实改了 CI 与 p。
 - **方向是良性的**：论文的数字比 artifact **更保守**（CI 更宽、p 更大），
   这不像"夸大结果"，更像"引用了旧版本"。但**必须解决**。
-- **怎么修**：回 GPU 主机（或拿到缓存后在 CPU 上）用**当前代码**重跑
-  `significance.py`（500q 与 1500q 两轮），然后把
-  `REPORT.md` §9/§10、`CLAUDE.md` §6、`main.tex` Table 2/3 + Abstract **全部对齐到新 JSON**。
-  在解决之前，建议在 `REPORT.md` 顶部加一条醒目提示，避免后续继续引用错数。
+- **怎么修（2026-10-12 更正：比原先设想的便宜得多）**：
+  **改论文，不需要重跑。** 独立审计用 git diff 证明：`4c8be8a`/`25d878b` 那两个提交里
+  **被替换掉的旧值就是论文现在写的值**（逐格吻合），而 `results/` 里的是修正后的配对版本。
+  所以仓库里的 JSON **才是对的**，论文引的是旧版。
+  → 只要把 `main.tex` Table 2/3 + Abstract 的 CI/p **改成引用 `results/significance*.json`**，
+  再同步 `REPORT.md` §9/§10 与 `CLAUDE.md` §6 即可。**不需要 GPU、不需要缓存。**
+  （这一点现在尤其重要：**原主机已被回收**，见 P2，所以"重跑后再对齐"这条路已经走不通了。）
+  - 顺带：改完之后 **加粗/显著性判定不会翻转**（旧值更保守），所以论文的结论不受影响。
+  - 但有一个边界格子会变：Mistral-7B-Inst 的 `attn−final` 由 `p=0.1476` → `0.0526`，
+    仍不显著，但已贴到 0.05 边缘，值得在文中留意。
 - **独立复核（一次专项 fact-check，逐格比对 main.tex 与 results/）的结论**：
   - `Table 2`：**18 个 edge 格子，0 个与现行 artifact 吻合**；全部 18 个都精确复现
     **被取代的旧版本**（13 个在论文精度下逐位相同，5 个仅末位差 1）。
@@ -133,6 +139,51 @@
 - **来源**：这句"widens"是从 `REPORT.md` §4 抄来的，而 §4 用的是**已被取代的 v1（test-argmax）数字**。
   这是"论文从旧 REPORT 誊抄"的又一例证，与 P0-4 同源。
 - **怎么修**：改成"internal edge 在 base 上显著、在 instruct 上收缩"，并在重算后统一口径（与 P0-4 一起做）。
+
+---
+
+### P0-6. `logit_lens.py` 也在 test 上选层 —— 而论文**明确否认**了这件事 🔴
+
+- `scripts/logit_lens.py:112`：`best = int(np.argmax(layer_auc))`，而 `layer_auc` 是在
+  **被评估的 split**（`--split`，默认 `test`）上算的 → 又一次 selection-on-test。
+  论文引的峰值（3B `0.560@L25`、8B `0.577@L30`）就出自这一行。
+- **严重性在于论文的相反声明**：`main.tex:144-147` 写 logit lens
+  "**no training and no label-based layer selection**"，`CLAUDE.md` §6 也重复
+  "零训练**无选层**"。**这两句按字面都是错的**——零训练✔，但**有**基于标签的选层。
+  这是"论文与自己的代码矛盾"，审稿人查代码就能发现。
+- 同一类问题还有两处（全部已加注释标记，避免未来 Agent 当成新 bug 各自"修"）：
+  - `internals_vs_output.py` 的 `resid_best_layer`（test-argmax）→ 仓库里 3 个
+    `internals_vs_output_*.json` 的该字段都带乐观偏差（R-2）。
+  - `aggregate_models.py` 的 `internal_edge = max(best_resid_test, attn_test) − final`，
+    **与论文的 `best_resid − final` 不是同一个量**（3B：+0.093 vs +0.036）。
+    `multimodel_summary.json` 的 `intEdge` 列因此不可与 Table 2 对比。
+- **另外，被测的量本身噪声很大**：同一个 3B 模型，val 选层在 500q 是 **L13**、
+  在 1500q 是 **L9**（差 4 层）。所以 ±1 层的差异没有意义，但 +0.01~0.02 的 AUC 乐观偏差是系统性的。
+- **怎么修**（三处一起改，并同步论文措辞）：改成 val 选层；`aggregate_models.py` 的
+  `internal_edge` 要么改名、要么改成论文的定义。**改代码会变动论文数字，必须同一次改完。**
+
+### P0-7. 因果 steering 的**随机对照表现和实验组一样** 🔴 这条动摇论文的因果论断
+
+- 论文（`main.tex:40-44`、`336-341`）与 `REPORT.md` §11 的核心对照是：
+  "唯独 internal 方向**既**改变判断**又**保住 AUC；final 改判断但摧毁 AUC；
+  **random 不产生定向效应**"，据此得出"输出通路本可表达该信号，只是被衰减"。
+- **但 artifact 自己不支持"random 不产生定向效应"**。`results/causal_steer_llama32_3b_q1500.json`：
+
+  | 方向 | mean P(yes) 摆动 | AUC 范围 |
+  |---|---|---|
+  | internal | 0.793 → 0.260（**0.53**），随 α 单调 | 0.541–0.553（平） |
+  | **random** | 0.789 → 0.363（**0.43**），**同样随 α 单调** | 0.540–0.546（**也平**） |
+  | final | 0.793 → 0.995/0.010 | 崩到 0.485 |
+
+  也就是说 **random 方向同样大幅改变判断、同样保住 AUC**，它与 internal 的唯一差别是
+  internal 在 α>0 时 AUC +0.007、random −0.006 —— **远在 ±0.05 的 CI 之内**。
+- **根因**：`causal_steer.py` 只记录了 mean P(yes) 与 AUC，**没有按真实标签分组**，
+  所以"relevance-aligned"（相关性对齐的摆动）**在这个 artifact 里根本无法测量**。
+  又只用**单个**随机方向（`default_rng(0)`），无法排除"任何方向都能这样"。
+- **怎么修**：①在 `causal_steer.py` 里按标签分组记录 `mean P(yes) | relevant` 与 `| irrelevant`
+  per α（这样"定向"才可测）；②用 **多个**随机方向（如 ≥10 个）给出随机基线分布；
+  ③在那之前，论文的因果措辞应收紧到"消融臂单调崩塌"这一条（它仍然成立），
+  去掉"random 无定向效应"和"唯独 internal 两者兼具"这两个过强表述。
 
 ---
 
@@ -252,14 +303,82 @@
 
 ---
 
-## P2 — 数据缺口（只能回 GPU 主机 `/root/shared-nvme/paper_A_internals` 取）
+### P1-15. 两个缓存的"对齐"只是口头约定，唯一那句断言抓不到真正的失效
 
-> `.gitignore` 原先把 `results/` 整个忽略，这些文件从未进入任何 clone（已实测确认：
-> clone 出来的 `results/` 只有 13 个文件）。2026-10-12 已把 `.gitignore` 收窄为
-> 只忽略 `results/cache/`、`results/**/*.pt`、`results/logs/`，**以后的结果会自动入库**；
-> 但**已经丢的只能回主机取**。
+- 全仓库**只有** `significance.py` 有一句跨缓存校验：
+  `assert np.array_equal(jd["labels"], yte)`（只看 test、只比 labels）。
+  `internals_vs_output.py`、`logit_lens.py`、`plot_layer_signal.py` **一句都没有** ——
+  judge 的分数与激活缓存的标签是**纯按位置**拼起来的。
+- **并且那句断言抓不到最现实的失效**。审计实测：用真实 `src/data.py`、同样的 10 个段落但
+  **把 query 内顺序打乱**，结果 **labels 完全相同、(query,passage) 对完全不同**，
+  断言照样通过。因为 `load_ms_marco` 是先 append 正例再 append 负例、再取 `negatives[:n_neg]`，
+  所以只要 HF 数据集 revision / `trust_remote_code` 脚本 / `--max-passages` / `--seed` 任一改变，
+  就会得到"标签一样、文本不同"的两个缓存 → judge 与探针**静默错配**，
+  而 `train_edge`、`best_resid−judge` 以及整张 4-reader 表都会失效。
+- **好消息**：两个缓存其实都存了 `query_ids`（`extract_instruct.py`、`llm_judge.py`），
+  `significance.py` 甚至已经 load 了它，只是**从没拿来比对**。
+- **怎么修**：在**每个**同时消费两种缓存的脚本里，加一句按 `query_id` + label 的 join 校验
+  （不只是 labels）：`assert np.array_equal(jd["query_ids"], qte)`。
+  一行代码，消除一类静默失效。对 FiQA 尤其重要——见 P1-16。
+
+### P1-16. BeIR 的 query id 哈希依赖进程 → 两个脚本可能造出**不同的切分**
+
+- `src/data.py`：`except ValueError: qid_num = abs(hash(q)) % 10**9`。
+  Python 的 `hash(str)` 受 `PYTHONHASHSEED` 随机化，审计实测**4 个进程给出 4 组不同的 id
+  与 4 套不同的 query→split 分配**。
+- 而 `extract_instruct.py` 与 `llm_judge.py` 是**两个独立进程**，所以 FiQA 实验可能让
+  judge 与探针在不同的 query 集合上训练/测试；`run_fiqa.sh` 调的是
+  `internals_vs_output.py`，而它**没有对齐断言**，不会发现。
+- 目前 FiQA 的 id 都是数值、走 `int(q)` 分支，所以是**潜在**地雷（未能联网确认全部 id 都是数值）。
+- **怎么修**：把回退分支换成稳定的哈希（`hashlib` + 固定盐），或直接改成顺序编号；
+  并顺手加上 P1-15 的 query_id 校验。
+
+### P1-17. bootstrap 的随机流是**跨模型共享**的 → `--only` 会改变其它模型的 CI
+
+- `significance.py` 的 `rng = np.random.default_rng(42)` 建在**模型循环之外**、在循环内被消耗。
+  被 `--only` 跳过、或缓存缺失而 `continue` 的模型**不消耗**随机数。
+  → 所以 `--only X`、或某台机器少一个缓存目录，都会**改变其后所有模型的 CI 与 p**。
+  再加上 `default_rng` 的流本身不保证跨 numpy 版本稳定，**已发表的 CI 不是逐模型可复现的**。
+- JSON 里原先也没有 `n_test`/`n_boot`/缓存路径/版本 —— 这正是 P0-2（Table 1 混样本量）
+  **无法从 artifact 审计**的原因。
+- **已部分修复（2026-10-12）**：`significance.py` 现在会记录
+  `n_test / n_boot / cache / judge_cache / env`。
+- **仍需修**：改成按模型派生子流（`SeedSequence(42).spawn(...)`），让每个模型的 CI
+  与"跑了哪些模型"无关。
+
+### P1-18. `compare_probes.py` 用未分组的 StratifiedKFold → train 内部按段落泄露
+
+- `per_head_cv_auc` 与 M4 的 stacking OOF 都在**段落层面**切折，于是"留出折"里的样本，
+  其同 query 的兄弟段落进了训练集。`load_split` 连 `query_ids` 都没读，所以想用 GroupKFold
+  得先改它。
+- **后果**：M2 用来选头的排序、以及 M4 的元特征都偏乐观，且与 val/test 的元特征分布不一致；
+  `corr(val_auc, test_auc)=0.028` 那个诊断也被混淆。M0/M1/M3/M5 是干净的。
+- **怎么修**：换成 `GroupKFold(groups=query_id)`。
+
+### P1-19. 因果 steering 的三处协议偏差
+
+- **方向层是按 train 选的**：`causal_steer.py` 取 train 投影 AUC 的 argmax（排除最后一层）→
+  q1500 的 3B 跑出 **L13**，而论文 val 选层是 **L9**（`significance_q1500.json`）。
+  不是泄露，但论文 `main.tex:162` 写 "At the best internal layer"，与事实不符。
+- **截断不一致**：`causal_steer.py` 用 `truncation=True, max_length=512`（右侧截断会**切掉
+  "Question … Answer:" 后缀**），而 nnsight 提取器**从不截断**
+  （`max_length` 在 `extract_instruct.py` 里其实是**死参数**）。
+  → 对超过 512 token 的 prompt，steering 读的 P(yes) 在文档中间的 token 上，不是 answer token。
+- **yes/no token 集漂移**：`causal_steer.py` 用 4 个变体，`llm_judge.py`/`logit_lens.py` 用 5 个
+  （多 " YES"/" NO"），尽管前者 docstring 声称一致。实测影响 ≈0.001 AUC（α=0 基线 0.546 vs judge 0.545），
+  属文档/代码漂移，非效应。
+- **怎么修**：方向层改用 val 选层；去掉截断或让提取器也截断（两者取一致）；统一 token 集。
+
+---
+
+## P2 — 数据缺口（⚠️ 2026-10-12 性质变更：**原主机已被回收，这些不是"待取回"而是"已永久丢失"**）
+
+> **重要**：原先这一档写的是"回 GPU 主机 `/root/shared-nvme/paper_A_internals` 打包取回"。
+> **该主机已被回收**，`results/cache/`（几十 GB 激活缓存）随之消失。
+> 所以 P2-1~P2-5 列出的文件**除非另有一份备份，否则已不可恢复**，
+> 只能在新主机上**重新跑管线生成**（见 `docs/READING_GUIDE.md` §七）。
 >
-> 一次性打包（**别 tar 整个 `results/`**，里面有几十 GB 的 `.pt`）：
+> **如果有旧备份**（tar/网盘/另一台机），打包命令仍然适用（**别 tar 整个 `results/`**，里面有 `.pt`）：
 > ```bash
 > cd /root/shared-nvme/paper_A_internals
 > tar czf ~/paperA_snapshot_$(date +%F).tgz \
@@ -267,6 +386,12 @@
 >     results/*.json results/figures results/cache/*/meta.json \
 >     scripts src README.md CLAUDE.md HANDOVER.md TODO.md docs .gitignore
 > ```
+>
+> **这也意味着两件事**：①新的跑法会给出**复现版**数字而非原件，注意第 3 位小数的漂移
+> （`requirements.txt` 目前**零钉版本**，已在 `src/provenance.py` 里开始记录版本与 revision）；
+> ②P0-1 的"重画 Fig. 1"与 R-2/R-4 等需要缓存的事项，全部要先在新主机上重跑提取。
+> 好消息是**纯 CPU 的分析脚本**（`plot_layer_signal` / `internals_vs_output` / `significance`）
+> 只要拿到 `.pt` 就不需要显卡。
 
 ### P2-1. 缺 4 个 `internals_vs_output_*.json`
 
@@ -478,6 +603,29 @@ P1 的修复只改了**论文表格**（改用 `significance.json` 的 val 选�
   Abstract 的因果 / FiQA / logit-lens 数字全部与 JSON 吻合；
   vendored `nnsight/` **不会**遮蔽 pip 版本（见 P3-2）；
   MS MARCO 负例确为 BM25 未选中段落（"hard negative" 说法成立）。
+- ✅ **2026-10-12 完成第二次独立审计（代码正确性）**，结论已并入 P0-6/P0-7/P1-15~P1-19。
+  它**执行了**两处复现（用真实 `src/data.py` 跑 stub 数据集；多进程 `PYTHONHASHSEED` 跑切分逻辑），
+  并明确列出**已排除**的怀疑（记录以免重复排查）：
+  1. **四个脚本的 instruct prompt 逐字节相同**（逐个 AST 提取并实际调用过 builder）；
+     `src/activations.py` 里那个 "Q:/P:" 旧格式只被 `initial_validation.py` 用到，属另一套 regime。
+  2. **种子一致**（处处 42），整数 query_id 下数据管线**确定性**（跨 PYTHONHASHSEED 实测相同）；
+     只有 BeIR 的哈希回退路径会破（P1-16）。
+  3. **切分确实是按 query 的**，且**验证集从未被用于拟合**（选头/选层在 val，探针 fit 在 train，
+     没有任何 scaler 在 val/test 上 fit）。对 test 的唯一接触就是 P0-6 那些 argmax。
+  4. **bootstrap 形状是对的**：确实是 query 聚类 + **配对**（共享重采样索引），
+     `p_le0` 是正确方向的单侧（用 Qwen 那个负的 train_edge 验过，p=0.9996）。
+     唯一保留意见：没有 `(1+count)/(1+B)` 平滑，所以 `p=0.0` 实为 <2e-4。
+  5. **`class_weight="balanced"` 不偏 AUC**（AUC 是秩统计量、四个 reader 评在同一批行上）。
+     正负比确为 1:4（用真实 loader 复现出 20% 正例率，与论文"~22%"一致）——
+     对 AUC 无碍，但 `initial_validation` 里那些 accuracy/F1 图因此**没有意义**。
+  6. **MS MARCO 负例是 hard 而非随机**；随机采样只存在于 BeIR 加载器。
+  7. **logit-lens 的实现位置正确**（对每层 decoder 输出施加 `norm` + `lm_head`），
+     末层逐位复现 judge（3B/8B/Qwen 的 `sanity_lastlayer_vs_judge_absdiff = 0.0`）。
+     这同时证明**残差缓存末层就是 judge logits 的来源向量**（所以 `train_edge` 是干净的
+     "纯训练"对照），也证明那三次运行的 judge 与激活缓存**是对齐的**。
+  8. **头索引一致**（layer-major，提取 / `probes.py` / `plot_layer_signal.py` 三处一致）；
+     同一缓存内 attn 与 resid 由同一循环产出，必然对齐。
+  9. **没有裸 `except:`**；唯一的 `|| true` 在 `run_queue.sh`（已记录）。
 - ✅ **2026-10-12 完成一次独立交叉复核**（专项 fact-check，逐格比对 `main.tex` 与 `results/`，
   结论已并入 P0-4 / P0-5 / P1-7~P1-14 / P2-6）。核心结论：**Table 1 全对（42/42）；
   Table 2 全错（0/18，全部是被取代的旧版本）；Table 3 对 2 错 4**。

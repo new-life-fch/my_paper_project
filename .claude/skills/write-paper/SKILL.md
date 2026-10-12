@@ -3,6 +3,17 @@ name: write-paper
 description: Draft and compile the "Internals > Output" interpretability paper (LaTeX via tectonic). Use when writing, revising, or building the paper for workspace A (paper_A_internals). Encapsulates interpretability-paper structure, honesty rules, and this project's verified results.
 ---
 
+> 🚫 **本文所述的项目状态已过时——写作时以别处为准，不要按本文"纠正"论文。**
+> 本文写于论文 6 模型阶段，之后论文已扩到 **8 模型**（3B–8B，LLaMA/Mistral/Qwen，base+instruct）、
+> **2 个 in-domain 数据集**（MS MARCO + FiQA）、因果 steering **3 个变体**（3B / 8B base / 8B instruct），
+> 并新增了三块证据：logit-lens（REPORT §14）、Qwen 第三家族（§15）、few-shot judge（§13）。
+> 下文出现的「6 模型」「因果限 3B」「in-domain 单数据集」**都已不是现状**；
+> 取数速查表里的 `results/multimodel_summary.json` **从来不存在**。
+> **当前状态**：`CLAUDE.md` §6（进展流水账，末尾最新）+ `results/*.json`（数字）。
+> **冲突时以 `results/*.json` 为准**，权威顺序见 `docs/READING_GUIDE.md` §三。
+> 本文仍然有用的部分是：**结构方法论 + 诚实铁律（只写已验证的数字、效应强弱分级陈述）**。
+> 完整待修清单见 `TODO.md` P1-4。
+
 # write-paper — 可解释性论文写作 skill（工作区 A）
 
 ## 何时用

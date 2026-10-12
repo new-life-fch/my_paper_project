@@ -109,6 +109,14 @@ def main():
                 a = 0.5
             layer_auc.append(round(a, 3))
 
+    # ⚠️ KNOWN BIAS -- do not "rediscover" this as a new bug, and do not fix it
+    # on one side only. This argmax runs over the EVALUATED split (--split,
+    # default 'test'), i.e. it is selection-on-test. paper/main.tex:144-147
+    # nevertheless claims the logit lens has "no training and no label-based
+    # layer selection", and CLAUDE.md repeats "零训练无选层" -- both are false as
+    # written. The peaks quoted in the paper (3B 0.560@L25, 8B 0.577@L30) come
+    # from this line. Tracked as TODO.md P0-6; fixing it changes reported
+    # numbers, so the paper text must be updated in the same change.
     best = int(np.argmax(layer_auc))
     rep = {
         "tag": args.tag,

@@ -28,6 +28,7 @@ from sklearn.metrics import roc_auc_score
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data import load_ms_marco, split_by_query
+from src.provenance import env_versions, model_revision
 
 
 def build_instruct_prompt(query: str, passage: str) -> str:
@@ -89,6 +90,7 @@ def main():
 
     from tqdm import tqdm
     meta = {"model": args.model, "n_queries": args.n_queries, "method": "llm_judge",
+            "env": env_versions(), "model_revision": model_revision(model),
             "yes_ids": yes_ids, "no_ids": no_ids, "seed": args.seed}
     auc_report = {}
 

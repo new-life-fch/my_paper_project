@@ -83,6 +83,13 @@ def main():
         delayed(layer_auc)(li) for li in range(n_layers))
     rep["resid_per_layer_test_auc"] = layer_aucs
     rep["resid_final_layer(output_repr)"] = layer_aucs[-1]
+    # ⚠️ KNOWN BIAS (selection-on-test): `layer_aucs` are TEST AUCs, so this
+    # argmax picks the best layer on the test set. significance.py selects on
+    # VAL instead, which is why the paper's Table 1 no longer uses this file's
+    # numbers. Everything written by this script -- including the three
+    # internals_vs_output_*.json that survive in results/ -- therefore carries
+    # an optimistic resid_best_layer. Do NOT compare those values against
+    # significance*.json without accounting for this. Tracked as TODO.md P0-6.
     rep["resid_best_layer"] = {"layer": int(np.argmax(layer_aucs)), "auc": max(layer_aucs)}
 
     # --- 4. attn-head probe (our method) ---

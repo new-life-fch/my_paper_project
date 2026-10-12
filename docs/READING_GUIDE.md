@@ -104,7 +104,30 @@
 
 ---
 
-## 四、项目进展怎么读（`CLAUDE.md` §六 的体例）
+## 四、已知的文档↔代码冲突：**哪一边权威、不要改什么**
+
+> 这一节是给"新环境里的新 Agent"看的。这个项目有 6+ 份 MD，**它们互相矛盾是正常的历史沉积**，
+> 不是待修的 bug。**新手最危险的行为，是发现矛盾后热心地"统一"它 —— 那会静默换掉数据集、
+> 换掉标签口径、或者把论文改回旧规模。** 遇到下表的情况，按"权威"列办。
+
+| 你会看到 | 冲突双方 | 权威 | 🚫 不要做什么 |
+|---|---|---|---|
+| `HANDOVER.md` 说数据来自 "MS MARCO **dev-small** + **qrels**" | 文档 vs `src/data.py:26,44-48` | **代码**：`split="train"` + `is_selected` | 不要改代码去迁就文档（那会换掉整个数据集与标签口径） |
+| `HANDOVER.md` 写 `load_msmarco_dev_small()` | 文档 vs 代码 | 代码：`load_ms_marco` | 不要新增一个同名函数来"对齐" |
+| `SKILL.md` 说「6 模型 / 因果限 3B / 单数据集」 | 文档 vs 论文+`results/` | 论文与 `results/*.json`（**8 模型 / 3 变体 / 2 数据集**） | 不要按 SKILL.md 把论文改回 6 模型 |
+| `README.md`、`CLAUDE.md` §3.1/§3.2 的 `0.593 / 0.632(L12)` | 旧口径 vs `significance*.json` | **JSON**（val 选层：`0.592 / 0.628(L13)`） | 不要以为 JSON 是错的 |
+| 论文 Table 2/3 与 Abstract 的 CI、p 值 | 论文 vs `significance*.json` | **JSON**（论文引的是被取代的**非配对** Gen-1 版本） | **绝不要为了迁就论文去重跑或改写 JSON**；要改的是**论文**（见 `TODO.md` P0-4） |
+| 论文说 logit-lens "**no label-based layer selection**" | 论文 vs `scripts/logit_lens.py:112` | **代码事实**：它**确实**在评估集（默认 test）上取 argmax | 不要单方面改一边；要改就连论文正文一起改 |
+| 论文 `internal_edge = best_resid − final` vs `aggregate_models.py` 的 `max(best,attn) − final` | 两个**不同**的量 | 论文的定义（`significance.py`） | 不要把两边"统一"——它们本来就该不同，注释里已标明 |
+| `internals_vs_output_*.json` 的 `resid_best_layer` | test-argmax vs val 选层 | `significance*.json` | 不要拿它跟 Table 1 比数值 |
+| `docs/RAG检索优化文献调研报告.md` 的"探针做 reranking"定位 | 已被证伪 | `CLAUDE.md` §四 | 不要复活这条线（属已死方案） |
+| 历史文档里的旧缓存名（`q500_instruct` 等） | 历史写法 vs 新规范 | `src/cache_paths.py::LEGACY_ALIASES`（脚本会自动兜底） | 不要手动猜名字或手工建目录；要改就跑 `scripts/migrate_cache_names.sh` |
+
+**一句话原则**：**代码与 `results/*.json` 是事实，文档是叙述。** 文档之间的矛盾以
+`CLAUDE.md` §6 最新一条 + 上表为准；代码与文档矛盾时，先在 `TODO.md` 记一条，
+**不要直接改**——因为"哪边错"往往需要原作者判断（比如 logit-lens 那条，改代码会变动论文数字）。
+
+## 五、项目进展怎么读（`CLAUDE.md` §六 的体例）
 
 §六 是**流水账**，不是摘要。按时间顺序记了 **7 次推进**，每次一个引用块。读的时候注意三件事：
 
@@ -136,7 +159,7 @@
 
 ---
 
-## 五、待办
+## 六、待办
 
 **统一看 `TODO.md`**，按优先级分档：
 
@@ -150,7 +173,62 @@
 
 ---
 
-## 六、在云容器里从零开始
+## 七、在新主机上从零开始（并保持可复现）
+
+> ⚠️ **前提已经变了（2026-10-12 确认）：原 GPU 主机已被回收。**
+> `results/cache/` 里那几十 GB 激活缓存**没了**，所以 `TODO.md` P2 里"回主机取文件"那一档
+> **整体作废** —— 那 4 个 `internals_vs_output_*.json`、2 个 `causal_steer_llama31_8b*.json`、
+> 7 张图、以及所有 `*_layer_signal.json` 现在是**永久丢失**，只能在新主机上**重新跑出来**。
+> 同理，`paper` 的 Fig. 1 也无法再"重画原件"，只能得到一份**复现版**。
+
+### 先认清"能复现什么、不能复现什么"
+
+| 目标 | 需要什么 | 说明 |
+|---|---|---|
+| 修论文 Table 2/3 的 CI 与 p | **什么都不用** | 改论文去引用 `results/significance*.json` 即可（`TODO.md` P0-4）。**幸亏不用重跑**，否则缓存没了就卡死 |
+| 重画 8 张 `*_layer_signal.png` | 激活缓存 | 只要拿到 `.pt` 就是**纯 CPU** 的活（见下） |
+| 重算 `internals_vs_output` / `significance` | 激活缓存 | 同上，纯 CPU |
+| 重新生成激活缓存 | **GPU + 模型 + 数据集** | 这是唯一必须上卡的一步 |
+| 复现论文的**数值到第 3 位小数** | 见下面的"必须固定什么" | 否则会有 1e-3 量级漂移 |
+
+### 重跑前必须固定什么（否则数字对不上、且无法判断是 bug 还是版本差异）
+
+1. **包版本** —— ⚠️ `requirements.txt` 目前**零钉版本**（0 行带 `==`）。
+   sklearn 的 lbfgs 解路径与 numpy 的 BLAS 都会让 AUC 动第 3 位小数。
+   → 要么第一次跑完把实际版本回填进 `requirements.txt`，要么接受"复现版数字与论文有 1e-3 差异"并写明。
+   现在 `meta.json` 会自动记录 `env`（各包版本）与 `model_revision`，`significance*.json` 会记录
+   `n_test / n_boot / cache / env` —— 这是为了以后能判断漂移来源。
+2. **模型 revision** —— `meta.json.model_revision` 会记录（取自 config 的 `_commit_hash`）。
+   注意 LLaMA 是 **gated**：需要 HF token 并接受许可。
+3. **数据与切分**：`--n-queries`、`--max-passages`、`--seed`（默认 42）三者必须与论文一致；
+   论文 **Table 1 混用了 500q（6 行）与 1500q（Qwen 2 行）**，照抄时别统一成一种。
+4. **prompt 模板**：四个脚本里的 instruct prompt 是逐字节相同的（已核实），改一处就要改四处。
+
+### 步骤
+
+```bash
+git clone https://github.com/new-life-fch/my_paper_project.git
+cd my_paper_project && git checkout paper-A
+
+bash scripts/setup_env.sh                 # 注意 TODO.md P1-14 里记的几个问题
+export HF_HOME=/root/shared-nvme/hf_cache # 系统盘小的话务必改；见 CLAUDE.md §七
+export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"   # 凭据不要提交
+
+# 先确认手上有什么（缓存目录名不是权威，meta.json 才是）
+python -c "import json,glob;[print(p,json.load(open(p))['model'],json.load(open(p)).get('n_queries')) \
+  for p in sorted(glob.glob('results/cache/*/meta.json'))]"
+
+bash scripts/run_scaleup.sh               # 4 个旗舰模型 500q->1500q 的完整管线
+bash scripts/run_fiqa.sh <model> llama32_3b_fiqa
+python scripts/significance.py --suffix _q500
+python scripts/significance.py --suffix _q1500
+```
+
+- ✅ **有缓存时纯 CPU 可跑**：`plot_layer_signal.py`、`internals_vs_output.py`、`significance.py`
+- ❌ **必须 GPU**：`extract_instruct.py`、`llm_judge*.py`、`causal_steer.py`、`logit_lens.py`
+- 💡 `plot_causal.py` 只读 JSON，**既不需要 GPU 也不需要缓存** —— 这是最快能出的一张图
+
+
 
 ```bash
 git clone https://github.com/new-life-fch/my_paper_project.git
@@ -178,7 +256,7 @@ python -c "import json,glob; [print(p, json.load(open(p))['model'], json.load(op
 
 ---
 
-## 七、别在这些地方浪费时间
+## 八、别在这些地方浪费时间
 
 1. **不要试图让探针在重排精度上打赢 reranker** —— 已系统证伪（`CLAUDE.md` §四第 1 条）。
 2. **不要做跨域迁移** —— 属 `paper-B` 分支；A 分支的 FiQA 实验是**同域**重训重测，不是跨域。

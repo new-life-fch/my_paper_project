@@ -28,6 +28,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data import load_ms_marco, split_by_query
+from src.provenance import env_versions, model_revision
 
 
 def build_instruct_prompt(query: str, passage: str) -> str:
@@ -102,6 +103,9 @@ def main():
     print(f"Arch: {n_layers}L x {n_heads}H, head_dim={head_dim}, hidden={hidden}")
 
     meta = {"model": args.model, "n_queries": args.n_queries, "prompt": "instruct",
+            # provenance: the original host is gone, so numbers may be re-derived;
+            # without these two fields a version drift is indistinguishable from a bug
+            "env": env_versions(), "model_revision": model_revision(model),
             "n_layers": n_layers, "n_heads": n_heads, "head_dim": head_dim,
             "hidden": hidden, "seed": args.seed,
             "splits": {k: len(v) for k, v in splits.items()}}
