@@ -7,6 +7,21 @@
 
 ---
 
+> 🚫 **读之前请先看这段——本文是 2026-06-30 的历史快照，不是现状。**
+> - **数字口径已过时**：§4.2 的 8 模型表用的是 **test 上 argmax 选层**（P1 修复前的乐观口径）。
+>   现行口径是 **val 选层**，见 `results/significance*.json`；差异例：3B best-resid
+>   `0.581(L14)` → `0.628(L13)`。**不要用本文的数字去对论文或去"修正"代码。**
+> - **两处事实性错误**（§2.3/§2.4 已就地标注）：函数名不是 `load_msmarco_dev_small` 而是
+>   `load_ms_marco`；数据源不是 "MS MARCO dev-small + qrels"，而是 `split="train"` + `is_selected`
+>   ——**以代码为准**，改代码会静默换掉整个数据集与标签口径。
+> - **引用的路径已不存在**：`src/common.py`、`.claude/memory/`、`paper/tools/tectonic`、
+>   `results/multimodel_summary.json`。
+> - **项目进展以 `CLAUDE.md` §6 末尾为准**；数字以 `results/*.json` 为准；
+>   已知问题与待办在 `TODO.md`；接手前请读 `docs/READING_GUIDE.md`（含"哪一边权威、不要改什么"）。
+> - 本文作为**历史背景与文件结构意图**的记录仍然有价值，但**不要把它当现状**。
+
+---
+
 ## 一、项目主旨与研究问题
 
 ### 核心问题
