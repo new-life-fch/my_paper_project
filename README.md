@@ -17,8 +17,10 @@
 ```bash
 pip install -r requirements.txt   # 或 bash scripts/setup_env.sh
 export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1
-python scripts/internals_vs_output.py --cache results/cache/q500_instruct
+# 缓存目录命名规范见 docs/CACHE_NAMING.md
+python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct
 ```
 
-完整上下文、方案史、脚本说明、进度与下一步见 **`CLAUDE.md`**。
+完整上下文、方案史、脚本说明、进度与下一步见 **`CLAUDE.md`**；
+缓存命名规范与旧目录对照见 **`docs/CACHE_NAMING.md`**。
 本目录是 git worktree（分支 `paper-A`）；姊妹工作区 `paper-B` 做 cheap-adaptation 主线。

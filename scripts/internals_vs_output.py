@@ -19,7 +19,7 @@ final-layer probe ~matches the attn-head probe, the gap vs judge is just
 training, not depth — that would WEAKEN the claim and must be reported honestly.
 
 Usage:
-  python scripts/internals_vs_output.py --cache results/cache/q500_instruct
+  python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct
 """
 import os, sys, argparse, json
 import numpy as np, torch
@@ -50,8 +50,8 @@ def load(cache, scheme, split):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", default="results/cache/q500_instruct")
-    ap.add_argument("--judge-cache", default="results/cache/q500_judge")
+    ap.add_argument("--cache", default="results/cache/llama32_3b_q500_instruct")
+    ap.add_argument("--judge-cache", default="results/cache/llama32_3b_q500_judge")
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--out", default="results/internals_vs_output.json")
     args = ap.parse_args()

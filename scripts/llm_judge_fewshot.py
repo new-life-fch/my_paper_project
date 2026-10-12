@@ -80,7 +80,7 @@ def main():
     ap.add_argument("--max-passages", type=int, default=5)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--k-shot", type=int, default=4)
-    ap.add_argument("--out", default="results/cache/judge_fs")
+    ap.add_argument("--out", default="results/cache/llama32_3b_q1500_judge_fs4")
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)

@@ -32,7 +32,7 @@ Outputs results/causal_steer_<tag>.json (+ optional png).
 
 Usage (run AFTER scaleup frees the GPU to avoid OOM):
   python scripts/causal_steer.py --model meta-llama/Llama-3.2-3B \
-      --cache results/cache/q500_instruct --tag llama32_3b
+      --cache results/cache/llama32_3b_q500_instruct --tag llama32_3b
 """
 import os, sys, argparse, json
 import numpy as np, torch
@@ -68,7 +68,7 @@ def diff_means_dir(acts, labels):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="meta-llama/Llama-3.2-3B")
-    ap.add_argument("--cache", default="results/cache/q500_instruct")
+    ap.add_argument("--cache", default="results/cache/llama32_3b_q500_instruct")
     ap.add_argument("--tag", default="llama32_3b")
     ap.add_argument("--n-queries", type=int, default=500)
     ap.add_argument("--max-passages", type=int, default=5)

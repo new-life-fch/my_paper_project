@@ -102,7 +102,10 @@ def evaluate(name, ytr, str_, yva, sva, yte, ste, log):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", default="results/cache/q500")
+    # legacy ablation tool: the `last_token` scheme came from the plain-prompt
+    # extractor (extract_and_cache.py), which was removed once extract_instruct.py
+    # replaced it. Point --cache at a canonical dir and pass --scheme attn/resid.
+    ap.add_argument("--cache", default="results/cache/llama32_3b_q500_instruct")
     # scheme = the .pt filename prefix in the cache dir (last_token/pooling, or attn/resid)
     ap.add_argument("--scheme", default="last_token")
     ap.add_argument("--topk", type=int, default=20)

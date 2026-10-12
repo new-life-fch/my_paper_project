@@ -15,7 +15,7 @@ Two sites captured in a single forward pass (GPU-efficient):
 Same seed/splits as the plain cache, so results are directly comparable.
 
 Usage:
-  python scripts/extract_instruct.py --n-queries 500 --out results/cache/q500_instruct
+  python scripts/extract_instruct.py --n-queries 500 --out results/cache/llama32_3b_q500_instruct
 """
 import os
 import sys
@@ -72,7 +72,7 @@ def main():
     ap.add_argument("--max-passages", type=int, default=5)
     ap.add_argument("--max-length", type=int, default=512)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--out", default="results/cache/q500_instruct")
+    ap.add_argument("--out", default="results/cache/llama32_3b_q500_instruct")
     ap.add_argument("--dataset", default="ms_marco",
                     help="ms_marco | beir:fiqa | beir:scifact")
     args = ap.parse_args()

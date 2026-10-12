@@ -14,7 +14,7 @@ vocab), computes a normalized P(yes) score per sample, saves scores+labels+
 query_ids, and reports ROC-AUC on each split.
 
 Usage:
-  python scripts/llm_judge.py --n-queries 500 --out results/cache/q500_judge
+  python scripts/llm_judge.py --n-queries 500 --out results/cache/llama32_3b_q500_judge
 """
 import os
 import sys
@@ -59,7 +59,7 @@ def main():
     ap.add_argument("--n-queries", type=int, default=500)
     ap.add_argument("--max-passages", type=int, default=5)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--out", default="results/cache/q500_judge")
+    ap.add_argument("--out", default="results/cache/llama32_3b_q500_judge")
     ap.add_argument("--dataset", default="ms_marco",
                     help="ms_marco | beir:fiqa | beir:scifact")
     args = ap.parse_args()

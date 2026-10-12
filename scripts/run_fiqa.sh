@@ -10,8 +10,9 @@ cd "$(dirname "$0")/.."
 MODEL="$1"; TAG="$2"
 DS="beir:fiqa"
 NQ=1500
-CACHE="results/cache/${TAG}_instruct"
-JUDGE="results/cache/${TAG}_judge"
+# Canonical cache naming (docs/CACHE_NAMING.md): results/cache/<tag>_q<N>_{instruct,judge}
+CACHE="results/cache/${TAG}_q${NQ}_instruct"
+JUDGE="results/cache/${TAG}_q${NQ}_judge"
 OUT="results/internals_vs_output_${TAG}.json"
 
 export HF_HUB_DISABLE_XET=1

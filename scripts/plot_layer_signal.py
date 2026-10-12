@@ -15,8 +15,8 @@ Also dumps the underlying numbers to results/figures/<tag>_layer_signal.json so
 the paper can cite exact values.
 
 Usage:
-  python scripts/plot_layer_signal.py --cache results/cache/q500_instruct \
-      --judge-cache results/cache/q500_judge --tag llama32_3b
+  python scripts/plot_layer_signal.py --cache results/cache/llama32_3b_q500_instruct \
+      --judge-cache results/cache/llama32_3b_q500_judge --tag llama32_3b
 """
 import os, sys, argparse, json
 import numpy as np, torch
@@ -93,6 +93,12 @@ def compute(cache, judge_cache, topk):
         "model": meta["model"], "n_layers": n_layers, "n_heads": n_heads,
         "judge": judge,
         "resid_auc_per_layer": resid_auc,
+        # NOTE (known bias, see TODO.md P0-1): this peak is an argmax taken on the
+        # TEST curve, i.e. selection-on-test. It is therefore optimistically biased
+        # and does NOT match significance.py, which selects the layer on VAL.
+        # Consequence today: this figure annotates 0.632 @ L12 while paper Table 1
+        # reports the val-selected 0.628 @ L13. Fix = select on val here too, then
+        # re-render (needs results/cache/*.pt; see docs/CACHE_NAMING.md).
         "resid_peak": {"layer": int(np.argmax(resid_auc)), "auc": max(resid_auc)},
         "resid_final": resid_auc[-1],
         "head_te_grid": head_te_grid.tolist(),
@@ -157,8 +163,8 @@ def plot(d, save_png):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", default="results/cache/q500_instruct")
-    ap.add_argument("--judge-cache", default="results/cache/q500_judge")
+    ap.add_argument("--cache", default="results/cache/llama32_3b_q500_instruct")
+    ap.add_argument("--judge-cache", default="results/cache/llama32_3b_q500_judge")
     ap.add_argument("--tag", default="llama32_3b")
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--outdir", default="results/figures")

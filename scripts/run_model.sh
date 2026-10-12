@@ -7,8 +7,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODEL="$1"; TAG="$2"
-CACHE="results/cache/${TAG}_instruct"
-JUDGE="results/cache/${TAG}_judge"
+# Canonical cache naming (docs/CACHE_NAMING.md): always spell out the query count,
+# so a 500q cache is never confusable with the `-Instruct` *model* of the same tag.
+NQ=500
+CACHE="results/cache/${TAG}_q${NQ}_instruct"
+JUDGE="results/cache/${TAG}_q${NQ}_judge"
 OUT="results/internals_vs_output_${TAG}.json"
 
 # proxy only needed while downloading; harmless once cached
@@ -17,17 +20,17 @@ export HF_HUB_DISABLE_XET=1
 # (see CLAUDE.md §七 / memory disk-layout-server)
 export HF_HOME="${HF_HOME:-/root/shared-nvme/hf_cache}"
 # Proxy is needed while downloading; inherit from environment if set.
-# Set https_proxy before calling this script if your environment requires it:
-#   export https_proxy="http://user:pass@host:port"
+# NEVER hardcode credentials here — this repo is public.
+#   export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"
 if [ -n "${https_proxy:-}" ]; then
     export http_proxy="$https_proxy"
 fi
 
-echo "==== [$TAG] extract_instruct ($MODEL) ===="
-python scripts/extract_instruct.py --model "$MODEL" --n-queries 500 --out "$CACHE"
+echo "==== [$TAG] extract_instruct ($MODEL, ${NQ}q) ===="
+python scripts/extract_instruct.py --model "$MODEL" --n-queries "$NQ" --out "$CACHE"
 
-echo "==== [$TAG] llm_judge ===="
-python scripts/llm_judge.py --model "$MODEL" --n-queries 500 --out "$JUDGE"
+echo "==== [$TAG] llm_judge (${NQ}q) ===="
+python scripts/llm_judge.py --model "$MODEL" --n-queries "$NQ" --out "$JUDGE"
 
 echo "==== [$TAG] internals_vs_output ===="
 python scripts/internals_vs_output.py --cache "$CACHE" --judge-cache "$JUDGE" --out "$OUT"

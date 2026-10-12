@@ -42,8 +42,9 @@ for item in "${QUEUE[@]}"; do
     # aggregate after each success so partial progress is always visible
     python scripts/aggregate_models.py >> "$MASTER" 2>&1 || true
     # generate the layer-signal figure for this model
-    python scripts/plot_layer_signal.py --cache "results/cache/${TAG}_instruct" \
-      --judge-cache "results/cache/${TAG}_judge" --tag "$TAG" >> "$MASTER" 2>&1 || true
+    # (run_model.sh ran the 500q pipeline -> canonical <tag>_q500_* caches)
+    python scripts/plot_layer_signal.py --cache "results/cache/${TAG}_q500_instruct" \
+      --judge-cache "results/cache/${TAG}_q500_judge" --tag "$TAG" >> "$MASTER" 2>&1 || true
   else
     echo "[$(date +%H:%M)] FAIL  $TAG (see results/logs/${TAG}.log)" >> "$MASTER"
   fi
