@@ -186,6 +186,14 @@ paper_A_internals/
 #### 激活缓存 (results/cache/)
 每个模型生成 6 个 .pt 文件（attn/resid × train/val/test）+ meta.json。文件巨大(1-2GB)，gitignored，需从头跑或从备份恢复。
 
+> ⚠️ **2026-10-12 加注**：下面这份清单里的目录名是**当时的写法**。其中
+> `mistral_7b_instruct` 与 `llama32_3b_fiqa_instruct` 是**旧名**，按现行规范
+> （`docs/CACHE_NAMING.md`）应分别为 `mistral_7b_q500_instruct` 与
+> `llama32_3b_fiqa_q1500_instruct`；`{tag}_q1500_instruct` 那几条本来就合规。
+> 照旧名找不到文件时：所有读缓存的脚本会自动回退到旧名并提示 `mv`，
+> 也可直接跑 `bash scripts/migrate_cache_names.sh`（默认 dry-run）。
+> **权威判据是目录里 `meta.json` 的 `model` 字段，不是目录名。**
+
 已跑模型列表（1500q @ instruct prompt）：
 ```
 llama32_3b_q1500_instruct / _judge

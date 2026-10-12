@@ -21,7 +21,9 @@ Usage:
   python scripts/significance.py                 # all models
   python scripts/significance.py --boot 5000
 """
-import os, json, argparse
+import os, sys, json, argparse
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache   # noqa: E402  (docs/CACHE_NAMING.md)
 import numpy as np, torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -36,10 +38,10 @@ N_JOBS = max(1, min(48, (os.cpu_count() or 4) - 2))
 #   results/cache/{tag}{suffix}_judge      judge scores (judge_*.pt, meta.json)
 # with suffix in {_q500, _q1500}.
 #
-# `legacy` is the 500q base name used BEFORE the 2026-10-12 rename, when the
-# 500q dirs were named inconsistently across models (3B-base used the bare
-# `q500`, every other model used `{tag}`). It is kept ONLY so caches that have
-# not been renamed on the host still resolve; new runs never use it.
+# The 3rd column is the 500q base name used BEFORE the 2026-10-12 rename. It is
+# kept as documentation only -- the authoritative old->new alias table lives in
+# src/cache_paths.py (LEGACY_ALIASES), shared with every other cache consumer
+# and with scripts/migrate_cache_names.sh. See docs/CACHE_NAMING.md.
 MODELS = [
     # tag,                   display name,              legacy 500q base
     ("llama32_3b",          "LLaMA-3.2-3B",        "q500"),
@@ -56,26 +58,18 @@ MODELS = [
 ]
 
 
-def resolve_caches(tag, legacy, suffix):
-    """Locate a model's (instruct, judge) cache dirs, preferring canonical names.
+def resolve_caches(tag, _legacy_base, suffix):
+    """Locate a model's (instruct, judge) cache dirs, honouring legacy names.
 
-    Canonical: results/cache/<tag><suffix>_{instruct,judge}  -> llama32_3b_q500_instruct
-    Legacy:    results/cache/<legacy>_{instruct,judge}       -> q500_instruct
-    The legacy branch exists only for caches not yet renamed on the GPU host.
+    Canonical: results/cache/<tag><suffix>_{instruct,judge}
+    Falls back to pre-2026-10-12 names (e.g. q500_instruct) so caches not yet
+    renamed on the GPU host are still found, printing the `mv` needed.
+    The alias table itself lives in src/cache_paths.py -- single source of truth,
+    shared with every other cache consumer and with migrate_cache_names.sh.
+    `_legacy_base` is retained only so the MODELS registry stays readable.
     """
-    canon = (f"results/cache/{tag}{suffix}_instruct",
-             f"results/cache/{tag}{suffix}_judge")
-    if suffix != "_q500" or os.path.isdir(canon[0]):
-        return canon
-    old = (f"results/cache/{legacy}_instruct",
-           f"results/cache/{legacy}_judge")
-    if os.path.isdir(old[0]):
-        print(f"  ! {tag}: using LEGACY cache name {old[0]}")
-        print(f"    canonical would be  {canon[0]}")
-        print(f"    rename with:  mv {old[0]} {canon[0]}")
-        print(f"                  mv {old[1]} {canon[1]}")
-        return old
-    return canon
+    return (resolve_cache(f"results/cache/{tag}{suffix}_instruct"),
+            resolve_cache(f"results/cache/{tag}{suffix}_judge"))
 
 
 def lr(penalty="l2"):

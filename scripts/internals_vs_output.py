@@ -21,7 +21,11 @@ training, not depth — that would WEAKEN the claim and must be reported honestl
 Usage:
   python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct
 """
-import os, sys, argparse, json
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache, warn_if_legacy_exists  # noqa: E402  (docs/CACHE_NAMING.md)
+
+import argparse, json
 import numpy as np, torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -55,6 +59,10 @@ def main():
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--out", default="results/internals_vs_output.json")
     args = ap.parse_args()
+
+    # honour pre-2026-10-12 cache names too (docs/CACHE_NAMING.md)
+    args.cache = resolve_cache(args.cache)
+    args.judge_cache = resolve_cache(args.judge_cache)
 
     rep = {}
 

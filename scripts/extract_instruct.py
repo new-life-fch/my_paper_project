@@ -77,6 +77,7 @@ def main():
                     help="ms_marco | beir:fiqa | beir:scifact")
     args = ap.parse_args()
 
+    warn_if_legacy_exists(args.out)   # docs/CACHE_NAMING.md
     os.makedirs(args.out, exist_ok=True)
 
     if args.dataset.startswith("beir:"):

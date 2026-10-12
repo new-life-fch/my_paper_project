@@ -76,6 +76,7 @@ def main():
     ap.add_argument("--alphas", default="-8,-4,-2,-1,0,1,2,4,8")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    args.cache = resolve_cache(args.cache)   # docs/CACHE_NAMING.md
     out = args.out or f"results/causal_steer_{args.tag}.json"
     alphas = [float(a) for a in args.alphas.split(",")]
 

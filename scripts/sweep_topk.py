@@ -10,8 +10,7 @@ Runs on cached activations only (CPU, fast). For a given cache:
 Reports test AUC. Heads selected on val, ensemble trained on train, eval on test.
 
 Usage:
-  python scripts/sweep_topk.py --cache results/cache/q500_instruct      # in-domain
-  python scripts/sweep_topk.py --cache results/cache/scifact_ood        # SciFact-adapted
+  python scripts/sweep_topk.py --cache results/cache/llama32_3b_q500_instruct
 """
 import os, sys, argparse
 import numpy as np, torch
@@ -42,8 +41,9 @@ def auc(y, s):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", default="results/cache/q500_instruct")
+    ap.add_argument("--cache", default="results/cache/llama32_3b_q500_instruct")
     args = ap.parse_args()
+    args.cache = resolve_cache(args.cache)   # docs/CACHE_NAMING.md
     Xtr, ytr = load(args.cache, "train")
     Xva, yva = load(args.cache, "val")
     Xte, yte = load(args.cache, "test")

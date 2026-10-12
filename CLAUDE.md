@@ -234,8 +234,18 @@
 > - **`.gitignore` 收窄**：`results/` + `*.png` + `*.csv` → **`results/cache/` + `results/**/*.pt`**，
 >   图与结果 JSON 现在默认入库，只有多 GB 激活缓存仍忽略。
 > - **命名规范化**：新增 `docs/CACHE_NAMING.md`，统一 `results/cache/{tag}_q{N}_{instruct,judge}`；
->   修掉 `run_model.sh`/`run_queue.sh`/`run_fiqa.sh` 与 7 个脚本默认值的旧命名；
->   `significance.py` 去掉 `q500` 特例并加旧名回退（已在 4 种情形下单元验证）。
+>   修掉 `run_model.sh`/`run_queue.sh`/`run_fiqa.sh` 与 8 个脚本默认值的旧命名。
+>   **旧 → 新**（完整表见 `docs/CACHE_NAMING.md`）：`q500_instruct`/`q500_judge` →
+>   `llama32_3b_q500_instruct`/`_judge`；`llama31_8b_instruct`/`mistral_7b_instruct` →
+>   `{tag}_q500_instruct`；`llama32_3b_instruct_instruct` → `llama32_3b_instruct_q500_instruct`；
+>   `llama32_3b_fiqa_instruct` → `llama32_3b_fiqa_q1500_instruct`。`{tag}_q1500_*` 本来就合规，未动。
+>   ⚠️ **本文件的历史段落、`HANDOVER.md`、`REPORT.md` 里仍然写着旧名**——这是**有意的**，
+>   它们当时的路径就是那样。**读到旧名不等于文件没了**：`src/cache_paths.py::LEGACY_ALIASES`
+>   是唯一的别名表，所有读缓存的脚本（`internals_vs_output`/`plot_layer_signal`/`causal_steer`/
+>   `sweep_topk`/`significance`）都会自动回退到旧名并打印应执行的 `mv`；
+>   也可直接跑 `bash scripts/migrate_cache_names.sh`（默认 dry-run，`--apply` 才真改）。
+>   写缓存的脚本（`extract_instruct`/`llm_judge`）在旧目录已存在时会**警告**，
+>   避免在主机上又建一份多 GB 的副本。
 > - 🔴 **安全事件**：`run_experiment.sh`、`scripts/download_model.sh`、本文件 §七、`HANDOVER.md`
 >   硬编码了真实代理口令，而本仓库是**公开**的、该口令进了 8 个提交。工作区已清除；
 >   用户 2026-10-12 决定暂不重写历史，故**口令轮换仍待办**（`TODO.md` S-1）。

@@ -18,7 +18,11 @@ Usage:
   python scripts/plot_layer_signal.py --cache results/cache/llama32_3b_q500_instruct \
       --judge-cache results/cache/llama32_3b_q500_judge --tag llama32_3b
 """
-import os, sys, argparse, json
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache, warn_if_legacy_exists  # noqa: E402  (docs/CACHE_NAMING.md)
+
+import argparse, json
 import numpy as np, torch
 import matplotlib
 matplotlib.use("Agg")
@@ -169,6 +173,10 @@ def main():
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--outdir", default="results/figures")
     args = ap.parse_args()
+
+    # honour pre-2026-10-12 cache names too (docs/CACHE_NAMING.md)
+    args.cache = resolve_cache(args.cache)
+    args.judge_cache = resolve_cache(args.judge_cache)
 
     os.makedirs(args.outdir, exist_ok=True)
     d = compute(args.cache, args.judge_cache, args.topk)

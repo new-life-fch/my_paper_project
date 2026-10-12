@@ -16,7 +16,9 @@ venv/
 # compiled paper/main.pdf and had to be re-extracted from it.
 # Only the multi-GB activation caches are ignored now; figures, result JSONs
 # and meta.json are tracked on purpose. See results/figures/README.md.
-results/cache/
+results/cache/*
+# keep the old->new directory-name map next to the caches themselves
+!results/cache/README.md
 results/**/*.pt
 results/logs/
 
