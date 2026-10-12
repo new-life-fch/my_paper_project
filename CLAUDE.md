@@ -29,7 +29,14 @@
 - **可下载**：所需 skills / 数据集 / 模型可下载，但**不下载超大模型**（磁盘未扩容；当前已缓存 LLaMA-3.2-3B，够用；8B 级别需先确认磁盘）。
 - **可用后台任务 / 并行**：长实验用后台跑；独立任务可并行。
 - **HF token**：用户已提供（如失效向用户索取）。`huggingface-cli` 在本环境损坏，用 Python `huggingface_hub.login()` API。
-- **提交规范**：里程碑式提交，message 写清「做了什么 + 结论」，带 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`。提交前留意不要把 `results/`（已 gitignore）或密钥提交进去。
+- **提交规范**：里程碑式提交，message 写清「做了什么 + 结论」，并**按实际使用的工具署名**。历史 message 里的 `Co-Authored-By: Claude Opus 4.8` 是上一阶段的署名，换工具就换名字，不要沿用不属于自己的署名。
+- **提交前必查密钥**（血泪教训）：
+  ```bash
+  git diff --cached | grep -inE 'https?://[^@ ]+:[^@ ]+@|token|api[_-]?key|secret'
+  ```
+  2026-10-12 发现 `run_experiment.sh`、`scripts/download_model.sh`、`CLAUDE.md`、`HANDOVER.md`
+  4 个文件里硬编码了真实代理口令，且本仓库是**公开**的、该口令已进入 8 个提交。
+  已从工作区移除，详情与后续处理见 `TODO.md` S-1。
 
 ---
 
@@ -45,9 +52,18 @@
 
 ### 3.2 已验证结果（截至 worktree 创建，commit a296676）
 
+> ⚠️ **2026-10-12 加注——这张表是 P1 修复前的口径，勿再当作当前结果引用。**
+> 它用的是 **500q + 在 test 上 argmax 选层**（乐观偏差）。P1 之后论文一律改用 **val 选层**：
+> - 500q val 选层（`results/significance.json`）：judge 0.535 / final **0.592** / best_resid **0.628 (L13)** / attn 0.685
+> - 1500q val 选层（`results/significance_q1500.json`）：judge 0.545 / final 0.536 / best_resid **0.614 (L9)** / attn 0.682
+>
+> 即 0.632@L12（test-argmax）→ 0.628@L13（val）。差异纯粹来自选层口径，不是新实验、也不是数据变化。
+> 同理，§3.1、`README.md` 与图 `figures/llama32_3b_layer_signal.png` 里的 0.593 / 0.632 / L12 都是这一版旧数
+> （图的峰值标注也是 test-argmax，见 `TODO.md` P0-1）。
+
 | 读取位置 | 训练 | test AUC | 数据来源 |
 |---|---|---|---|
-| 输出 logits（LLM-judge）| 否 | 0.535 | `results/cache/q500_judge` |
+| 输出 logits（LLM-judge）| 否 | 0.535 | `results/cache/llama32_3b_q500_judge` |
 | 最终层 hidden（输出表示）| 是 | 0.593 | `internals_vs_output.py` |
 | 中层残差 L12（内部最优）| 是 | 0.632 | 同上 |
 | 注意力头探针（本方法）| 是 | 0.685 | 同上 |
@@ -84,11 +100,11 @@
 | 脚本 | 作用 | 备注 |
 |---|---|---|
 | `scripts/setup_env.sh` | 环境安装 + 验证（torch/nnsight/transformers/sklearn/datasets 版本与 CUDA） | 新容器首次必跑 |
-| `scripts/extract_instruct.py` | **激活提取器**：用 instruct prompt 在 answer-token 处提取 attn（per-head）+ resid（每层残差）双位点激活，缓存为 float16 .pt。输出 `results/cache/q500_instruct/{attn,resid}_{train,val,test}.pt` + `meta.json` | A 的数据来源生产者 |
-| `scripts/llm_judge.py` | **输出端基线**：同模型同 prompt，读 answer-token 处 `P("yes")` vs `P("no")` 输出概率，零训练。输出 `results/cache/q500_judge/judge_*.pt`（scores/labels/query_ids） | internals>output 的「输出端、零训练」对照 |
+| `scripts/extract_instruct.py` | **激活提取器**：用 instruct prompt 在 answer-token 处提取 attn（per-head）+ resid（每层残差）双位点激活，缓存为 float16 .pt。输出 `results/cache/llama32_3b_q500_instruct/{attn,resid}_{train,val,test}.pt` + `meta.json` | A 的数据来源生产者 |
+| `scripts/llm_judge.py` | **输出端基线**：同模型同 prompt，读 answer-token 处 `P("yes")` vs `P("no")` 输出概率，零训练。输出 `results/cache/llama32_3b_q500_judge/judge_*.pt`（scores/labels/query_ids） | internals>output 的「输出端、零训练」对照 |
 | `scripts/internals_vs_output.py` | **A 的核心实验**：在同一缓存上比较 ①LLM-judge(输出,0训练) ②最终层 hidden 探针(输出表示,训练) ③逐层残差探针(找信号最强层) ④注意力头探针(本方法)。输出逐层 AUC 曲线 + 四者对比，落 `results/internals_vs_output.json` | 跑它复现第 3.2 节结果 |
-| `scripts/run_model.sh` | **多模型驱动**：`bash scripts/run_model.sh <hf_model_id> <tag>` 串联 extract_instruct→llm_judge→internals_vs_output，输出 `results/cache/{tag}_instruct`、`{tag}_judge`、`internals_vs_output_{tag}.json`。模型无关（脚本动态读 n_layers/n_heads） | 多模型复现 gap 用 |
-| `scripts/plot_layer_signal.py` | **论文主图生成器**：从 `{tag}_instruct` 缓存计算并出三联图（A 逐层 resid AUC 深度曲线+judge 基线+峰值/输出层标注；B per-head AUC 热力图 layer×head；C head 视角 vs layer 视角+top-k head 层分布直方图）。落 `results/figures/{tag}_layer_signal.{png,json}`。`--cache --judge-cache --tag --topk` | 跑它出信号层定位图 |
+| `scripts/run_model.sh` | **多模型驱动**：`bash scripts/run_model.sh <hf_model_id> <tag>` 串联 extract_instruct→llm_judge→internals_vs_output，输出 `results/cache/{tag}_q500_instruct`、`{tag}_q500_judge`、`internals_vs_output_{tag}.json`。模型无关（脚本动态读 n_layers/n_heads） | 多模型复现 gap 用 |
+| `scripts/plot_layer_signal.py` | **论文主图生成器**：从 `{tag}_q500_instruct` 缓存计算并出三联图（A 逐层 resid AUC 深度曲线+judge 基线+峰值/输出层标注；B per-head AUC 热力图 layer×head；C head 视角 vs layer 视角+top-k head 层分布直方图）。落 `results/figures/{tag}_layer_signal.{png,json}`。`--cache --judge-cache --tag --topk` | 跑它出信号层定位图 |
 | `scripts/aggregate_models.py` | **多模型汇总**：扫描所有 `internals_vs_output_<tag>.json`，输出对比表（judge/final/best_resid/attn + peak_frac + internal_edge=best_internal−final + train_edge=final−judge + holds 判定），落 `results/multimodel_summary.json` | 多模型实验汇总用 |
 | `scripts/sweep_topk.py` | 探针超参敏感性扫描（top-k∈{5..200}×raw/scaled×whole-L2×mean-probe），证明结论对调参稳健 | 已证调参不改变结论，按需复用 |
 | `scripts/compare_probes.py` | 6 种探针方法论对比（baseline 选头 / StandardScaler / CV 选头 / whole-L2 / stacking / mean-probe），数据驱动选最优探针架构 | 探针架构消融 |
@@ -99,6 +115,10 @@
 | `initial_validation.py` | 早期 M1+M2 主入口（编排 load_model→sanity_check→提激活→训探针→方案对比），含 `sanity_check()` 验证 nnsight 激活 shape | 参考用，新实验优先用 scripts/ 下专用脚本 |
 | `scripts/download_model.sh` | classic-HTTP 断点续传下载 LLaMA-3.2-3B（`HF_HUB_DISABLE_XET=1`，hf_xet 须卸载） | 模型已缓存则跳过 |
 
+> **缓存目录命名规范见 `docs/CACHE_NAMING.md`**：统一为 `results/cache/{tag}_q{N}_{instruct,judge}`。
+> 2026-10-12 之前的 500q 缓存命名在各模型间不一致（3B-base 叫 `q500_*`，其余叫 `{tag}_*`，
+> instruct 模型还会产生 `..._instruct_instruct`）。`significance.py` 保留了旧名回退，命中时打印应执行的 `mv`。
+>
 > 已删除的脚本（属于 B 分支或废弃方案，A 不需要）：`build_ood*.py`、`compare_ood.py`、`zeroshot_transfer.py`、`strong_reranker.py`、`compare_methods.py`、`data_efficiency.py`、`extract_and_cache.py`（旧 plain prompt 提取器，已被 extract_instruct 取代）。
 
 ---
@@ -196,8 +216,37 @@
 > - **论文现状**：8 模型（3B-8B，LLaMA/Mistral/Qwen，base+inst）。主表+scale 表各 +2 行、新增"A third model family"段、abstract→eight models、Limitations attn-head 改"LLaMA+Qwen 显著、Mistral 弱"。PDF 干净。**工作量已达 CCF-B 投稿量级**。
 > - **仍未做的可选项**：prompt 改写鲁棒性、FiQA BM25 难负例、judge 阈值校准、appendix 8 模型全图、Qwen 因果 steering、投稿目标会议定稿。
 
+> 🗂️ **2026-10-12（第 7 次推进）图失而复得 + 命名规范化 + 安全事件 + 待办清单**
+> 起因：把仓库 clone 到本机后发现 `paper/main.tex` 引用的两张图不在目录里。
+> - **根因**：`.gitignore` 里同时有 `results/` 和 `*.png`，这两张图**从未被 `git add -f`**；
+>   而后来新增的 `qwen25_7b_layer_signal.png` 被强制提交过，所以只有它活了下来。
+>   实测确认：clone 出来的 `results/` 只有 13 个文件，与 4 个 `internals_vs_output_*.json`、
+>   2 个 `causal_steer_llama31_8b*.json`、7 张图**都不在 git 里**——永远不要指望 clone 能拿回它们。
+> - **恢复方式（未跑实验、未用 GPU）**：`paper/main.pdf` 是在这两张图还在时编译的，LaTeX 把每个
+>   `\includegraphics` 作为图像 XObject（RGB + 灰度 `/SMask` alpha）嵌在 PDF 里，原始像素仍在。
+>   新增 `scripts/extract_figures_from_pdf.py` 无损导出：**3133×887 → 深度定位三联图**、
+>   **1634×609 → 因果 steering 双图**，尺寸与 `plot_layer_signal.py`(21×6in@150dpi)、
+>   `plot_causal.py`(11×4.2in@150dpi) 的 tight-bbox 输出吻合。
+> - **三重验证**：①图内标注与文档一致（Fig 1 标 peak L12=0.632 / final L27=0.593 / judge=0.535，
+>   top-20 头落在 L10-16）；②Fig 2 用 `results/causal_steer_llama32_3b_q1500.json` 重跑 `plot_causal.py`
+>   独立复现（图例 "internal dir (L13)"、α=−8 时 P(yes)=0.260、final AUC 最低 0.485），同宽同内容、
+>   仅高度差 4px（本机 matplotlib 版本不同导致 tight bbox 裁切差异）；③RGBA、alpha 全 255。
+> - **`.gitignore` 收窄**：`results/` + `*.png` + `*.csv` → **`results/cache/` + `results/**/*.pt`**，
+>   图与结果 JSON 现在默认入库，只有多 GB 激活缓存仍忽略。
+> - **命名规范化**：新增 `docs/CACHE_NAMING.md`，统一 `results/cache/{tag}_q{N}_{instruct,judge}`；
+>   修掉 `run_model.sh`/`run_queue.sh`/`run_fiqa.sh` 与 7 个脚本默认值的旧命名；
+>   `significance.py` 去掉 `q500` 特例并加旧名回退（已在 4 种情形下单元验证）。
+> - 🔴 **安全事件**：`run_experiment.sh`、`scripts/download_model.sh`、本文件 §七、`HANDOVER.md`
+>   硬编码了真实代理口令，而本仓库是**公开**的、该口令进了 8 个提交。工作区已清除；
+>   用户 2026-10-12 决定暂不重写历史，故**口令轮换仍待办**（`TODO.md` S-1）。
+>   注意 `download_model.sh` / `run_experiment.sh` 现在**要求先 `export https_proxy`**，否则直接退出。
+> - **新增 `TODO.md`**：记录 15 项已知问题（含 P0：Fig 1 与 Table 1 选层口径不一致、
+>   Table 1 混用 500q/1500q、正文引用了不存在的 supplement）。
+> - **仍未解决**：本机无 GPU / 无 `results/cache/`，故 Fig 1 无法重画（其逐层 AUC 与 per-head
+>   热力图数据**只存在于恢复出的那张 PNG 里**）；本机也无 LaTeX 工具链，`main.tex` 改了无法编译验证。
 
-1. 🔄 **扩样本加固 internal_edge**（根因修复，进行中）：500q→1500q（test 75→~225 query），`scripts/run_scaleup.sh` 后台跑 4 旗舰模型。完成后重跑 `significance.py`，看 internal_edge 能否达单模型显著。**这是当前最高优先**——决定"残差流内部>输出表示"能否从"方向证据"升级为"单模型显著"。
+
+1. ✅ **扩样本加固 internal_edge（已完成 —— 见上文第 3 次推进）**：500q→1500q（test 75→~225 query），4 旗舰模型跑完并重测 `significance.py`。结论：**base 模型 internal_edge 单模型显著**（3B +0.077 p=0.0008、8B +0.060 p=0.004），instruct 收缩；attn−final 4/4 极显著。~~"这是当前最高优先"~~ 已结案。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
 3. ✅ **更公平的强 judge 上界（已完成 2026-06-29，REPORT §13）**：few-shot judge（`llm_judge_fewshot.py`，4 exemplar 仅取 train）。3B-base 零样本 0.545→4-shot 0.566，仍远低内部探针，证 gap 非 prompt 工程可填平。
 4. ✅ **第二个 in-domain relevance 数据集（已完成 2026-06-29，REPORT §12）**：FiQA 同域重训+重测（`load_beir_relevance` + `run_fiqa.sh`）。best_resid−judge +0.253、internal_edge +0.0165 显著。与跨域(B 分支)严格区分。
@@ -224,6 +273,16 @@
 | 工作区目录 | `/root/shared-nvme/paper_A_internals`（分支 paper-A） |
 | GPU | RTX 3090 24GB | Python 3.12 | torch 2.7 | nnsight 0.7.0 | transformers 5.x | datasets 3.6.0 |
 
+> ⚠️ **非 GPU 机器上的能力边界（2026-10-12 记录，实测）**：仓库可以 clone 到任何机器上阅读和改文档，
+> 但**只有 `results/cache/*.pt` 在手时才能重算、重画任何东西**。在普通笔记本（macOS）上：
+> - ✅ **能（纯 CPU，不需要显卡）**：`plot_layer_signal.py`、`internals_vs_output.py`、`significance.py`
+>   —— 它们只做 `torch.load` 缓存 + sklearn 逻辑回归。**前提是把缓存从主机拷过来。**
+> - ✅ **能（连缓存都不需要）**：`plot_causal.py`（只读 JSON）、`extract_figures_from_pdf.py`（只读 PDF）。
+> - ❌ **不能**：`extract_instruct.py` / `llm_judge.py` / `llm_judge_fewshot.py` / `causal_steer.py` /
+>   `logit_lens.py` —— 这些要加载模型，必须有 GPU。
+> - ❌ **不能**：编译 `paper/main.tex` —— tectonic/pdflatex 都不在仓库里（`tools/` 被 gitignore）。
+> - CPU 环境需补装：`torch`（CPU 版即可）+ `scikit-learn` + `joblib` + `matplotlib`。
+
 **会复现的坑：**
 1. **新容器依赖需重装**：仅 torch/sklearn/numpy/matplotlib 预装，需装 transformers/datasets/sentence-transformers/nnsight/accelerate/seaborn。
 2. **dill pip 约束**：`/etc/pip/constraint.txt` 把 dill 钉死 0.3.9，直接 `pip install datasets` 会静默装成远古 1.1.1。解法：`PIP_CONSTRAINT="" pip install 'datasets>=3.0,<4'`。
@@ -244,5 +303,5 @@
 ```bash
 cd /root/shared-nvme/paper_A_internals
 export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存
-python scripts/internals_vs_output.py --cache results/cache/q500_instruct   # 复现核心结果
+python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct   # 复现核心结果
 ```
