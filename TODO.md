@@ -7,6 +7,59 @@
 >
 > 分档：**S** 安全 / **P0** 投稿前必须 / **P1** 文档失真 / **P2** 数据缺口 /
 > **P3** 工程 / **P4** 可选加分项 / **R** 研究逻辑（比 bug 更该先想清楚）
+>
+> **`[必做]` = 不做会导致论文出错、或导致重跑结果不可信。** 清单与执行顺序见下面的
+> 「⚡ 必做清单」；未标 `[必做]` 的条目可以排在后面。
+
+---
+
+## ⚡ 必做清单（先做这些）
+
+> **判据**：不做会导致**论文出错**，或导致**重跑结果不可信**。
+> 只标 `[必做]`；未标的不代表不重要，而是可以排在后面（已用横幅缓解的文档口径问题、
+> 可选加分项等）。全部条目仍在下面的分档里，`[必做]` 就是本节列的这些。
+
+### A 组 —— **不需要 GPU、不需要缓存**，改文字即可（建议最先做）
+
+| # | 条目 | 为什么必做 | 前置 |
+|---|---|---|---|
+| 1 | **P3-1** 装 LaTeX 工具链 | 否则 A 组改完 `main.tex` **无法编译验证** | 下载 tectonic（约 30MB）+ 首次联网拉宏包 |
+| 2 | **P0-4** 把论文 Table 2/3 + Abstract 改成引用 `results/significance*.json` | 论文的 CI/p 引的是**已被取代的非配对版本**；审稿人索要 artifact 必撞。**不需要重跑** | — |
+| 3 | **P0-5** 删掉「internal edge … widens on LLaMA」 | 与论文**自己的 Table 3** 直接矛盾 | — |
+| 4 | **P0-2** Table 1 的样本量（统一到 1500q，或 caption 标注） | 同一张表混了 500q 与 1500q，且与 Table 3 对同一模型给出两套数 | — |
+| 5 | **P0-3** 删掉 "(per model in the supplement)" | 引用了不存在的章节 | — |
+| 6 | **P1-5 ~ P1-12**（8 条论文内部不一致） | 审稿人**现在就能看到**：同一个量两个值、「除 Qwen 外」不成立、Mistral 过度概括、层号 0/1-based 混用、`top-k` 的 `k` 从未给出…… | — |
+| 7 | **P0-6** 的**论文侧** + **R-3** 的措辞 | 论文称 logit-lens "no label-based layer selection"，而代码**确实**有；标题用 "attenuation" 但 logit-lens 的证据更支持 "misalignment" | 代码侧改动需缓存 → B 组 |
+| 8 | **P0-7 / R-5** 的措辞收紧 | 随机对照的 artifact **不支持**「random 无定向效应」，须收紧到仍然成立的「消融臂单调崩塌」 | 补分组统计需重跑 → B 组 |
+| 9 | **R-1** Limitations 明确写「干净对照只在 base 上成立」 | 全文最大软肋，应正面承认，不要留给审稿人指出 | — |
+| 10 | **R-2** 与 P0-6/P1-15 同源，一并处理 | `internals_vs_output.py` 既在 test 上选层、又缺样本对齐断言 | B 组 |
+
+### B 组 —— 在新主机上**重跑之前**必须先做（否则重跑结果不可信）
+
+| 条目 | 为什么是前置 |
+|---|---|
+| **P1-15** 给每个双缓存消费者加 `query_id` 对齐断言 | 现有唯一那句断言只比 labels，**抓不到**「标签相同、文本不同」的错配；错了会静默污染整张 4-reader 表 |
+| **P1-16** BeIR query id 换成稳定哈希 | `hash(str)` 逐进程随机化（实测 4 进程 4 套切分），FiQA 的 judge 与探针可能在不同 query 集上训练/测试 |
+| **P1-19** 因果 steering 三处协议（方向层按 val 选、截断口径一致、yes/no token 集统一） | 否则重跑的因果结果与论文不可比 |
+| **P0-6** 代码侧：`logit_lens.py` / `internals_vs_output.py` 改 val 选层；`aggregate_models.py` 的 `internal_edge` 改名或改定义 | 这三处现在都在 test 上选层，产出的数偏乐观 |
+| **P0-7** 代码侧：`causal_steer.py` 按真实标签分组记录 `mean P(yes)`，并用 ≥10 个随机方向 | 否则「相关性对齐」这个判据**无法测量** |
+| **P1-13 / P1-14** 补 `requirements.txt` 依赖、修 `setup_env.sh` | 新主机 setup 就靠它们；`total_mem` 疑似真 bug（本机无 GPU，未验证） |
+| **P0-1** 重画 Fig. 1（val 选层 + 对齐 C=1.0） | 需先有缓存 → 属重跑之后的事 |
+
+### C 组 —— 重跑的目标（注意：**不是"取回"，原主机已回收**）
+
+**P2-1 ~ P2-6** 列出的文件**已永久丢失**，只能在新主机上跑出来。
+其中 **P2-1**（`internals_vs_output_llama32_3b_q1500.json`）是 Fig. 1 的唯一数据来源；
+**P2-2** 是论文因果段"三个变体复现"的唯一佐证。
+
+### 明确**不在**必做内
+
+- **S-1**（轮换代理口令）：你已决定暂缓。它仍是唯一的彻底止血动作，成本只是改一次密码。
+- **P1-1 ~ P1-4**（README / CLAUDE §3.1 / HANDOVER / SKILL 的口径旧）：
+  都**已加醒目横幅**缓解，不影响论文本身。
+- **P1-17、P1-18、P3-2 ~ P3-8、R-6、R-7、P4**：建议项或可选加分项。
+  其中 **P4 表第 2 项（prompt 改写鲁棒性）** 与 **R-4（capacity-matched 对照）** 是审稿人最可能要求补的
+  两件事 —— 若决定冲更高档次，这两条就升级为必做。
 
 ---
 
@@ -29,7 +82,7 @@
 
 ## P0 — 投稿前必须处理（影响论文正确性）
 
-### P0-1. Fig. 1 与 Table 1 不一致，且有**两个**混淆原因（不只是选层口径）
+### P0-1. [必做] Fig. 1 与 Table 1 不一致，且有**两个**混淆原因（不只是选层口径）
 
 - **现象**：`results/figures/llama32_3b_layer_signal.png` 标 **peak L12 = 0.632**；
   `main.tex` Table 1 的同一格是 **best-resid 0.628**。
@@ -45,7 +98,7 @@
 - **附带**：`internals_vs_output.py:78` 的 `resid_best_layer` 也是 test-argmax，
   所以仓库里那 3 个 `internals_vs_output_*.json` 的 `resid_best_layer` 都带乐观偏差（见 R-2）。
 
-### P0-2. Table 1 混用了两个样本量，且与 Table 3 自相矛盾
+### P0-2. [必做] Table 1 混用了两个样本量，且与 Table 3 自相矛盾
 
 - **现象（已逐格核对）**：Table 1 八行**与各自的来源 JSON 完全吻合**，但
   **前 6 行来自 `significance.json`（500q）**，**Qwen 两行来自 `significance_qwen_q1500.json`（1500q）**。
@@ -58,7 +111,7 @@
     （需回主机补跑，或在行内标注 Mistral 为 500q）。
   - **B（最省事）**：保留现状，caption 写明 "LLaMA/Mistral rows: 500 queries; Qwen rows: 1500 queries"。
 
-### P0-3. 正文引用了不存在的 supplement
+### P0-3. [必做] 正文引用了不存在的 supplement
 
 - `main.tex` Experiments 的 Depth localization 段写
   "Figure~\ref{fig:depth} (**per model in the supplement**) shows ..."，
@@ -66,7 +119,7 @@
 - **怎么修**：删掉该括号，或真补 appendix（那些图见 P2-3，重画需缓存）。
 - **注意**：本地若无 LaTeX 工具链（P3-1），改完 `main.tex` 无法编译验证。
 
-### P0-4. 🔴 论文 Table 2 / Table 3 / Abstract 的 CI 与 p 值**无法从已提交的结果文件复现**
+### P0-4. [必做] 🔴 论文 Table 2 / Table 3 / Abstract 的 CI 与 p 值**无法从已提交的结果文件复现**
 
 > **本次通读最重要的发现**。投稿前必须解决：审稿人或 AC 一旦索要 artifact 就会撞上。
 
@@ -129,7 +182,7 @@
 
 ---
 
-### P0-5. 正文自相矛盾："internal edge 在 LLaMA 上变宽" vs "在 instruct 上收缩"
+### P0-5. [必做] 正文自相矛盾："internal edge 在 LLaMA 上变宽" vs "在 instruct 上收缩"
 
 - `main.tex` L325（Mechanism 段）写 "the internal edge persists (**and widens on LLaMA**)"，
   而 L244–246（Scaling 段）写 "**shrinks and loses significance on instruct models**"。
@@ -142,7 +195,7 @@
 
 ---
 
-### P0-6. `logit_lens.py` 也在 test 上选层 —— 而论文**明确否认**了这件事 🔴
+### P0-6. [必做] `logit_lens.py` 也在 test 上选层 —— 而论文**明确否认**了这件事 🔴
 
 - `scripts/logit_lens.py:112`：`best = int(np.argmax(layer_auc))`，而 `layer_auc` 是在
   **被评估的 split**（`--split`，默认 `test`）上算的 → 又一次 selection-on-test。
@@ -162,7 +215,7 @@
 - **怎么修**（三处一起改，并同步论文措辞）：改成 val 选层；`aggregate_models.py` 的
   `internal_edge` 要么改名、要么改成论文的定义。**改代码会变动论文数字，必须同一次改完。**
 
-### P0-7. 因果 steering 的**随机对照表现和实验组一样** 🔴 这条动摇论文的因果论断
+### P0-7. [必做] 因果 steering 的**随机对照表现和实验组一样** 🔴 这条动摇论文的因果论断
 
 - 论文（`main.tex:40-44`、`336-341`）与 `REPORT.md` §11 的核心对照是：
   "唯独 internal 方向**既**改变判断**又**保住 AUC；final 改判断但摧毁 AUC；
@@ -226,7 +279,7 @@
 - 编译段用硬编码主机路径 `/root/shared-nvme/paper_A_internals/paper`。
 - **这份文档的作用是"保证只写已验证的数字"，它本身失准会直接导致论文引用错数**，优先级不低。
 
-### P1-5. 同一个量在论文里出现**两个不同值**（未披露样本量切换的直接后果）
+### P1-5. [必做] 同一个量在论文里出现**两个不同值**（未披露样本量切换的直接后果）
 
 这是 P0-2 的"可见症状"——即使不重算数字，**审稿人现在就能看到同一模型同一量有两个值**：
 
@@ -239,7 +292,7 @@
   用的是 **1500q** 的 `0.545 / 0.574`；而读者刚在 Table 1 看到同两个模型的 judge 是 `0.535 / 0.514`。
 - **怎么修**：统一 Table 1 到 1500q（即 P0-2 的选项 A），或在两处都写明 query 数。
 
-### P1-6. "除 Qwen 外每个模型都超过零样本 judge" 对 Qwen-base 不成立
+### P1-6. [必做] "除 Qwen 外每个模型都超过零样本 judge" 对 Qwen-base 不成立
 
 - L175–176 写 "on every model except the Qwen pair it also exceeds the zero-shot judge"。
 - **实测**：Qwen2.5-7B **base** 的 best-resid `0.655 > judge 0.652`、attn `0.682 > 0.652`，
@@ -247,39 +300,39 @@
 - "except the Qwen pair" 过度概括，把一个成立的结论说弱了（对本文不利）。
 - **怎么修**：改成 "except Qwen2.5-7B-Instruct"。
 
-### P1-7. Limitations 的 "attn 在 Mistral 上弱" 只对 Mistral-**base** 成立
+### P1-7. [必做] Limitations 的 "attn 在 Mistral 上弱" 只对 Mistral-**base** 成立
 
 - L406–408（与 Intro L89–90）写 attn reader "weak on Mistral"。
 - **实测**：Mistral-7B-v0.3 base 确实弱（attn `0.603` < best-resid `0.621`）；
   但 **Mistral-7B-Instruct-v0.3 上 attn `0.667` > best-resid `0.628`，attn 就是最强的内部读取器**。
 - **怎么修**：限定为 "Mistral-7B-v0.3 (base)"。
 
-### P1-8. "judge rising from 0.52 to 0.60" 无精确出处
+### P1-8. [必做] "judge rising from 0.52 to 0.60" 无精确出处
 
 - L283 的 `0.52 → 0.60` 与任何单模型对或均值都不精确吻合
   （最近的：8B `0.514→0.603`；三对均值 `0.527→0.607`）。
 - **怎么修**：改成具体某一对（如 8B 的 `0.51→0.60`）或写"三对均值 0.53→0.61"。
 
-### P1-9. FiQA 的 final-layer AUC 在相邻两句里是 `0.976` 与 `0.977`
+### P1-9. [必做] FiQA 的 final-layer AUC 在相邻两句里是 `0.976` 与 `0.977`
 
 - L374 用 `0.976`（来自 `significance_fiqa.json`），L376 用 `0.977`
   （来自 `internals_vs_output_llama32_3b_fiqa.json`）。**两个文件对同一个量不一致**，
   根因还是 val 选层 vs test-argmax 两套口径（同 P0-1）。
 - **怎么修**：统一取 `significance_fiqa.json` 的值（val 选层，"L14 0.993 vs L28 0.977"这句要一起改）。
 
-### P1-10. 层号约定不统一：同一输出层被写成 `L28` 和 `L27`
+### P1-10. [必做] 层号约定不统一：同一输出层被写成 `L28` 和 `L27`
 
 - L376 写 FiQA "L14 0.993 vs **L28** 0.977" —— 28 是 **1-based**（28 层模型的最后一层）；
   而 Fig. 1 把同一个输出层标成 **"final L27"** —— **0-based 索引**。
 - 正文其它地方（如 "L12"、"L10–16"）用的是 0-based。
 - **怎么修**：全文统一为 0-based（或统一 1-based），并在第一次出现时说明约定。
 
-### P1-11. "four flagship models at 1500 queries" 与同表的 2 个 Qwen 1500q 行不符
+### P1-11. [必做] "four flagship models at 1500 queries" 与同表的 2 个 Qwen 1500q 行不符
 
 - L240 说 1500q 只跑了四个旗舰模型，但 Table 3 里还有两个 Qwen 的 1500q 行。
 - **怎么修**：改为 "four LLaMA models (plus the two Qwen models, below)"。
 
-### P1-12. 论文从未给出 `top-$k$` heads 的 `k`
+### P1-12. [必做] 论文从未给出 `top-$k$` heads 的 `k`
 
 - Method 写 "top-$k$ heads chosen on validation"，但**全文没给 k 的值**；
   代码里是硬编码 **20**（`significance.py` 的 `sel = ... [:20]`，`internals_vs_output.py --topk` 默认 20）。
@@ -303,7 +356,7 @@
 
 ---
 
-### P1-15. 两个缓存的"对齐"只是口头约定，唯一那句断言抓不到真正的失效
+### P1-15. [必做] 两个缓存的"对齐"只是口头约定，唯一那句断言抓不到真正的失效
 
 - 全仓库**只有** `significance.py` 有一句跨缓存校验：
   `assert np.array_equal(jd["labels"], yte)`（只看 test、只比 labels）。
@@ -321,7 +374,7 @@
   （不只是 labels）：`assert np.array_equal(jd["query_ids"], qte)`。
   一行代码，消除一类静默失效。对 FiQA 尤其重要——见 P1-16。
 
-### P1-16. BeIR 的 query id 哈希依赖进程 → 两个脚本可能造出**不同的切分**
+### P1-16. [必做] BeIR 的 query id 哈希依赖进程 → 两个脚本可能造出**不同的切分**
 
 - `src/data.py`：`except ValueError: qid_num = abs(hash(q)) % 10**9`。
   Python 的 `hash(str)` 受 `PYTHONHASHSEED` 随机化，审计实测**4 个进程给出 4 组不同的 id
@@ -355,7 +408,7 @@
   `corr(val_auc, test_auc)=0.028` 那个诊断也被混淆。M0/M1/M3/M5 是干净的。
 - **怎么修**：换成 `GroupKFold(groups=query_id)`。
 
-### P1-19. 因果 steering 的三处协议偏差
+### P1-19. [必做] 因果 steering 的三处协议偏差
 
 - **方向层是按 train 选的**：`causal_steer.py` 取 train 投影 AUC 的 argmax（排除最后一层）→
   q1500 的 3B 跑出 **L13**，而论文 val 选层是 **L9**（`significance_q1500.json`）。
@@ -450,7 +503,7 @@
 
 ## P3 — 工程与复现环境
 
-### P3-1. LaTeX 工具链不在仓库里 → `main.tex` 改了无法验证
+### P3-1. [必做] LaTeX 工具链不在仓库里 → `main.tex` 改了无法验证
 
 `tectonic`/`pdflatex`/`xelatex`/`latexmk` 均不在；`paper/tools/tectonic` 不存在
 （`tools/` 在 `.gitignore` 里，编译器没随项目走）。
@@ -526,7 +579,7 @@
 > 这些不是代码错误，是**论证结构上的软肋**。投稿前值得逐条想清楚怎么回应，
 > 因为审稿人最可能从这些地方进攻。
 
-### R-1. 最强的主张建立在**混淆最多**的对照上，而**无混淆的对照最弱** ⚠️ 最大软肋
+### R-1. [必做] 最强的主张建立在**混淆最多**的对照上，而**无混淆的对照最弱** ⚠️ 最大软肋
 
 - `best_resid − final` 是**唯一干净**的对照：同为残差流、同为 3072 维、
   在 `significance.py` 里**同为 `C=1.0` + StandardScaler**——只差"读哪一层"。
@@ -540,7 +593,7 @@
   但**没有正面承认它同时是 thesis 的边界**。
 - **建议**：①在 Limitations 里明确写"干净对照只在 base 上成立"；②补 capacity-matched 对照（R-4）。
 
-### R-2. `internals_vs_output.py` **至今仍在 test 上选层**，且缺少样本对齐断言
+### R-2. [必做] `internals_vs_output.py` **至今仍在 test 上选层**，且缺少样本对齐断言
 
 `internals_vs_output.py:78`：`resid_best_layer = argmax(layer_aucs)`，而 `layer_aucs` 是 **test** AUC。
 P1 的修复只改了**论文表格**（改用 `significance.json` 的 val 选层值），**没有改这个脚本**。
@@ -553,7 +606,7 @@ P1 的修复只改了**论文表格**（改用 `significance.json` 的 val 选�
   **没有任何机制保证两个缓存描述的是同一批样本**（`--n-queries`/`--seed`/`--dataset` 不一致会静默错配）。
 - **建议**：把这两个脚本都改成 val 选层（与 `significance.py` 对齐），并补上该断言。
 
-### R-3. "attenuation"（衰减）这个标题词，证据其实更支持"misalignment"（错位）
+### R-3. [必做] "attenuation"（衰减）这个标题词，证据其实更支持"misalignment"（错位）
 
 - 论文实测：①中层线性可解码性 > 最终层；②**logit-lens 在每一层都接近随机**
   （3B 峰值仅 0.560、8B 0.577），远低于训练探针的 0.62；③把内部方向注入输出层能改变判断。
@@ -578,7 +631,7 @@ P1 的修复只改了**论文表格**（改用 `significance.json` 的 val 选�
   ③至少报告 top-k 变化时 attn−final 是否稳定。
   若 gap 在非线性 final 探针下仍在，thesis 会强很多；若消失，就得改写论点——**早知道比被审稿人指出好**。
 
-### R-5. 因果 steering 的替代解释没有被排除
+### R-5. [必做] 因果 steering 的替代解释没有被排除
 
 `results/causal_steer_llama32_3b_q1500.json` 自己记录了
 `proj_auc_internal = 0.602` vs `proj_auc_final = 0.577`。
