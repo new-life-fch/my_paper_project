@@ -129,6 +129,6 @@ mv results/cache/llama31_8b_judge           results/cache/llama31_8b_q500_judge
 
 - `results/internals_vs_output_{tag}.json` / `results/internals_vs_output_{tag}_q1500.json`
   —— 结果文件名没有统一带 query 数，同理有歧义。**本次未改动**（会牵动论文引用与文档），
-  记在 `TODO.md`。
+  记在 `TODO.md` P3-3。
 - `results/significance.json` / `_q1500.json` / `_qwen_q1500.json` / `_fiqa.json`
-  —— 四个显著性结果的命名规则不统一，同样记在 `TODO.md`。
+  —— 四个显著性结果的命名规则不统一，同样记在 `TODO.md` P3-3。

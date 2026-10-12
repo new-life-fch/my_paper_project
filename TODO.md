@@ -85,19 +85,54 @@
 - **为什么这不可能是"bootstrap 随机性"**：`significance.py:128` 是
   `rng = np.random.default_rng(42)` —— **bootstrap 种子写死**。同一份缓存 + 同一份代码
   必然给出逐位相同的结果。所以论文与 JSON 不可能同时正确。
-- **最可能的解释（诚实标注为推断）**：git 显示 `results/significance.json` 最后一次被写是
-  `4c8be8a`「显著性改用**配对** bootstrap」这个提交本身；而 `REPORT.md` §9 是更早的
-  `0f58593` 写的（**非配对**版本，CI 偏宽、p 偏大）。也就是说**artifact 在修方法学时被重算了，
-  但 REPORT 与论文表格没有同步更新**。
+- **根因（fact-check 给出的结构性解释，比"没同步"更精确）**：这个仓库里**同时存在两代 bootstrap 产物**，
+  而论文**跨在两代之间**：
+
+  | 代 | bootstrap 方式 | 产生于 | 现在这些数字住在哪 |
+  |---|---|---|---|
+  | **Gen-1（已被取代）** | **非配对**，每个 reader 各自重采样 | `0f58593`(500q) / `3476b90`(1500q) | git 历史 + `REPORT.md` §9/§10 的表格 |
+  | **Gen-2（现行 artifact）** | **配对**，共享重采样索引 | `4c8be8a`(500q) / `25d878b`(1500q) | `results/significance.json`、`significance_q1500.json` |
+
+  **论文 Table 2 精确复现 Gen-1（18/18 格）；Table 3 的 LLaMA 四行也精确复现 Gen-1；
+  只有两个 Qwen 行（2026-06-30 才写）复现 Gen-2。** 也就是说论文的 LLaMA 列
+  **无法从 `results/` 里任何现存文件复现**——只能从 git 历史或 REPORT 复现。
+  这和 `CLAUDE.md` §6 里"改成配对后**结论完全不变**"的说法也对不上：配对确实改了 CI 与 p。
 - **方向是良性的**：论文的数字比 artifact **更保守**（CI 更宽、p 更大），
   这不像"夸大结果"，更像"引用了旧版本"。但**必须解决**。
 - **怎么修**：回 GPU 主机（或拿到缓存后在 CPU 上）用**当前代码**重跑
   `significance.py`（500q 与 1500q 两轮），然后把
   `REPORT.md` §9/§10、`CLAUDE.md` §6、`main.tex` Table 2/3 + Abstract **全部对齐到新 JSON**。
   在解决之前，建议在 `REPORT.md` 顶部加一条醒目提示，避免后续继续引用错数。
+- **独立复核（一次专项 fact-check，逐格比对 main.tex 与 results/）的结论**：
+  - `Table 2`：**18 个 edge 格子，0 个与现行 artifact 吻合**；全部 18 个都精确复现
+    **被取代的旧版本**（13 个在论文精度下逐位相同，5 个仅末位差 1）。
+  - `Table 3`：6 行里 **2 行吻合**（两个 Qwen，2026-06-30 才写的），**4 个 LLaMA 行不吻合**。
+  - `Table 1`：**42/42 全部吻合** ✓（问题只在 Table 2/3 与 Abstract 的 p 值）。
+  - 论文 Table 3 的 **500q 列**也一起旧了：3B-Inst 论文 `p=0.28` vs 文件 `0.2254`；
+    8B-Inst 论文 `p=0.16` vs 文件 `0.0742`。
+  - **误差方向是混合的，别一句"更保守"带过**：
+    1500q base 的 `internal_edge` 上论文**低估**了显著性（报 0.0008，实际 <2e-4）；
+    但 500q instruct 列上论文**高估**了 p（报 0.16，实际 0.074）。
+    所以这不能简单说成"论文更保守就没事"——**必须逐格重算重对齐**。
+  - `sign test 6/6 (p=.016)` 一行与加粗判定在两种版本下都成立 ✓。
+  - 另有一个**边界格子会因重算而翻转**：Mistral-7B-Inst 的 `attn−final`，
+    论文（旧版）`p=0.1476` 未加粗，现行 artifact `p=0.0526` —— 仍不显著，但已贴到 0.05 边缘。
 - **附带（已核对无问题）**：FiQA 的 `resid_best_layer=0.993` 与 Abstract 的
   "0.993 / +0.253" **吻合**；Abstract 的因果、logit-lens 数字也**全部吻合**。
   本问题集中在 bootstrap 那两张表。
+
+---
+
+### P0-5. 正文自相矛盾："internal edge 在 LLaMA 上变宽" vs "在 instruct 上收缩"
+
+- `main.tex` L325（Mechanism 段）写 "the internal edge persists (**and widens on LLaMA**)"，
+  而 L244–246（Scaling 段）写 "**shrinks and loses significance on instruct models**"。
+- **实测两者不能同真**：现行 artifact 下，1500q 的 `internal_edge` 在 LLaMA **两对都变窄**
+  （3B `0.0779 → 0.0249`；8B `0.0601 → 0.0129`）；500q 下 3B 也是变窄（`0.0351 → 0.0269`），
+  只有 8B 变宽（`0.0289 → 0.0436`）。
+- **来源**：这句"widens"是从 `REPORT.md` §4 抄来的，而 §4 用的是**已被取代的 v1（test-argmax）数字**。
+  这是"论文从旧 REPORT 誊抄"的又一例证，与 P0-4 同源。
+- **怎么修**：改成"internal edge 在 base 上显著、在 instruct 上收缩"，并在重算后统一口径（与 P0-4 一起做）。
 
 ---
 
@@ -140,13 +175,72 @@
 - 编译段用硬编码主机路径 `/root/shared-nvme/paper_A_internals/paper`。
 - **这份文档的作用是"保证只写已验证的数字"，它本身失准会直接导致论文引用错数**，优先级不低。
 
-### P1-5. `requirements.txt` 与实际依赖不符
+### P1-5. 同一个量在论文里出现**两个不同值**（未披露样本量切换的直接后果）
+
+这是 P0-2 的"可见症状"——即使不重算数字，**审稿人现在就能看到同一模型同一量有两个值**：
+
+| 量 | Table 1（500q） | 正文别处（1500q） | 位置 |
+|---|---|---|---|
+| judge, LLaMA-3.1-8B | `0.514` | `0.574` | logit-lens 段 L302 |
+| judge, LLaMA-3.2-3B | `0.535` | `0.545` | L302 与 few-shot 段 L385 |
+
+- logit-lens 那段的 sanity check 说"末层 logit-lens 复现 judge 到 <0.001"，
+  用的是 **1500q** 的 `0.545 / 0.574`；而读者刚在 Table 1 看到同两个模型的 judge 是 `0.535 / 0.514`。
+- **怎么修**：统一 Table 1 到 1500q（即 P0-2 的选项 A），或在两处都写明 query 数。
+
+### P1-6. "除 Qwen 外每个模型都超过零样本 judge" 对 Qwen-base 不成立
+
+- L175–176 写 "on every model except the Qwen pair it also exceeds the zero-shot judge"。
+- **实测**：Qwen2.5-7B **base** 的 best-resid `0.655 > judge 0.652`、attn `0.682 > 0.652`，
+  **两者都超过 judge**；只有 Qwen-**Instruct** 的 best-resid `0.630 < judge 0.660`。
+- "except the Qwen pair" 过度概括，把一个成立的结论说弱了（对本文不利）。
+- **怎么修**：改成 "except Qwen2.5-7B-Instruct"。
+
+### P1-7. Limitations 的 "attn 在 Mistral 上弱" 只对 Mistral-**base** 成立
+
+- L406–408（与 Intro L89–90）写 attn reader "weak on Mistral"。
+- **实测**：Mistral-7B-v0.3 base 确实弱（attn `0.603` < best-resid `0.621`）；
+  但 **Mistral-7B-Instruct-v0.3 上 attn `0.667` > best-resid `0.628`，attn 就是最强的内部读取器**。
+- **怎么修**：限定为 "Mistral-7B-v0.3 (base)"。
+
+### P1-8. "judge rising from 0.52 to 0.60" 无精确出处
+
+- L283 的 `0.52 → 0.60` 与任何单模型对或均值都不精确吻合
+  （最近的：8B `0.514→0.603`；三对均值 `0.527→0.607`）。
+- **怎么修**：改成具体某一对（如 8B 的 `0.51→0.60`）或写"三对均值 0.53→0.61"。
+
+### P1-9. FiQA 的 final-layer AUC 在相邻两句里是 `0.976` 与 `0.977`
+
+- L374 用 `0.976`（来自 `significance_fiqa.json`），L376 用 `0.977`
+  （来自 `internals_vs_output_llama32_3b_fiqa.json`）。**两个文件对同一个量不一致**，
+  根因还是 val 选层 vs test-argmax 两套口径（同 P0-1）。
+- **怎么修**：统一取 `significance_fiqa.json` 的值（val 选层，"L14 0.993 vs L28 0.977"这句要一起改）。
+
+### P1-10. 层号约定不统一：同一输出层被写成 `L28` 和 `L27`
+
+- L376 写 FiQA "L14 0.993 vs **L28** 0.977" —— 28 是 **1-based**（28 层模型的最后一层）；
+  而 Fig. 1 把同一个输出层标成 **"final L27"** —— **0-based 索引**。
+- 正文其它地方（如 "L12"、"L10–16"）用的是 0-based。
+- **怎么修**：全文统一为 0-based（或统一 1-based），并在第一次出现时说明约定。
+
+### P1-11. "four flagship models at 1500 queries" 与同表的 2 个 Qwen 1500q 行不符
+
+- L240 说 1500q 只跑了四个旗舰模型，但 Table 3 里还有两个 Qwen 的 1500q 行。
+- **怎么修**：改为 "four LLaMA models (plus the two Qwen models, below)"。
+
+### P1-12. 论文从未给出 `top-$k$` heads 的 `k`
+
+- Method 写 "top-$k$ heads chosen on validation"，但**全文没给 k 的值**；
+  代码里是硬编码 **20**（`significance.py` 的 `sel = ... [:20]`，`internals_vs_output.py --topk` 默认 20）。
+- 属于可复现性缺口（不是数字错误）。**怎么修**：在 Method 里写明 k=20。
+
+### P1-13. `requirements.txt` 与实际依赖不符
 
 - 缺 **`nnsight`**（`src/activations.py` 直接 import；由 `setup_env.sh` 单独 `pip install`）。
 - 缺 **`joblib`**（`plot_layer_signal.py`、`significance.py` 用 `joblib.Parallel`）。
 - 缺 **`pypdf`**、**`pillow`**（新增的 `scripts/extract_figures_from_pdf.py` 需要）。
 
-### P1-6. `scripts/setup_env.sh` 有几处问题
+### P1-14. `scripts/setup_env.sh` 有几处问题
 
 - `pip install nnsight` 与仓库里那份 vendored `nnsight/` 并存且无说明（见 P3-2；已核实**不会**遮蔽）。
 - `torch.cuda.get_device_properties(0).total_mem` —— **疑似属性名错误**（现代 PyTorch 是
@@ -209,6 +303,23 @@
 
 `aggregate_models.py` 的产物，被 `CLAUDE.md` §5 / `REPORT.md` §7 / `SKILL.md` 引用。
 可重生成，但它扫描的正是 P2-1 里缺的那些 JSON，**必须先补 P2-1**。
+
+---
+
+### P2-6. 因文件缺失而**完全不可验证**的具体主张（清单）
+
+上面 P2-1~P2-5 是"文件缺"，这里列"因此哪几句话在仓库里查不到依据"，
+投稿前一并想清楚：要不要在文中降级措辞，或把文件补回来。
+
+| 论文主张 | 依据文件 | 现状 |
+|---|---|---|
+| L385 few-shot judge `0.545 → 0.566` | `results/cache/llama32_3b_q1500_judge_fs4/meta.json` | **文件缺失**（在 `results/cache/` 里，被 gitignore），仅 REPORT §13/CLAUDE/HANDOVER 有文字 |
+| L343 "only ~22% of test pairs are relevant" | 无任何 artifact | **仓库里没有出处**，仅散文 |
+| L347–349 "因果在三个变体上复现 / 消融臂每次都崩塌 / 唯独 internal 保 AUC" | `causal_steer_llama31_8b{,_instruct}_q1500.json` | **两个文件都缺**，仅 REPORT §11.1 的表格佐证 |
+| L350 "instruct 上崩塌最剧 `0.87 → 0.003`" | 同上 | **文件缺失**，仅 REPORT |
+| L290 "LLaMA 最强头集中 L10–16" | `figures/<tag>_layer_signal.json` | **全部缺失**，仅 REPORT §5/CLAUDE 有文字 |
+| L291–292 "Mistral 早层单头 AUC ≈0.50" | 同上 | **全部缺失**，仅 REPORT §6/CLAUDE |
+| Fig. 1 三个 panel 的全部数值 | `internals_vs_output_llama32_3b_q1500.json` + `*_layer_signal.json` | **都缺**，只剩恢复出的那张 PNG |
 
 ---
 
@@ -367,3 +478,7 @@ P1 的修复只改了**论文表格**（改用 `significance.json` 的 val 选�
   Abstract 的因果 / FiQA / logit-lens 数字全部与 JSON 吻合；
   vendored `nnsight/` **不会**遮蔽 pip 版本（见 P3-2）；
   MS MARCO 负例确为 BM25 未选中段落（"hard negative" 说法成立）。
+- ✅ **2026-10-12 完成一次独立交叉复核**（专项 fact-check，逐格比对 `main.tex` 与 `results/`，
+  结论已并入 P0-4 / P0-5 / P1-7~P1-14 / P2-6）。核心结论：**Table 1 全对（42/42）；
+  Table 2 全错（0/18，全部是被取代的旧版本）；Table 3 对 2 错 4**。
+  这不是零散笔误，而是"artifact 重算后文档/论文没同步"的**系统性**问题。

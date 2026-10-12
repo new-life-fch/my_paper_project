@@ -54,7 +54,7 @@
 2. **`paper/main.tex`**（424 行，8 页）——正文。
 3. **`.claude/skills/write-paper/SKILL.md`** — 写作方法论 + 诚实铁律 + 取数速查表。
    ⚠️ **这份已过时**（还写着 6 模型、因果限 3B、单数据集，且指向一个不存在的
-   `results/multimodel_summary.json`）。当"方法论"读，别当"当前状态"读。见 `TODO.md` P1-5。
+   `results/multimodel_summary.json`）。当"方法论"读，别当"当前状态"读。见 `TODO.md` P1-4。
 4. **`TODO.md` 的 P0 段** —— 三个投稿前必须处理的论文问题（图表口径不一致、Table 1 混样本量、
    正文引用不存在的 supplement）。
 5. **`results/REPORT.md`** —— 需要某个具体数字的出处时查它。
@@ -75,7 +75,7 @@
 2. **`HANDOVER.md`** —— 2026-06-30 的完整交接文档。⚠️ **是历史快照**：数字是旧口径，
    文件树里的 `src/common.py`、`paper/tools/tectonic`、`.claude/memory` **都不存在了**，
    还声称数据来自 "MS MARCO dev-small (6980 queries, qrels)"，而代码实际加载的是
-   `split="train"` 并用 `is_selected` 造标签。见 `TODO.md` P1-3 / P1-6。
+   `split="train"` 并用 `is_selected` 造标签。见 `TODO.md` P1-3。
 3. **`docs/RAG检索优化文献调研报告.md`** —— ⚠️ 写于 **2026-05-18**，描述的是**转向之前的**定位
    （"探针做 reranking/filtering，替代外部 reranker"）。这正是后来被证伪的那条路。
    把它当**文献综述**读（17 篇论文的分类整理仍然有用），**不要**当项目当前定位读。
