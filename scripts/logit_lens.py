@@ -36,6 +36,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score as auc
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache   # docs/CACHE_NAMING.md  (see docs/CACHE_NAMING.md)
 
 
 def yes_no_token_ids(tokenizer):
@@ -68,6 +69,7 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--out", default="results/logit_lens.json")
     args = ap.parse_args()
+    args.cache = resolve_cache(args.cache)   # docs/CACHE_NAMING.md
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
     print(f"Loading {args.model} (norm + lm_head only used) ...")

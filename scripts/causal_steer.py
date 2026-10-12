@@ -39,6 +39,7 @@ import numpy as np, torch
 from sklearn.metrics import roc_auc_score
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache, warn_if_legacy_exists   # docs/CACHE_NAMING.md
 from src.data import load_ms_marco, split_by_query
 
 

@@ -26,6 +26,7 @@ import torch
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache, warn_if_legacy_exists   # docs/CACHE_NAMING.md
 
 from src.data import load_ms_marco, split_by_query
 from src.provenance import env_versions, model_revision

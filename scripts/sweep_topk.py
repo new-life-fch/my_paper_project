@@ -19,6 +19,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.metrics import roc_auc_score
 from joblib import Parallel, delayed
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache, warn_if_legacy_exists   # docs/CACHE_NAMING.md
 
 N_JOBS = max(1, min(48, (os.cpu_count() or 4) - 2))
 

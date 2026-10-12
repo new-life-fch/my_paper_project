@@ -68,6 +68,18 @@
 4. **`TODO.md` P2** —— 哪些结果文件已经丢了、怎么从 GPU 主机打包取回。
 5. `scripts/run_model.sh` / `run_scaleup.sh` / `run_fiqa.sh` —— 三条驱动管线，照抄即可。
 
+### 读完之后的验收动作（30 秒）
+
+```bash
+python scripts/selfcheck.py     # 只依赖标准库，不需要 torch/显卡
+```
+
+它检查 6 条**这个仓库真的踩过的**坑：缓存兜底的调用是否有导入、
+每个读缓存的脚本是否都装了旧名兜底、代码里有没有残留旧缓存名、
+TODO 的交叉引用是否悬挂、别名表会不会把 1500q 缓存指到 500q 目录、
+以及四个脚本的 instruct prompt 是否**求值后**逐字节相同。
+**改完代码或文档后都跑一次**；全绿再提交。
+
 ### 路线 D — 要了解历史上走过哪些弯路（避免重走）
 
 1. **`CLAUDE.md` §四** —— 废弃方案清单（探针打 reranker / 跨域 / 数据效率，全部证伪）。
@@ -210,6 +222,7 @@
 git clone https://github.com/new-life-fch/my_paper_project.git
 cd my_paper_project && git checkout paper-A
 
+python scripts/selfcheck.py               # 先确认仓库自洽（标准库即可，无需显卡）
 bash scripts/setup_env.sh                 # 注意 TODO.md P1-14 里记的几个问题
 export HF_HOME=/root/shared-nvme/hf_cache # 系统盘小的话务必改；见 CLAUDE.md §七
 export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"   # 凭据不要提交

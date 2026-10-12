@@ -33,6 +33,7 @@ from joblib import Parallel, delayed
 N_JOBS = max(1, min(48, os.cpu_count() - 2))  # parallelize per-head fits across cores
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.cache_paths import resolve_cache   # docs/CACHE_NAMING.md  (see docs/CACHE_NAMING.md)
 
 
 def load_split(cache_dir, scheme, split):
@@ -111,6 +112,7 @@ def main():
     ap.add_argument("--topk", type=int, default=20)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    args.cache = resolve_cache(args.cache)   # docs/CACHE_NAMING.md
 
     meta = json.load(open(os.path.join(args.cache, "meta.json")))
     print(f"Cache: {args.cache} | scheme={args.scheme} | {meta['n_queries']}q | "

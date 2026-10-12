@@ -476,6 +476,44 @@
 - `significance.json` / `_q1500.json` / `_qwen_q1500.json` / `_fiqa.json` —— 四种后缀风格。
 - **建议**：统一为 `{kind}_{tag}_q{N}.json`，一次性改掉论文与文档里的引用。
 
+### P3-5. `src/probes.py` 的宽 except 与 docstring 不符（审计 P2 级）
+
+- `probes.py:165-173`：`except Exception` 在 `roc_auc_score` 抛错时把 **accuracy 与 f1 一起置 0.0**
+  （AUC 置 0.5），**静默**污染该 split 的指标。当前两个 loader 下每个 query 都同时贡献正负例，
+  所以触发不了，属**潜在**地雷。
+- `probes.py:94-105`：任何 fit 错误都变成 "AUC 0.5 + probe None"，而那个 `error` 键没人读。
+- `probes.py:107-108`：按 **train** AUC 排序，而 docstring（第 38 行）说是 validation；
+  `initial_validation.py:209` 在外面绕过了这个不一致。
+
+### P3-6. `src/evaluation.py` / `initial_validation.py` 的图与标签错配（审计 P2 级）
+
+- `evaluation.py:81-83`：`aucs[k]` 把第 (k+1) 个值标成 "top-k" —— **off-by-one**。
+- 同一处在一份**按 val 排序**的列表上画 **train** AUC，于是图的顺序与数值/轴标签互相矛盾。
+- `initial_validation.py:429-438`：用 **mean train AUC** 宣布哪个方案是 "Winner"。
+- `evaluation.py:164-169`：标题写 "Ensemble Probe Performance"，画的却是 train 的 accuracy/f1
+  （而 MS MARCO 是 1:4 不平衡，accuracy/F1 本就没有意义——见"已核实"第 5 条）。
+- **注意**：这条只影响 `initial_validation.py` 那条**早期**管线，不影响论文的任何数字。
+
+### P3-7. `scripts/` 的三处卫生问题（审计 P2 级）
+
+- **`run_queue.sh`**：`:43,47` 用 `|| true` 吞掉 aggregate 与出图的失败；`:35` 对
+  **JSON 已存在就 SKIP** —— 由于仓库里那些 `internals_vs_output_*.json` 是
+  **test-argmax 的旧产物**（P0-6），队列会**永远复用它们、不再重生成**。
+  修：把 SKIP 条件换成检查产物是否由当前代码版本生成（例如比对 `env`/时间戳）。
+- **`run_scaleup.sh`**：`:4,7` 只有 `set -u` **没有 `-e`**，且硬编码
+  `cd /root/shared-nvme/paper_A_internals` —— 在新主机上 `cd` 失败后，
+  整个 scale-up 会**在错误的 CWD 下静默跑下去**。修：`set -euo pipefail` +
+  `cd "$(dirname "$0")/.."`（其他驱动脚本已经是这个写法，只有它没跟上）。
+- **`plot_causal.py:24`**：把 `0.793` 作为水平基线**硬编码**，这只对 3B 那张图成立；
+  画 8B / instruct 的因果图时基线是错的。修：从传入的 JSON 里读 `sweep.internal.mean_pyes[α=0]`。
+
+### P3-8. `llm_judge_fewshot.py` 仍然评了 train split（审计 P2 级）
+
+- 它从 **train** 抽 exemplar（`:46-58`，无 val/test 泄露 ✔），但随后**也评了 train split**
+  （`:117-128`），而 exemplar 就来自那批行 → 那个 train AUC **没有意义**。
+- 引用 few-shot 数字时**只引 test**（`0.566`）。
+- 另外 `:95-96` 用文本匹配 `ex_qids`，属元数据、不影响结果。
+
 ### P3-4. 残留文件
 
 - `.ipynb_checkpoints/README-checkpoint.md`（已被 gitignore，不影响提交），可删。
