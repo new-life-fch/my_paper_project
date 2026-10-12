@@ -10,9 +10,18 @@
 set -e
 
 # --- 代理（下载 HF 必需）---
-export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export http_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
-export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
+# ⚠️ 凭据绝不写进仓库（本文件曾硬编码 user:pass 并已随公开仓库泄露，2026-10-12 移除）。
+#    请在调用前从环境注入，例如：
+#      export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"
+#    或写进 shell rc / ~/.netrc，不要提交。
+if [ -z "${https_proxy:-}" ]; then
+  echo "!! 未设置 https_proxy —— 防火墙内下载大概率会失败。" >&2
+  echo "   请先: export https_proxy=\"http://<user>:<pass>@<proxy-host>:<port>\"" >&2
+  exit 1
+fi
+export http_proxy="$https_proxy"
+# 直连网段与内网域名不走代理；可用 NO_PROXY 覆盖
+export no_proxy="${no_proxy:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn}"
 
 # --- 强制禁用 xet，走经典 HTTP ---
 export HF_HUB_DISABLE_XET=1

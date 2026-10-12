@@ -222,10 +222,10 @@ llama32_3b_fiqa_instruct / _judge  (FiQA数据集)
 **LaTeX 编译**：
 - **不用 conda/mamba**（本机 broken）
 - 用 `paper/tools/tectonic` 静态二进制，从 GitHub 直接下载
-- 编译命令（需代理访问 ctan 包源）：
+- 编译命令（需代理访问 ctan 包源；凭据从环境注入，**勿写进仓库**）：
   ```bash
   cd paper
-  export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+  export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"
   ../tools/tectonic main.tex
   ```
 
@@ -240,7 +240,7 @@ llama32_3b_fiqa_instruct / _judge  (FiQA数据集)
 **Step 1: 下载模型** (如果未缓存)
 ```bash
 export HF_HOME=/root/shared-nvme/hf_cache
-export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"   # 凭据从环境注入，勿写进仓库
 python -c "from huggingface_hub import snapshot_download; \
   snapshot_download('Qwen/Qwen2.5-7B', ignore_patterns=['*.gguf'])"
 ```

@@ -228,13 +228,16 @@
 1. **新容器依赖需重装**：仅 torch/sklearn/numpy/matplotlib 预装，需装 transformers/datasets/sentence-transformers/nnsight/accelerate/seaborn。
 2. **dill pip 约束**：`/etc/pip/constraint.txt` 把 dill 钉死 0.3.9，直接 `pip install datasets` 会静默装成远古 1.1.1。解法：`PIP_CONSTRAINT="" pip install 'datasets>=3.0,<4'`。
 3. **hf_xet 与代理不兼容**：下载大文件卡死。解法：`pip uninstall hf_xet` + `export HF_HUB_DISABLE_XET=1`。
-4. **代理**（下载 HF/PyPI 慢时）：
+4. **代理**（下载 HF/PyPI 慢时）：凭据**从环境注入，绝不写进仓库**：
    ```bash
-   export https_proxy="http://u-UE25Z3:tXGJgV92@10.255.128.102:3128"
+   export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"
    export http_proxy="$https_proxy"
    export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
    export HF_HUB_DISABLE_XET=1
    ```
+   > 🔴 **2026-10-12 安全事件**：本节原先硬编码了一个真实的 `user:pass`，而本仓库是**公开**的
+   > （`private: false`），该凭据已随 **8 个提交**进入 git 历史。已从工作区移除，但**历史里仍在**。
+   > 处理见 `TODO.md` S-1：**必须轮换密码**，并考虑 `git filter-repo` 清历史。
 5. **缓存是软链**：`results/cache` → 主仓库真实目录。删 worktree 前勿 `rm -rf` 跟随软链误删主缓存。
 
 **常用命令：**
