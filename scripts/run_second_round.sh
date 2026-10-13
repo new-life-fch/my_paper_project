@@ -80,6 +80,26 @@ if [ "$KIND" = "all" ] || [ "$KIND" = "causal" ]; then
   done
 fi
 
+# ------------------------------------------------------------------- patch ---
+# E-3: 把中层真实激活移植到输出层，看判别力能否恢复（区分 attenuation / misalignment）。
+# GPU 串行；每个模型 5 个 alpha × 3 个读取器 × ~1117 行 ≈ 15 次前向 ≈ 12-20 分钟。
+if [ "$KIND" = "all" ] || [ "$KIND" = "patch" ]; then
+  for item in "${CAUSAL[@]}"; do
+    MID="$(echo "$item" | cut -d'|' -f1)"
+    MODEL="$(echo "$item" | cut -d'|' -f2)"
+    IC="results/cache/${MID}_q${NQ}_instruct"
+    JC="results/cache/${MID}_q${NQ}_judge"
+    OUT="results/patch_internal_${MID}_q${NQ}.json"
+    [ -f "$IC/resid_test.pt" ] || { log "SKIP patch $MID (no cache)"; continue; }
+    if [ -f "$OUT" ]; then log "SKIP patch $MID (exists)"; continue; fi
+    log "START patch $MID"
+    python scripts/patch_internal.py --model "$MODEL" --cache "$IC" --judge-cache "$JC" \
+      --tag "$MID" --n-queries "$NQ" --alphas 0,0.25,0.5,0.75,1.0 \
+      --out "$OUT" >> "$LOG" 2>&1 \
+      && log "DONE  patch $MID" || log "FAIL  patch $MID"
+  done
+fi
+
 # ------------------------------------------------------------------ prompt ---
 if [ "$KIND" = "all" ] || [ "$KIND" = "prompt" ]; then
   for item in "${PROMPT_MODELS[@]}"; do
