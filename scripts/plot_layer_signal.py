@@ -49,7 +49,8 @@ def lr(penalty="l2", C=1.0):
 
 def load(cache, scheme, split):
     d = torch.load(os.path.join(cache, f"{scheme}_{split}.pt"))
-    return d["acts"].to(torch.float32).numpy(), d["labels"].numpy()
+    qids = d["query_ids"].numpy() if "query_ids" in d else None
+    return d["acts"].to(torch.float32).numpy(), d["labels"].numpy(), qids
 
 
 def compute(cache, judge_cache, topk):
@@ -64,24 +65,40 @@ def compute(cache, judge_cache, topk):
         judge = round(auc(jd["labels"].numpy(), jd["scores"].numpy()), 4)
 
     # ---- per-layer resid probe AUC (depth curve) ----
-    Rtr, ytr = load(cache, "resid", "train")
-    Rte, yte = load(cache, "resid", "test")
+    Rtr, ytr, _ = load(cache, "resid", "train")
+    Rva, yva, _ = load(cache, "resid", "val")
+    Rte, yte, qte = load(cache, "resid", "test")
 
+    # both caches must describe the same rows (TODO.md P1-15)
+    if os.path.exists(jp):
+        assert np.array_equal(jd["labels"].numpy(), yte), "judge/resid label mismatch"
+        if "query_ids" in jd and qte is not None:
+            assert np.array_equal(jd["query_ids"].numpy(), qte), \
+                "judge/resid QUERY_ID mismatch -- caches describe different rows"
+
+    # NOTE (2026-10-13, TODO.md P0-1): this used to fit with lr(C=0.5) while the
+    # paper's numbers come from significance.py, which uses C=1.0 -- so the figure
+    # and Table 1 disagreed for TWO reasons (selection split AND regularisation).
+    # Both are now aligned: C=1.0, and the peak is chosen on VAL.
     def layer_auc(li):
-        m = make_pipeline(StandardScaler(), lr(C=0.5)).fit(Rtr[:, li, :], ytr)
-        return round(auc(yte, m.predict_proba(Rte[:, li, :])[:, 1]), 4)
-    resid_auc = Parallel(n_jobs=min(N_JOBS, n_layers))(
+        m = make_pipeline(StandardScaler(), lr(C=1.0)).fit(Rtr[:, li, :], ytr)
+        va = auc(yva, m.predict_proba(Rva[:, li, :])[:, 1])
+        te = auc(yte, m.predict_proba(Rte[:, li, :])[:, 1])
+        return round(va, 4), round(te, 4)
+    both = Parallel(n_jobs=min(N_JOBS, n_layers))(
         delayed(layer_auc)(li) for li in range(n_layers))
+    resid_val = [b[0] for b in both]
+    resid_auc = [b[1] for b in both]
 
     # ---- per-head attn probe AUC (val-selected, test-scored) ----
-    Atr, _ = load(cache, "attn", "train")
-    Ava, yva = load(cache, "attn", "val")
-    Ate, _ = load(cache, "attn", "test")
+    Atr, _, _ = load(cache, "attn", "train")
+    Ava, yva_h, _ = load(cache, "attn", "val")
+    Ate, _, _ = load(cache, "attn", "test")
     n_total_heads = Atr.shape[1]
 
     def head_auc(h):
         p = lr(penalty="l1").fit(Atr[:, h, :], ytr)
-        va = auc(yva, p.predict_proba(Ava[:, h, :])[:, 1])
+        va = auc(yva_h, p.predict_proba(Ava[:, h, :])[:, 1])
         te = auc(yte, p.predict_proba(Ate[:, h, :])[:, 1])
         return va, te
     res = Parallel(n_jobs=N_JOBS)(delayed(head_auc)(h) for h in range(n_total_heads))
@@ -93,17 +110,18 @@ def compute(cache, judge_cache, topk):
     sel = np.argsort(head_va)[::-1][:topk]   # select on val (no leakage)
     sel_layers = (sel // n_heads).tolist()
 
+    best_val = int(np.argmax(resid_val))
     return {
         "model": meta["model"], "n_layers": n_layers, "n_heads": n_heads,
         "judge": judge,
         "resid_auc_per_layer": resid_auc,
-        # NOTE (known bias, see TODO.md P0-1): this peak is an argmax taken on the
-        # TEST curve, i.e. selection-on-test. It is therefore optimistically biased
-        # and does NOT match significance.py, which selects the layer on VAL.
-        # Consequence today: this figure annotates 0.632 @ L12 while paper Table 1
-        # reports the val-selected 0.628 @ L13. Fix = select on val here too, then
-        # re-render (needs results/cache/*.pt; see docs/CACHE_NAMING.md).
-        "resid_peak": {"layer": int(np.argmax(resid_auc)), "auc": max(resid_auc)},
+        "resid_auc_per_layer_val": resid_val,
+        # peak chosen on VAL, value reported on TEST -- matches significance.py
+        "resid_peak": {"layer": best_val, "auc": resid_auc[best_val],
+                       "selection": "val", "val_auc_at_selected": resid_val[best_val]},
+        # transparency only; selection-on-test, never report as a result
+        "resid_peak_test_argmax_DO_NOT_REPORT": {
+            "layer": int(np.argmax(resid_auc)), "auc": max(resid_auc)},
         "resid_final": resid_auc[-1],
         "head_te_grid": head_te_grid.tolist(),
         "head_layer_max": head_te_grid.max(axis=1).round(4).tolist(),

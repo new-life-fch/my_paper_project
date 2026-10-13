@@ -49,7 +49,8 @@ def auc(y, s):
 
 def load(cache, scheme, split):
     d = torch.load(os.path.join(cache, f"{scheme}_{split}.pt"))
-    return d["acts"].to(torch.float32).numpy(), d["labels"].numpy()
+    qids = d["query_ids"].numpy() if "query_ids" in d else None
+    return d["acts"].to(torch.float32).numpy(), d["labels"].numpy(), qids
 
 
 def main():
@@ -66,36 +67,64 @@ def main():
 
     rep = {}
 
-    # --- 1. LLM-judge (zero training) ---
+    # --- 0. the two caches must describe the SAME rows -------------------
+    # Labels alone are NOT sufficient: a different dataset revision / seed /
+    # --max-passages produces the same label vector over different (query, passage)
+    # pairs, which silently misaligns judge scores against probe features.
+    # TODO.md P1-15; significance.py got this check on 2026-10-13, this script
+    # was the one missing it (TODO.md R-2).
+    _Rte_chk, yte_chk, qte_chk = load(args.cache, "resid", "test")
     jd = torch.load(os.path.join(args.judge_cache, "judge_test.pt"))
+    assert np.array_equal(jd["labels"].numpy(), yte_chk), "judge/resid label mismatch"
+    if "query_ids" in jd and qte_chk is not None:
+        assert np.array_equal(jd["query_ids"].numpy(), qte_chk), \
+            "judge/resid QUERY_ID mismatch -- caches describe different rows (TODO.md P1-15)"
+    else:
+        print("WARNING: judge cache has no query_ids; only labels were checked")
+
+    # --- 1. LLM-judge (zero training) ---
     rep["llm_judge_zeroshot"] = round(float(auc(jd["labels"].numpy(), jd["scores"].numpy())), 3)
 
     # --- 2/3. resid per-layer trained probes ---
-    Rtr, ytr = load(args.cache, "resid", "train")
-    Rva, yva = load(args.cache, "resid", "val")
-    Rte, yte = load(args.cache, "resid", "test")
+    Rtr, ytr, _ = load(args.cache, "resid", "train")
+    Rva, yva, _ = load(args.cache, "resid", "val")
+    Rte, yte, _ = load(args.cache, "resid", "test")
     n_layers = Rtr.shape[1]
 
     def layer_auc(li):
         m = make_pipeline(StandardScaler(), lr(C=0.5)).fit(Rtr[:, li, :], ytr)
         return round(float(auc(yte, m.predict_proba(Rte[:, li, :])[:, 1])), 3)
-    layer_aucs = Parallel(n_jobs=min(N_JOBS, n_layers))(
-        delayed(layer_auc)(li) for li in range(n_layers))
-    rep["resid_per_layer_test_auc"] = layer_aucs
-    rep["resid_final_layer(output_repr)"] = layer_aucs[-1]
-    # ⚠️ KNOWN BIAS (selection-on-test): `layer_aucs` are TEST AUCs, so this
-    # argmax picks the best layer on the test set. significance.py selects on
-    # VAL instead, which is why the paper's Table 1 no longer uses this file's
-    # numbers. Everything written by this script -- including the three
-    # internals_vs_output_*.json that survive in results/ -- therefore carries
-    # an optimistic resid_best_layer. Do NOT compare those values against
-    # significance*.json without accounting for this. Tracked as TODO.md P0-6.
-    rep["resid_best_layer"] = {"layer": int(np.argmax(layer_aucs)), "auc": max(layer_aucs)}
+    # Layer selection MUST happen on validation, never on test (TODO.md P0-6/R-2).
+    # This script used to argmax TEST AUCs, which inflated resid_best_layer by
+    # ~+0.01-0.02 and contradicted the paper's own val-selected Table 1. Fit on
+    # train, score val AND test for every layer, then select on val.
+    def layer_aucs_both(li):
+        m = make_pipeline(StandardScaler(), lr(C=0.5)).fit(Rtr[:, li, :], ytr)
+        return (round(float(auc(yva, m.predict_proba(Rva[:, li, :])[:, 1])), 3),
+                round(float(auc(yte, m.predict_proba(Rte[:, li, :])[:, 1])), 3))
+    both = Parallel(n_jobs=min(N_JOBS, n_layers))(
+        delayed(layer_aucs_both)(li) for li in range(n_layers))
+    val_aucs = [b[0] for b in both]
+    test_aucs = [b[1] for b in both]
+    rep["resid_per_layer_val_auc"] = val_aucs
+    rep["resid_per_layer_test_auc"] = test_aucs
+    rep["resid_final_layer(output_repr)"] = test_aucs[-1]
+    best_layer = int(np.argmax(val_aucs))
+    rep["resid_best_layer"] = {
+        "layer": best_layer,
+        "auc": test_aucs[best_layer],
+        "selection": "val",
+        "val_auc_at_selected": val_aucs[best_layer],
+    }
+    # kept for transparency only -- DO NOT report this as a result, it is
+    # selection-on-test and therefore optimistic (this is what the old field was).
+    rep["resid_best_layer_test_argmax_DO_NOT_REPORT"] = {
+        "layer": int(np.argmax(test_aucs)), "auc": max(test_aucs)}
 
     # --- 4. attn-head probe (our method) ---
-    Atr, _ = load(args.cache, "attn", "train")
-    Ava, _ = load(args.cache, "attn", "val")
-    Ate, _ = load(args.cache, "attn", "test")
+    Atr, _, _ = load(args.cache, "attn", "train")
+    Ava, _, _ = load(args.cache, "attn", "val")
+    Ate, _, _ = load(args.cache, "attn", "test")
     n_heads = Atr.shape[1]
 
     def hauc(h):

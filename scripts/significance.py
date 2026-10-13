@@ -120,13 +120,21 @@ def main():
     ap.add_argument("--out", default="results/significance.json")
     ap.add_argument("--only", default="", help="comma-separated tags to run (default: all)")
     args = ap.parse_args()
-    rng = np.random.default_rng(42)
+    # NOTE (2026-10-13, TODO.md P1-17): do NOT draw from one RNG for all models.
+    # The RNG used to be created once out here and consumed inside the model loop,
+    # so `--only X` (or a missing cache) shifted the stream for every later model
+    # and silently changed their CIs. Each model now gets its own spawned
+    # sub-stream, making a model's CI independent of what else ran.
+    base_seed = np.random.SeedSequence(42)
+    child_seeds = base_seed.spawn(len(MODELS))
 
     only = set(t for t in args.only.split(",") if t)
     report = []
-    for tag, name, legacy in MODELS:
+    for mi, (tag, name, legacy) in enumerate(MODELS):
         if only and tag not in only:
             continue
+        # per-model sub-stream (TODO.md P1-17) -> CI independent of --only
+        rng = np.random.default_rng(child_seeds[mi])
         ic, jc = resolve_caches(tag, legacy, args.suffix)
         if not os.path.isdir(ic):
             print(f"skip {tag}: no cache {ic}"); continue
@@ -140,7 +148,17 @@ def main():
 
         jd = torch.load(os.path.join(jc, "judge_test.pt"))
         s_judge = jd["scores"].numpy()
+        # Both caches must describe the SAME rows. Comparing labels alone is not
+        # enough: a different dataset revision / --seed / --max-passages yields
+        # the same label vector over DIFFERENT (query, passage) pairs, which
+        # silently misaligns judge scores against probe features (TODO.md P1-15).
         assert np.array_equal(jd["labels"].numpy(), yte), f"{tag}: judge/resid label mismatch"
+        if "query_ids" in jd:
+            assert np.array_equal(jd["query_ids"].numpy(), qte), \
+                f"{tag}: judge/resid QUERY_ID mismatch -- caches describe different rows"
+        else:
+            print(f"  WARNING {tag}: judge cache has no query_ids; "
+                  f"only labels were checked (TODO.md P1-15)")
 
         # final-layer (output-representation) probe
         m_fin = make_pipeline(StandardScaler(), lr()).fit(Rtr[:, -1, :], ytr)

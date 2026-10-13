@@ -32,10 +32,21 @@ echo "=== queue start $(date) ===" >> "$MASTER"
 for item in "${QUEUE[@]}"; do
   MODEL="${item%%|*}"; TAG="${item##*|}"
   OUT="results/internals_vs_output_${TAG}.json"
-  if [ -f "$OUT" ]; then
-    echo "[$(date +%H:%M)] SKIP $TAG (already have $OUT)" >> "$MASTER"
+  # SKIP only if the artifact came from the CURRENT code (TODO.md P3-7).
+  # A bare `[ -f "$OUT" ]` would forever reuse the pre-2026-10-13 files, whose
+  # resid_best_layer was selection-on-test (TODO.md P0-6/R-2), so the queue
+  # would silently never regenerate them.
+  if [ -f "$OUT" ] && python - "$OUT" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if (d.get("resid_best_layer", {}).get("selection") == "val"
+               and "resid_per_layer_val_auc" in d) else 1)
+PY
+  then
+    echo "[$(date +%H:%M)] SKIP $TAG (artifact already from current code)" >> "$MASTER"
     continue
   fi
+  [ -f "$OUT" ] && echo "[$(date +%H:%M)] STALE $TAG (regenerating with current code)" >> "$MASTER"
   echo "[$(date +%H:%M)] START $TAG ($MODEL)" >> "$MASTER"
   if bash scripts/run_model.sh "$MODEL" "$TAG" > "results/logs/${TAG}.log" 2>&1; then
     echo "[$(date +%H:%M)] DONE  $TAG" >> "$MASTER"
