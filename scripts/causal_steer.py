@@ -134,6 +134,16 @@ def main():
     d_final = diff_means_dir(Atr[:, -1, :], ytr).astype(np.float32)
     proj_internal = {"train": round(train_laucs[best], 3), "val": round(val_laucs[best], 3)}
     proj_final = {"train": round(train_laucs[-1], 3), "val": round(val_laucs[-1], 3)}
+
+    # E-8 / R-5: a direction's own relevance quality must be reported alongside its
+    # steering effect. "The final direction destroys AUC while the internal one
+    # keeps it" is partly explained by the two directions simply being different
+    # quality relevance directions (internal proj-AUC > final proj-AUC). Without
+    # this number the AUC contrast cannot be interpreted.
+    def dir_proj_auc(d, X=Ava, y=yva):
+        s = X[:, -1, :] @ d                      # random dirs live in the same space
+        try: return float(roc_auc_score(y, s))
+        except ValueError: return 0.5
     print(f"[{args.tag}] best internal layer L{best} (val proj-AUC {val_laucs[best]:.3f}, "
           f"train {train_laucs[best]:.3f}); final-layer val proj-AUC {val_laucs[-1]:.3f}")
 
@@ -142,6 +152,10 @@ def main():
     for _ in range(args.n_random):
         d = rng.standard_normal(d_internal.shape).astype(np.float32)
         randoms.append(d / np.linalg.norm(d))
+    rnd_proj = [round(dir_proj_auc(d), 4) for d in randoms]
+    print(f"[{args.tag}] direction quality (val proj-AUC): internal {proj_internal['val']:.3f} | "
+          f"final {proj_final['val']:.3f} | random mean {np.mean(rnd_proj):.3f} "
+          f"(min {min(rnd_proj):.3f}, max {max(rnd_proj):.3f})")
 
     # --- model + test prompts ---------------------------------------------
     samples = load_ms_marco(n_queries=args.n_queries,
@@ -216,6 +230,13 @@ def main():
         "tag": args.tag, "model": args.model,
         "best_internal_layer": best, "best_layer_selection": "val",
         "proj_auc_internal": proj_internal, "proj_auc_final": proj_final,
+        # direction-quality control (E-8 / R-5): if the random directions' proj-AUC
+        # is comparable to internal's, then "internal keeps AUC" cannot be explained
+        # by direction quality alone; if internal >> random, it can, and the paper
+        # must say so.
+        "proj_auc_random": {"mean": round(float(np.mean(rnd_proj)), 4),
+                            "min": min(rnd_proj), "max": max(rnd_proj),
+                            "values": rnd_proj},
         "alphas": alphas, "n_test": len(test_s),
         "n_test_relevant": int((labels == 1).sum()),
         "n_random": args.n_random,
