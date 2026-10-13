@@ -1,13 +1,34 @@
 # Attention-Probe-RAG Dependencies
-# 版本约束已放宽，服务器自带 torch 2.7.0 + Python 3.12.3
-# 去掉 torch 行避免覆盖已有安装，让 pip 自动解析兼容版本
-transformers
-accelerate
-datasets
-scikit-learn
-numpy
-matplotlib
-seaborn
-sentence-transformers
-tqdm
-safetensors
+#
+# 2026-10-13（新 AutoDL 主机首次完整跑通）后开始钉版本：此前本文件**零钉版本**，
+# 而论文的 AUC 会随 sklearn 的 lbfgs 解路径与 numpy 的 BLAS 动第 3 位小数
+# （见 src/provenance.py 的说明与 TODO.md P1-13）。下面的 == 是**实测跑通的组合**。
+#
+# torch / torchvision 故意不在此文件里：
+#   - 本机自带 torch 2.8.0+cu128（CUDA 12.8）与 torchvision 0.23.0+cu128，已可用；
+#   - 装 torch 会拉 GB 级 CUDA wheel，且容易把可用环境换掉。
+#   如需重装（例如换机器），显式执行：
+#     pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128
+#   ⚠️ 论文里的数字来自**原主机**（torch 2.7 / transformers 5.x，主机已回收），
+#      本机重跑得到的是"复现版"，允许 1e-3 量级漂移 —— 换版本时请把实际版本回填到此处。
+
+transformers==5.19.0
+# nnsight 0.7.0：激活提取（model.trace）用；依赖 astor/python-socketio/pydantic
+nnsight==0.7.0
+accelerate==1.15.0
+datasets==5.1.0
+scikit-learn==1.9.1
+numpy==2.3.2
+scipy==1.18.1
+matplotlib==3.10.5
+seaborn==0.13.2
+sentence-transformers==6.1.0
+huggingface-hub==1.33.0
+joblib==1.6.0
+pandas==3.0.6
+pyarrow==26.0.0
+tqdm==4.70.1
+safetensors==0.8.0
+# 注意：**不要**装 hf_xet —— 它与代理不兼容，会让 HF 下载卡死
+# （见 CLAUDE.md §七 坑 3；scripts/setup_autodl.sh 里已设 HF_HUB_DISABLE_XET=1）。
+# 若某个包把它作为依赖带回来：python -m pip uninstall -y hf_xet

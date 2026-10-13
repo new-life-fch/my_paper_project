@@ -6,8 +6,21 @@ Supports query-based splitting to prevent data leakage.
 """
 
 import random
+import zlib
+
 from datasets import load_dataset
 from tqdm import tqdm
+
+
+def stable_query_id(text: str) -> int:
+    """Deterministic positive int id for a query string.
+
+    Why not `hash(str)`: Python randomises str hashing per process (PYTHONHASHSEED),
+    so the same corpus produced a DIFFERENT id map on every run -- the FiQA judge
+    and the FiQA probe could then train/test on different query sets.  Documented
+    as TODO.md P1-16; zlib.crc32 is stable across processes and machines.
+    """
+    return zlib.crc32(str(text).encode("utf-8")) % (10 ** 9)
 
 
 def load_ms_marco(n_queries: int = 100, max_passages_per_query: int = 5, seed: int = 42):
@@ -23,7 +36,11 @@ def load_ms_marco(n_queries: int = 100, max_passages_per_query: int = 5, seed: i
         List of dicts: {query_id, query, passage, label}
     """
     print("Loading MS MARCO v1.1 dataset...")
-    ds = load_dataset("microsoft/ms_marco", "v1.1", split="train", trust_remote_code=True)
+    # NOTE 2026-10-13: `trust_remote_code=True` was removed -- datasets 5.x no
+    # longer accepts it and RAISES instead of ignoring it.  MS MARCO v1.1 is
+    # plain Parquet on the Hub (dataset card points at v1.1/*.parquet), so no
+    # loading script is needed and the data/labels are unchanged.
+    ds = load_dataset("microsoft/ms_marco", "v1.1", split="train")
 
     random.seed(seed)
     # Sample a subset of indices for efficiency
@@ -88,9 +105,10 @@ def load_beir_relevance(name: str = "fiqa", n_queries: int = 1500,
     judged relevant for that query (standard relevance-set construction).
     """
     print(f"Loading BeIR/{name} relevance dataset...")
-    corpus = load_dataset(f"BeIR/{name}", "corpus", trust_remote_code=True)["corpus"]
-    queries = load_dataset(f"BeIR/{name}", "queries", trust_remote_code=True)["queries"]
-    qrels_all = load_dataset(f"BeIR/{name}-qrels", trust_remote_code=True)
+    # `trust_remote_code` removed for datasets 5.x (see load_ms_marco).
+    corpus = load_dataset(f"BeIR/{name}", "corpus")["corpus"]
+    queries = load_dataset(f"BeIR/{name}", "queries")["queries"]
+    qrels_all = load_dataset(f"BeIR/{name}-qrels")
     # Pool qrels across splits (we re-split by query ourselves downstream).
     import itertools
     qrels = list(itertools.chain.from_iterable(qrels_all[s] for s in qrels_all))
@@ -132,7 +150,8 @@ def load_beir_relevance(name: str = "fiqa", n_queries: int = 1500,
         try:
             qid_num = int(q)
         except ValueError:
-            qid_num = abs(hash(q)) % (10 ** 9)
+            # stable across processes (was abs(hash(q)) -> random per run, TODO.md P1-16)
+            qid_num = stable_query_id(q)
         for c in pos_cids:
             samples.append({"query_id": qid_num, "query": qid2text[q],
                             "passage": cid2text[c], "label": 1})
