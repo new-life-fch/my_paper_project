@@ -27,6 +27,7 @@ Usage:
 Never writes the token anywhere; huggingface_hub stores it under HF_HOME.
 """
 import argparse
+import glob
 import json
 import os
 import shutil
@@ -168,6 +169,55 @@ def check_env():
     return ok
 
 
+def cached_complete(repo_id):
+    """True if this repo is already fully downloaded under HF_HOME.
+
+    Checks the *content*, not just "a snapshot dir exists": every shard named in
+    model.safetensors.index.json must be present and non-empty, and every snapshot
+    symlink must resolve.  This is what lets a re-run skip models that are done --
+    worth having because the HuggingFace cache stores each blob under a hash and a
+    killed transfer can leave an orphaned `.incomplete` next to the real file
+    (observed here: 3B-Instruct looked "in progress" but was complete).
+    """
+    from huggingface_hub import constants, try_to_load_from_cache
+    cache_root = os.environ.get("HF_HUB_CACHE") or os.path.join(
+        os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface")), "hub")
+    d = os.path.join(cache_root, "models--" + repo_id.replace("/", "--"))
+    if not os.path.isdir(d):
+        # fall back to the library's own view (respects HF_HUB_CACHE)
+        d = os.path.join(constants.HF_HUB_CACHE, "models--" + repo_id.replace("/", "--"))
+        if not os.path.isdir(d):
+            return False
+    snaps = glob.glob(os.path.join(d, "snapshots", "*"))
+    if not snaps:
+        return False
+    snap = snaps[0]
+
+    idx = os.path.join(snap, "model.safetensors.index.json")
+    if os.path.exists(idx):
+        try:
+            with open(idx) as f:
+                shards = sorted(set(json.load(f)["weight_map"].values()))
+        except Exception:
+            return False
+        for sh in shards:
+            p = os.path.join(snap, sh)
+            if not os.path.exists(p) or os.path.getsize(p) < 1_000_000:
+                return False
+    else:
+        # single-file model: any real weight file will do
+        weights = [f for f in os.listdir(snap) if f.endswith((".safetensors", ".bin"))]
+        if not weights or all(os.path.getsize(os.path.join(snap, f)) < 1_000_000 for f in weights):
+            return False
+
+    # every symlink must resolve to a real blob
+    for f in os.listdir(snap):
+        p = os.path.join(snap, f)
+        if os.path.islink(p) and not os.path.exists(p):
+            return False
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="", help="comma-separated tags to restrict the run")
@@ -211,6 +261,11 @@ def main():
         print("-" * 72, flush=True)
         print(f"[{i}/{len(todo)}] {tag}  <-  {repo}   (gated={gated})", flush=True)
         print("-" * 72, flush=True)
+        if cached_complete(repo):
+            print("  SKIP  already complete in the cache (all shards present)", flush=True)
+            results.append({"tag": tag, "repo": repo, "ok": True, "error": "",
+                            "seconds": 0.0, "cache_grew_mb": 0, "skipped": True})
+            continue
         before = du(cache_dir) if os.path.isdir(cache_dir) else 0
         t0 = time.time()
         ok, err = False, ""
