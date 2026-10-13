@@ -76,7 +76,7 @@ if [ "$KIND" = "all" ] || [ "$KIND" = "causal" ]; then
     python scripts/causal_steer.py --model "$MODEL" --cache "$IC" --tag "$MID" \
       --n-queries "$NQ" --n-random "$NR" --out "$OUT" >> "$LOG" 2>&1 \
       && log "DONE  causal $MID" || log "FAIL  causal $MID"
-    python scripts/plot_causal.py --in "$OUT" >> "$LOG" 2>&1 || true
+    python scripts/plot_causal.py --json "$OUT" --tag "$MID" >> "$LOG" 2>&1 || true
   done
 fi
 

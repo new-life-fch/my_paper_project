@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Scale-up extraction to tighten per-model CIs (root cause: test had only ~75 queries).
 # Runs extract->judge->internals for 1500-query caches on the flagship models.
-set -u
+set -uo pipefail   # 2026-10-13: 原为 `set -u`，缺 -e/-o pipefail（TODO.md P3-7）
 export HF_HOME="${HF_HOME:-/root/autodl-tmp/hf_cache}"
 export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1
 cd "$(dirname "$0")/.."   # 2026-10-13: 原为硬编码旧主机路径 /root/shared-nvme/paper_A_internals
