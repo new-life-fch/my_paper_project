@@ -18,7 +18,7 @@ OUT="results/internals_vs_output_${TAG}.json"
 export HF_HUB_DISABLE_XET=1
 # IMPORTANT: system disk is only 30G; force HF cache onto the data mount.
 # (see CLAUDE.md §七 / memory disk-layout-server)
-export HF_HOME="${HF_HOME:-/root/shared-nvme/hf_cache}"
+export HF_HOME="${HF_HOME:-/root/autodl-tmp/hf_cache}"
 # Proxy is needed while downloading; inherit from environment if set.
 # NEVER hardcode credentials here — this repo is public.
 #   export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"

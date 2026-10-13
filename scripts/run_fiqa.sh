@@ -16,7 +16,7 @@ JUDGE="results/cache/${TAG}_q${NQ}_judge"
 OUT="results/internals_vs_output_${TAG}.json"
 
 export HF_HUB_DISABLE_XET=1
-export HF_HOME="${HF_HOME:-/root/shared-nvme/hf_cache}"
+export HF_HOME="${HF_HOME:-/root/autodl-tmp/hf_cache}"
 export HF_HUB_OFFLINE=1
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 

@@ -10,7 +10,7 @@
 cd "$(dirname "$0")/.."
 
 # force HF cache onto data mount (system disk is only 30G)
-export HF_HOME="${HF_HOME:-/root/shared-nvme/hf_cache}"
+export HF_HOME="${HF_HOME:-/root/autodl-tmp/hf_cache}"
 export HF_HUB_DISABLE_XET=1
 # proxy for downloads (credentials live in env / CLAUDE.md §七, never hardcoded)
 export https_proxy="${https_proxy:-}"
