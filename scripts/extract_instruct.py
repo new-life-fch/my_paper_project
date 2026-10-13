@@ -32,20 +32,44 @@ from src.data import load_ms_marco, split_by_query
 from src.provenance import env_versions, model_revision
 
 
-def build_instruct_prompt(query: str, passage: str) -> str:
-    # Document first, then the question, then the judgment ask. The token after
-    # "Answer:" is where the model is poised to emit a relevance verdict.
-    return (f"Document: {passage}\n"
-            f"Question: {query}\n"
-            f"Is the document relevant to the question? Answer:")
+def build_instruct_prompt(query: str, passage: str, template: str = "canonical") -> str:
+    """The prompt whose answer-token activations we cache.
+
+    `canonical` is the frozen template the paper uses; every script must build it
+    byte-identically (scripts/selfcheck.py check 6 enforces this).  The extra
+    templates exist only for the prompt-robustness experiment (TODO.md P4-2):
+    they ask the same question in different words, to test that the
+    internals>output gap is not an artefact of one phrasing.
+    """
+    if template == "canonical":
+        # Document first, then the question, then the judgment ask. The token
+        # after "Answer:" is where the model is poised to emit a relevance verdict.
+        return (f"Document: {passage}\n"
+                f"Question: {query}\n"
+                f"Is the document relevant to the question? Answer:")
+    if template == "terse":
+        return (f"Passage: {passage}\n"
+                f"Query: {query}\n"
+                f"Relevant? Answer:")
+    if template == "verbose":
+        return (f"The following passage was retrieved for a search query.\n\n"
+                f"Passage: {passage}\n\n"
+                f"Query: {query}\n\n"
+                f"Does this passage answer or address the query? "
+                f"Please judge whether the passage is relevant. Answer:")
+    raise ValueError(f"unknown prompt template: {template}")
 
 
-def extract_both_sites(model, samples, n_layers, n_heads, head_dim, max_length):
+PROMPT_TEMPLATES = ("canonical", "terse", "verbose")
+
+
+def extract_both_sites(model, samples, n_layers, n_heads, head_dim, max_length,
+                       template="canonical"):
     """Return (attn [N, L*nh, hd], resid [N, L, H]) at the last token."""
     attn_all, resid_all = [], []
     from tqdm import tqdm
     for s in tqdm(samples, desc="extract(instruct)"):
-        prompt = build_instruct_prompt(s["query"], s["passage"])
+        prompt = build_instruct_prompt(s["query"], s["passage"], template)
         attn_layers, resid_layers = [], []
         with model.trace(prompt):
             for i in range(n_layers):
@@ -77,6 +101,9 @@ def main():
     ap.add_argument("--out", default="results/cache/llama32_3b_q500_instruct")
     ap.add_argument("--dataset", default="ms_marco",
                     help="ms_marco | beir:fiqa | beir:scifact")
+    ap.add_argument("--prompt-template", default="canonical", choices=PROMPT_TEMPLATES,
+                    help="canonical = the frozen paper prompt; others only for the "
+                         "prompt-robustness experiment (TODO.md P4-2)")
     args = ap.parse_args()
 
     warn_if_legacy_exists(args.out)   # docs/CACHE_NAMING.md
@@ -104,6 +131,7 @@ def main():
     print(f"Arch: {n_layers}L x {n_heads}H, head_dim={head_dim}, hidden={hidden}")
 
     meta = {"model": args.model, "n_queries": args.n_queries, "prompt": "instruct",
+            "prompt_template": args.prompt_template,
             # provenance: the original host is gone, so numbers may be re-derived;
             # without these two fields a version drift is indistinguishable from a bug
             "env": env_versions(), "model_revision": model_revision(model),
@@ -112,7 +140,8 @@ def main():
             "splits": {k: len(v) for k, v in splits.items()}}
 
     for name, s in splits.items():
-        attn, resid = extract_both_sites(model, s, n_layers, n_heads, head_dim, args.max_length)
+        attn, resid = extract_both_sites(model, s, n_layers, n_heads, head_dim,
+                                        args.max_length, args.prompt_template)
         labels = torch.tensor([x["label"] for x in s], dtype=torch.long)
         qids = torch.tensor([x["query_id"] for x in s], dtype=torch.long)
         torch.save({"acts": attn.to(torch.float16), "labels": labels, "query_ids": qids},

@@ -32,11 +32,31 @@ from src.data import load_ms_marco, split_by_query
 from src.provenance import env_versions, model_revision
 
 
-def build_instruct_prompt(query: str, passage: str) -> str:
-    # Identical to extract_instruct.py so the judge sees the same context.
-    return (f"Document: {passage}\n"
-            f"Question: {query}\n"
-            f"Is the document relevant to the question? Answer:")
+def build_instruct_prompt(query: str, passage: str, template: str = "canonical") -> str:
+    """Identical to extract_instruct.py so the judge sees the same context.
+
+    `canonical` must stay byte-identical across scripts (selfcheck check 6);
+    the other templates exist for the prompt-robustness experiment (TODO.md P4-2)
+    and are kept literally in sync with extract_instruct.py.
+    """
+    if template == "canonical":
+        return (f"Document: {passage}\n"
+                f"Question: {query}\n"
+                f"Is the document relevant to the question? Answer:")
+    if template == "terse":
+        return (f"Passage: {passage}\n"
+                f"Query: {query}\n"
+                f"Relevant? Answer:")
+    if template == "verbose":
+        return (f"The following passage was retrieved for a search query.\n\n"
+                f"Passage: {passage}\n\n"
+                f"Query: {query}\n\n"
+                f"Does this passage answer or address the query? "
+                f"Please judge whether the passage is relevant. Answer:")
+    raise ValueError(f"unknown prompt template: {template}")
+
+
+PROMPT_TEMPLATES = ("canonical", "terse", "verbose")
 
 
 def yes_no_token_ids(tokenizer):
@@ -64,6 +84,9 @@ def main():
     ap.add_argument("--out", default="results/cache/llama32_3b_q500_judge")
     ap.add_argument("--dataset", default="ms_marco",
                     help="ms_marco | beir:fiqa | beir:scifact")
+    ap.add_argument("--prompt-template", default="canonical", choices=PROMPT_TEMPLATES,
+                    help="canonical = the frozen paper prompt; others only for the "
+                         "prompt-robustness experiment (TODO.md P4-2)")
     args = ap.parse_args()
 
     warn_if_legacy_exists(args.out)   # docs/CACHE_NAMING.md
@@ -98,7 +121,7 @@ def main():
     for name, s in splits.items():
         scores = []
         for x in tqdm(s, desc=f"judge/{name}"):
-            prompt = build_instruct_prompt(x["query"], x["passage"])
+            prompt = build_instruct_prompt(x["query"], x["passage"], args.prompt_template)
             with model.trace(prompt):
                 logits = model.lm_head.output[0, -1, :].detach().cpu().save()
             lg = logits.float()
