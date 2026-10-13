@@ -42,6 +42,9 @@ results/logs/
 *.pt
 *.safetensors
 tools/
+# 例外：LaTeX 引擎（37MB 静态二进制）。tectonic 首次编译需联网拉 CTAN 包，
+# 之后离线可用；没有它 main.tex 改了无法编译验证（TODO.md P3-1）。
+!paper/tools/tectonic
 paper/*.aux
 paper/*.bbl
 paper/*.out
