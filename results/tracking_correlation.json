@@ -1,5 +1,5 @@
 {
-  "n": 7,
+  "n": 8,
   "per_model": [
     {
       "tag": "llama32_3b",
@@ -112,10 +112,26 @@
         0.3534
       ],
       "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "qwen25_7b_instruct",
+      "L": 23,
+      "probe_at_Lstar": 0.6301,
+      "final": 0.61,
+      "judge": 0.66,
+      "probe_minus_final": 0.0201,
+      "probe_minus_judge": -0.0299,
+      "delta_gap": 0.2283,
+      "auc_vs_target_at_1": 0.3404,
+      "norm_matched_vs_raw_at_1": [
+        0.3821,
+        0.3821
+      ],
+      "identity_max_absdiff": 0.0
     }
   ],
-  "corr_probe_minus_final_dgap": 0.2146,
-  "corr_probe_minus_judge_dgap": -0.2351,
+  "corr_probe_minus_final_dgap": -0.1233,
+  "corr_probe_minus_judge_dgap": -0.5167,
   "worst_identity_max_absdiff": 0.0,
   "worst_norm_matched_minus_raw": 0.0001
 }

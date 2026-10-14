@@ -429,35 +429,37 @@ can.
 
 \emph{What distinguishes the models?} We tested the obvious candidate---that
 tracking is weaker where the probe's margin over the output-side readers is
-larger---and found no support. On the seven models in Table~\ref{tab:tracking}
+larger---and found no support. On the eight models in Table~\ref{tab:tracking}
 the Pearson correlation between $\Delta$gap and the probe's margin over the
-final-layer probe is $+0.22$ while the Spearman correlation is $-0.36$, i.e.\
-the two even disagree in sign; dropping the single Qwen base model sends the
-Pearson value to $-0.62$. Correlations with the probe's margin over the judge
-span $-0.43$ to $-0.07$ across leave-one-model-out subsets. The association is
-small, sign-unstable, and driven by individual models, so we report the patching
-pattern as model-dependent and leave its mechanism open rather than assert one.
+final-layer probe is $-0.12$ while the Spearman correlation is $-0.48$; the
+Pearson value was $+0.22$ before the last model was measured, so adding a single
+model flips its sign. Correlations with the probe's margin over the judge stay
+negative but wander over $[-0.69,-0.24]$ across leave-one-model-out subsets. An
+association whose sign depends on which models are included is not usable, so we
+report the patching pattern as model-dependent and leave its mechanism open
+rather than assert one.
 
 \begin{table}[t]
 \centering\small
 \caption{Cross-sample patching: does the verdict follow the transplanted
 activation? $\Delta$gap is the change in the relevant-minus-irrelevant
-$P(\text{yes})$ gap from $\alpha{=}0$ to $\alpha{=}1$; the middle columns test
+$P(\text{yes})$ gap from $\alpha{=}0$ to $\alpha{=}1$. The middle columns test
 the candidate explanation that tracking is weaker where the probe leads the
-output-side readers more, and show no usable pattern. The last column compares
+output-side readers more; no usable pattern survives. The last column compares
 transplanting the mid-layer activation into the \emph{output} layer with and
-without rescaling it to that layer's own norm: the two agree to $\le0.0002$
-everywhere, so the failure to transfer is not a scale artefact.}
+without rescaling it to that layer's own norm: the two agree to $\le0.0002$ on
+all eight models, so the failure to transfer is not a scale artefact.}
 \label{tab:tracking}
 \begin{tabular}{lcccccc}
 \toprule
 Model & probe@$L^*$ & final & judge & probe$-$final & $\Delta$gap & norm vs.\ raw \\
 \midrule
-Qwen2.5-7B            & 0.655 & 0.592 & 0.652 & $+0.063$ & $\mathbf{+0.176}$ & 0.353 / 0.353 \\
+Qwen2.5-7B-Instruct   & 0.630 & 0.610 & 0.660 & $+0.020$ & $\mathbf{+0.228}$ & 0.382 / 0.382 \\
+Qwen2.5-7B            & 0.655 & 0.592 & 0.652 & $+0.063$ & $+0.176$ & 0.353 / 0.353 \\
 Mistral-7B-v0.3       & 0.606 & 0.583 & 0.579 & $+0.023$ & $+0.043$ & 0.451 / 0.451 \\
 LLaMA-3.2-3B-Instruct & 0.638 & 0.612 & 0.614 & $+0.026$ & $+0.040$ & 0.349 / 0.349 \\
 LLaMA-3.1-8B-Instruct & 0.609 & 0.596 & 0.630 & $+0.013$ & $+0.012$ & 0.426 / 0.426 \\
-Mistral-7B-Instruct   & 0.633 & 0.596 & 0.646 & $+0.038$ & $+0.008$ & 0.450 / 0.450 \\
+Mistral-7B-Instruct   & 0.633 & 0.596 & 0.646 & $+0.037$ & $+0.008$ & 0.450 / 0.450 \\
 LLaMA-3.1-8B          & 0.621 & 0.562 & 0.574 & $+0.059$ & $+0.006$ & 0.515 / 0.515 \\
 LLaMA-3.2-3B          & 0.613 & 0.536 & 0.545 & $+0.077$ & $+0.003$ & 0.499 / 0.499 \\
 \bottomrule
