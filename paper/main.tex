@@ -35,13 +35,19 @@ model and on both Qwen models, with corrected $q<0.002$ throughout
 (effect $+0.06$ to $+0.15$). This edge survives a capacity-matched control
 that gives the final layer the identical read-out procedure, and the same
 internal activations are also far more decodable than the model's zero-shot
-verdict. The residual-stream advantage over the output representation is
-narrower: it is individually significant on the three \emph{base} models
+verdict. We are explicit about the boundary: re-reading the final layer with a
+different read-out (a per-chunk ensemble) matches or beats the head probe on
+two of eight models, so the matched-procedure comparison and the margin over
+the model's own verdict are the claims we stand behind, not a general
+``internals beat the output end''. The residual-stream advantage over the
+output representation is narrower: it is individually significant on the three
+\emph{base} models
 ($+0.078$, $+0.064$, $+0.059$) and shrinks on their instruct counterparts,
 indicating that alignment moves relevance signal toward the output without
 closing the gap. Comparing base and instruct pairs, alignment reliably
-improves the output readout (the judge gets stronger) yet the internal signals
-stay ahead. In short: relevance is encoded internally, and the model's own
+improves the output readout (the judge gets stronger), and the model's own
+readout direction still extracts less than a probe trained on the same layer on
+every model. In short: relevance is encoded internally, and the model's own
 readout extracts only part of it.
 \end{abstract}
 
