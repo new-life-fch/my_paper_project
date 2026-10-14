@@ -64,8 +64,67 @@
     "display": "LLaMA-3.2-3B (base)"
   },
   "llama31_8b": {
-    "status": "STALE",
-    "why": "old fixed-alpha protocol (no calibration)",
+    "status": "OK",
+    "layer": 17,
+    "n_random": 12,
+    "n_test": 1117,
+    "criterion": "internal alignment_gap percentile vs random >= 0.95",
+    "endpoints": {
+      "negative_endpoint": {
+        "target_logit_shift": -8.0,
+        "internal_gap": 0.0012,
+        "random_gap_mean": 0.003,
+        "random_gap_range": [
+          0.0001,
+          0.0062
+        ],
+        "internal_percentile": 0.3333,
+        "n_random_usable": 12,
+        "internal_auc": 0.564,
+        "random_auc_min": 0.556,
+        "auc_verdict": "not collapsed",
+        "passes_percentile": false
+      },
+      "positive_endpoint": {
+        "target_logit_shift": 8.0,
+        "internal_gap": 0.0007,
+        "random_gap_mean": 0.0026,
+        "random_gap_range": [
+          0.0002,
+          0.0065
+        ],
+        "internal_percentile": 0.25,
+        "n_random_usable": 12,
+        "internal_auc": 0.557,
+        "random_auc_min": 0.551,
+        "auc_verdict": "not collapsed",
+        "passes_percentile": false
+      }
+    },
+    "gap_shrinks_with_strength": true,
+    "random_gap_baseline_mean": 0.0164,
+    "random_gap_neg_endpoint_mean": 0.003,
+    "ablation_arm": {
+      "targets": [
+        0.0,
+        -1.0,
+        -2.0,
+        -4.0,
+        -8.0
+      ],
+      "mean_pyes": [
+        0.886,
+        0.4241,
+        0.3296,
+        0.2831,
+        0.2603
+      ],
+      "monotone_decreasing": true,
+      "auc_natural": 0.563,
+      "auc_neg_endpoint": 0.564,
+      "final_dir_auc_neg_endpoint": 0.503
+    },
+    "verdict": "NULL",
     "display": "LLaMA-3.1-8B (base)"
   },
   "qwen25_7b": {
