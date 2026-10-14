@@ -89,6 +89,8 @@ def main():
                     help="test rows to differentiate (backward pass each); "
                          "0 = all")
     ap.add_argument("--layer", type=int, default=None)
+    ap.add_argument("--grad-checkpoint", action="store_true",
+                    help="trade compute for memory; needed for 8B/7B backward passes")
     ap.add_argument("--dtype", default="float32", choices=["float32", "float16"],
                     help="float32 keeps the gradient clean; float16 halves the "
                          "footprint, which a 7B model needs for the backward pass "
@@ -138,6 +140,13 @@ def main():
     _dt = torch.float16 if args.dtype == "float16" else torch.float32
     model = AutoModelForCausalLM.from_pretrained(args.model, device_map="auto",
                                                  dtype=_dt)
+    # An 8B model in fp16 still OOMs on a 32 GB card once the backward graph for
+    # a ~120-token prompt is built (measured). Checkpointing trades compute for
+    # memory and keeps the L* gradient valid because the hook output is retained.
+    if args.grad_checkpoint:
+        model.gradient_checkpointing_enable()
+        model.config.use_cache = False
+        print("  gradient checkpointing enabled")
     model.eval()
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token

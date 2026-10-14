@@ -1,0 +1,39 @@
+{
+  "tag": "mistral_7b_instruct",
+  "model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "layer": 13,
+  "n_rows": 256,
+  "n_random": 16,
+  "dtype": "float16",
+  "probe_direction_cosine": {
+    "mean": -0.01045,
+    "median": -0.01015,
+    "frac_positive": 0.1172
+  },
+  "random_directions_cosine": {
+    "mean_of_means": -0.00131,
+    "mean_abs_of_means": 0.00859,
+    "max_abs_mean": 0.01921,
+    "per_direction_means": [
+      -0.00294,
+      -0.01103,
+      -0.00486,
+      -0.00544,
+      0.01117,
+      -0.01681,
+      0.01166,
+      -0.00623,
+      0.00083,
+      -0.00437,
+      0.00442,
+      -0.01035,
+      -0.01381,
+      -0.00335,
+      0.01921,
+      0.01096
+    ]
+  },
+  "probe_vs_random_abs_mean_percentile": 0.5625,
+  "protocol": "g = grad of (yes-no logit difference) wrt the L* answer-token residual; cosine with the probe's unit relevance direction vs random unit directions. No activation is edited, so no out-of-distribution concern.",
+  "elapsed_sec": 35.5
+}

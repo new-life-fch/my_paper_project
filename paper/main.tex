@@ -466,20 +466,49 @@ LLaMA-3.2-3B          & 0.613 & 0.536 & 0.545 & $+0.077$ & $+0.003$ & 0.499 / 0.
 \end{tabular}
 \end{table}
 
-A controller measurement sharpens what \emph{is} common across models: we compute
+A controller measurement establishes what \emph{is} common across all eight
+models, and it is the sharpest test we have because it edits nothing. We compute
 the directional derivative of the model's own verdict with respect to
 $h_{L^*}$---a local property of the network \emph{at the activation it actually
-produced}, so no editing is involved and the out-of-distribution objection does
-not apply. Its cosine with the probe's relevance direction is $+0.008$ on
-LLaMA-3.2-3B and $+0.006$ on Qwen2.5-7B, while the spread of the same statistic
-over sixteen random directions reaches $|0.037|$ and $|0.035|$; the probe
-direction sits at the $0.56$ and $0.38$ percentile of those nulls. The output
-readout is therefore, to first order, \emph{not pointed at the direction from
-which a probe reads relevance}---and this holds for Qwen too, i.e.\ \emph{even in
-the model whose verdict is demonstrably sensitive to $L^*$ content}. That is the
-misalignment, measured without perturbing anything: the information is present
-and the downstream network uses $L^*$, but the direction the verdict is locally
-sensitive to is not the relevance direction.
+produced}, so the out-of-distribution objection that limits patching does not
+apply---and take its cosine with the probe's unit relevance direction, comparing
+against sixteen random unit directions. Across all eight models the probe
+direction is never an outlier: the cosine is $+0.019$ at most and $-0.010$ at
+least, while the random-direction spread reaches magnitudes of $0.016$ to
+$0.037$, placing the probe direction between the $0.06$ and $0.81$ percentile of
+that null (Table~\ref{tab:grad}). The output readout is therefore, to first
+order, \emph{not pointed at the direction from which a probe reads relevance}.
+Crucially this holds for the Qwen models too, i.e.\ \emph{even where the verdict
+is demonstrably driven by $L^*$ content}. That is the misalignment, measured
+without perturbing anything: the information is present and the downstream
+network uses $L^*$, but the direction the verdict is locally sensitive to is not
+the relevance direction.
+
+\begin{table}[t]
+\centering\small
+\caption{Gradient alignment, all eight models. $\cos$ is between the gradient of
+the yes/no logit difference with respect to $h_{L^*}$ and the probe's unit
+relevance direction; the percentile places that cosine among sixteen random unit
+directions. Nothing is edited, so no out-of-distribution concern arises. The
+probe direction is never an outlier---its percentile at the $0.95$ threshold
+would indicate an aligned readout---which is the misalignment result in its
+cleanest form.}
+\label{tab:grad}
+\begin{tabular}{lcccc}
+\toprule
+Model & $L^*$ & $\cos$ & random max $|\text{mean}|$ & percentile \\
+\midrule
+LLaMA-3.2-3B        & 9  & $+0.008$ & 0.037 & 0.56 \\
+LLaMA-3.1-8B        & 8  & $+0.008$ & 0.016 & 0.62 \\
+LLaMA-3.2-3B-Instr. & 18 & $-0.002$ & 0.033 & 0.06 \\
+LLaMA-3.1-8B-Instr. & 12 & $+0.019$ & 0.025 & 0.81 \\
+Mistral-7B-v0.3     & 16 & $-0.005$ & 0.024 & 0.38 \\
+Mistral-7B-Instr.   & 13 & $-0.010$ & 0.019 & 0.56 \\
+Qwen2.5-7B          & 22 & $+0.006$ & 0.035 & 0.38 \\
+Qwen2.5-7B-Instr.   & 23 & $+0.015$ & 0.036 & 0.56 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 For comparison, transplanting the same real mid-layer activation into the
 \emph{output} layer also fails to transfer discriminability, and---this is the
