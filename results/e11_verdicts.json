@@ -1,0 +1,97 @@
+{
+  "llama32_3b": {
+    "status": "OK",
+    "layer": 13,
+    "n_random": 12,
+    "n_test": 1117,
+    "criterion": "internal alignment_gap percentile vs random >= 0.95",
+    "endpoints": {
+      "negative_endpoint": {
+        "target_logit_shift": -8.0,
+        "internal_gap": 0.0012,
+        "random_gap_mean": 0.0016,
+        "random_gap_range": [
+          0.0002,
+          0.0043
+        ],
+        "internal_percentile": 0.5455,
+        "n_random_usable": 11,
+        "internal_auc": 0.539,
+        "random_auc_min": 0.5,
+        "auc_verdict": "not collapsed",
+        "passes_percentile": false
+      },
+      "positive_endpoint": {
+        "target_logit_shift": 8.0,
+        "internal_gap": 0.0008,
+        "random_gap_mean": 0.0011,
+        "random_gap_range": [
+          0.0002,
+          0.003
+        ],
+        "internal_percentile": 0.4545,
+        "n_random_usable": 11,
+        "internal_auc": 0.522,
+        "random_auc_min": 0.5,
+        "auc_verdict": "not collapsed",
+        "passes_percentile": false
+      }
+    },
+    "gap_shrinks_with_strength": true,
+    "random_gap_baseline_mean": 0.0121,
+    "random_gap_neg_endpoint_mean": 0.0016,
+    "ablation_arm": {
+      "targets": [
+        0.0,
+        -1.0,
+        -2.0,
+        -4.0,
+        -8.0
+      ],
+      "mean_pyes": [
+        0.8142,
+        0.6912,
+        0.573,
+        0.456,
+        0.3928
+      ],
+      "monotone_decreasing": true,
+      "auc_natural": 0.545,
+      "auc_neg_endpoint": 0.539,
+      "final_dir_auc_neg_endpoint": 0.503
+    },
+    "verdict": "NULL",
+    "display": "LLaMA-3.2-3B (base)"
+  },
+  "llama31_8b": {
+    "status": "STALE",
+    "why": "old fixed-alpha protocol (no calibration)",
+    "display": "LLaMA-3.1-8B (base)"
+  },
+  "qwen25_7b": {
+    "status": "STALE",
+    "why": "old fixed-alpha protocol (no calibration)",
+    "display": "Qwen2.5-7B (base)"
+  },
+  "llama32_3b_instruct": {
+    "status": "STALE",
+    "why": "old fixed-alpha protocol (no calibration)",
+    "display": "LLaMA-3.2-3B-Instruct"
+  },
+  "llama31_8b_instruct": {
+    "status": "MISSING",
+    "display": "LLaMA-3.1-8B-Instruct"
+  },
+  "mistral_7b": {
+    "status": "MISSING",
+    "display": "Mistral-7B-v0.3 (base)"
+  },
+  "mistral_7b_instruct": {
+    "status": "MISSING",
+    "display": "Mistral-7B-Instruct-v0.3"
+  },
+  "qwen25_7b_instruct": {
+    "status": "MISSING",
+    "display": "Qwen2.5-7B-Instruct"
+  }
+}

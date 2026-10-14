@@ -66,9 +66,12 @@ Our contribution is the \emph{relative} science of internals vs.\ output:
   trained probe on the output representation (final hidden state).
   \item \textbf{Attribution.} Decomposing the gap into a
   \emph{training} component (final-layer probe $-$ judge) and a
-  \emph{depth/internal} component (best internal layer $-$ final layer) shows
-  the edge comes substantially from \emph{reading internals}, not merely from
-  \emph{being trained}.
+  \emph{depth/internal} component (best internal layer $-$ final layer) rules
+  out the obvious explanation and locates the rest: the training component is
+  $0/8$ after correction---fitting a probe on the output representation buys
+  nothing over the zero-shot verdict---while the depth component is
+  individually significant on the three base models and is compressed by
+  alignment.
   \item \textbf{Mechanism.} Relevance decodability peaks in the middle of the
   network and declines toward the output layer. Comparing base vs.\ instruct
   models, alignment \emph{improves} the output readout but does not eliminate
@@ -80,11 +83,11 @@ Our contribution is the \emph{relative} science of internals vs.\ output:
   including the arm where it does not.
 \end{itemize}
 
-We report query-clustered bootstrap confidence intervals throughout, and are
-explicit about which claims are individually significant, which rest on a
-cross-model sign test, and which are architecture-dependent (the
-attention-head reader is weak on Mistral). Honest delineation of effect
-strength is central to this paper.
+We report query-clustered bootstrap confidence intervals throughout, apply
+Benjamini--Hochberg correction across the family of edges, and are explicit
+about which claims are individually significant, which are null, and which hold
+only on a subset of models. Honest delineation of effect strength is central to
+this paper.
 
 \section{Related Work}
 \textbf{Probing classifiers} read latent features from frozen representations
@@ -148,13 +151,19 @@ $\text{train\_edge} = \text{final} - \text{judge}$ (pure training, both at the
 output) and $\text{internal\_edge} = \text{best\_resid} - \text{final}$ (pure
 depth, beyond training). The thesis ``internals $>$ output'' requires internal
 readers to exceed \emph{both} the judge and the output-representation probe.
+A third component is read-out rather than depth: how the final layer is read.
+We therefore also hold the read-out procedure fixed (same feature budget, same
+validation-selected units, same per-unit standardisation) and, separately,
+replace the single linear read-out with a per-chunk ensemble, to separate
+``which layer'' from ``how it is read''.
 
 \textbf{Significance.} Because the split is by query, the correct resampling
 unit is the query. We report 95\% confidence intervals and one-sided
-$p$-values from a \emph{query-clustered bootstrap} (5000 resamples) on frozen
-test predictions; the best layer is chosen on validation to avoid
-selection-on-test optimism. We additionally run a cross-model sign test on
-the direction of each edge.
+$p$-values from a \emph{query-clustered paired bootstrap} (5000 resamples) on
+frozen test predictions; the best layer is chosen on validation to avoid
+selection-on-test optimism. Because we test four edges over eight models, we
+additionally report Benjamini--Hochberg $q$-values within each edge family
+(8 tests) and run a cross-model sign test on the direction of each edge.
 
 \textbf{Causal steering.} At the validation-selected internal layer we form a
 probe-free relevance direction $d = \overline{h}_{\text{rel}} -
