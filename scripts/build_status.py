@@ -396,6 +396,37 @@ def collect():
     A(">    \"instruct 上 logit-lens 反超\"的假象（那是拿 LL 的最佳层比训练探针的 L\\*），")
     A(">    同层比较后训练探针 8/8 全胜。")
     A("")
+    A("### 2.7.1 固定方向对照：模型自己的读出方向 vs「别处学来的」方向\n")
+    A("训练探针有 5218 条样本学方向，logit-lens 用的是固定方向——所以"
+      "\"训练探针赢\"不能推出\"信息不可被固定线性映射读出\"。")
+    A("用**跨数据集搬方向**实测这个界（零目标域拟合）：\n")
+    A("| 数据集 | 模型自己的读出 @L\\* | 跨数据集搬来的方向 | 域内训练探针 | 结论 |")
+    A("|---|---|---|---|---|")
+    # Each dataset has its own artifact with its own key names; read them
+    # explicitly rather than guessing, so a schema change fails loudly here.
+    rows_fd = []
+    fq = load(os.path.join(ROOT, "results/fixed_direction_control_llama32_3b.json"))
+    if fq:
+        b = fq.get("fiqa_logit_lens_bootstrap") or {}
+        ci = f" CI[{b['ci95'][0]},{b['ci95'][1]}]" if b.get("ci95") else ""
+        rows_fd.append(("FiQA（BM25 难负例）", f"{fq.get('fiqa_logit_lens_at_L')}{ci}",
+                        fq.get("ms_direction_on_fiqa"), fq.get("fiqa_probe_on_fiqa"),
+                        "模型自己的读出**显著低于随机**（CI 整体在 0.5 下），外来方向反而赢"))
+    ms = load(os.path.join(ROOT, "results/readout_direction_llama32_3b.json"))
+    if ms:
+        ci = ms.get("logit_lens_ci95") or []
+        cis = f" CI[{ci[0]},{ci[1]}]" if len(ci) == 2 else ""
+        rows_fd.append(("MS MARCO", f"{ms.get('logit_lens_auc')}{cis}",
+                        ms.get("fiqa_fitted_direction_on_msmarco"),
+                        ms.get("msmarco_fitted_direction_on_msmarco"),
+                        "模型自己的读出**与随机不可区分**（CI 跨 0.5），外来方向反而输"))
+    for r in rows_fd:
+        A("| " + " | ".join(str(x) for x in r) + " |")
+    A("")
+    A("> ⚠️ **不要一般化**：\"低于随机 / 外来方向能赢\"**只在 FiQA 上成立**。")
+    A("> 两个数据集上都成立、也够用的是**更弱的比较**：模型自己的读出方向比同层训练探针")
+    A("> 读得少 → 说明「**读出方向不对这个任务**」，而不是「信息无法被固定线性映射读出」。")
+    A("> （这条一般化我犯过一次，见 §9 纪律第 6 条。）\n")
     A("> **仍然成立、且更硬的一条**：即使在 logit-lens 最强的 Qwen-Inst 上（0.665），")
     A("> 注意力头读取器依然是 **0.669**，judge 只有 **0.660**；")
     A("> 在 8/8 模型上 `attn − final` 全部过 BH 校正（§2.3）。")
