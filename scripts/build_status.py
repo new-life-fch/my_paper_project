@@ -272,19 +272,30 @@ def collect():
     v2 = sorted(glob.glob(os.path.join(ROOT, f"results/patch_v2_*_q{NQ}.json")))
     A("#### 2.5.3 patch v2（无尺度混淆）\n")
     if v2:
-        A("| 模型 | 恒等(自patch) | 跨样本 auc_vs_source | follow_gap | 末层范数匹配后 |")
-        A("|---|---|---|---|---|")
+        A("跨样本替换 L\\* 的 answer-token 激活（优先取**不同标签**的伙伴）；"
+          "α 从 0（原激活）到 1（完全换成伙伴的）。")
+        A("`Δgap` = follow_gap(α=1) − follow_gap(α=0)，衡量**判决跟随移植内容的程度**。\n")
+        A("| 模型 | L\\* | 探针@L\\* | judge | 恒等 max\\|Δ\\| | 行对齐 | Δgap | α=1 auc_target | α=1 auc_source | 末层 nm@1 / raw@1 |")
+        A("|---|---|---|---|---|---|---|---|---|---|")
         for path in v2:
             d = json.load(open(path))
             sw = d.get("sweep", {})
-            self_auc = d.get("controls_Lstar", {}).get("self_patch_auc")
-            ca = [v for k, v in sw.items()
-                  if k.startswith("cross_Lstar@") and k.endswith("@1.0")]
-            nm = [v for k, v in sw.items()
-                  if k.startswith("final_normmatched@") and k.endswith("@1.0")]
-            A(f"| {d['tag']} | {self_auc} | {ca[0]['auc_vs_source'] if ca else '—'} | "
-              f"{ca[0].get('follow_gap_vs_source') if ca else '—'} | "
-              f"{nm[0]['auc_vs_target'] if nm else '—'} |")
+            c = d.get("controls_Lstar", {})
+            a0 = sw.get("cross_Lstar@0.0", {})
+            a1 = sw.get("cross_Lstar@1.0", {})
+            dg = a1.get("follow_gap_vs_source", 0) - a0.get("follow_gap_vs_source", 0)
+            nm = sw.get("final_normmatched@1.0", {}).get("auc_vs_target")
+            rw = sw.get("final_raw@1.0", {}).get("auc_vs_target")
+            A(f"| {d['tag']} | {d['layer']} | {d['probe_test_auc_at_Lstar']:.3f} | "
+              f"{d['judge_auc_natural']:.3f} | {c.get('self_patch_max_absdiff_vs_natural')} | "
+              f"{d.get('row_alignment_rel_mae')} | {dg:+.4f} | "
+              f"{a1.get('auc_vs_target')} | {a1.get('auc_vs_source')} | {nm} / {rw} |")
+        A("")
+        A("**结论是模型依赖的**：两个 LLaMA base 完全不跟随移植内容（Δgap +0.003/+0.006），"
+          "3B-Instruct 与 Qwen 明显跟随（+0.040 / **+0.176**）。")
+        A("所以「模型用不了自己的内部表示」这个一般说法**是错的**。\n")
+        A("**范数匹配与不匹配结果相同**（上表最后一列两个数）→ "
+          "**v1 观察到的崩塌不是尺度伪影**，这是本次重设计最想回答的问题，答案是否定的。\n")
     else:
         A("_尚未运行。脚本已就绪：_\n")
         A("```bash")
@@ -292,7 +303,30 @@ def collect():
         A("MODELS=all8 bash scripts/run_patch_v2.sh     # E-10：8 模型")
         A("WAIT_PID=<pid> bash scripts/run_patch_v2.sh  # 等别的 GPU 任务退出后再开始")
         A("```\n")
-    A("**四个实验的分工（判据见 §11）**：\n")
+    ga = sorted(glob.glob(os.path.join(ROOT, f"results/gradient_alignment_*_q{NQ}.json")))
+    A("#### 2.5.4 梯度对齐（解开 patch 的矛盾，且不编辑任何激活）\n")
+    if ga:
+        A("测 ∂(yes−no logit 差)/∂h_L\\* 与探针判别方向的余弦。梯度是网络在**它自己实际产生的**"
+          "激活处的局部性质，**不编辑任何激活**，所以不受跨样本 patch 的「分布外」限注影响。\n")
+        A("| 模型 | cos(模型梯度, 探针方向) | 非零比例 | 随机方向 max\\|mean\\| | 探针分位 | 判读 |")
+        A("|---|---|---|---|---|---|")
+        for path in ga:
+            d = json.load(open(path))
+            pc = d["probe_direction_cosine"]; rc = d["random_directions_cosine"]
+            pct = d["probe_vs_random_abs_mean_percentile"]
+            A(f"| {d['tag']} | {pc['mean']:+.5f} | {pc['frac_positive']} | "
+              f"{rc['max_abs_mean']:.5f} | **{pct}** | "
+              f"{'与随机不可区分 → 读出**不对准**' if pct < 0.95 else '显著高于随机'} |")
+        A("")
+        A("> **这是 misalignment 最锋利的证据**：cos 只有梯度尺度的约 1%，且"
+          "**在 Qwen 上也落在随机分布之内** —— 即**即使判决能被 L\\* 内容驱动**（patch 显示），"
+          "驱动它的方向也**不是**探针读相关性的那个方向。\n")
+        A("> 两个结果合起来才是准确的机制表述：**模型的下游计算会用 L\\*，"
+          "但它的读出方向不对准相关性方向**。\n")
+    else:
+        A("_尚未运行。_ `python scripts/gradient_alignment.py --model M --cache C --tag T`\n")
+
+    A("**四个实验的分工（判据见 §12.2）**：\n")
     A("| 实验 | 问的问题 | 无尺度问题的理由 |")
     A("|---|---|---|")
     A("| 自 patch 恒等 | sanity：hook 是否是惰性的 | payload 就是自己的激活 |")
