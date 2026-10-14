@@ -351,13 +351,20 @@ model's own fixed direction scores $\auc{}=0.453$ at $L9$ with a
 query-clustered 95\% CI of $[0.417,0.489]$---\emph{entirely below chance}
 ($P(\auc\ge0.5)=0.005$)---while a direction fitted on a \emph{different}
 dataset (MS MARCO) and carried over with no target-domain fitting at all
-scores $0.568$, and one fitted in-domain scores $0.777$. A direction that has
-never seen FiQA beats the model's own readout on FiQA, and the model's own
-readout is significantly \emph{worse than chance}. So the logit-lens deficit is
-a statement about the model's readout direction being off-task, not about the
-information being unreadable by a fixed linear map---which is precisely the
-distinction the misalignment reading requires, and it is measured here rather
-than assumed.
+scores $0.568$, and one fitted in-domain scores $0.777$. On that dataset a
+direction that has never seen FiQA beats the model's own readout, and the
+model's own readout is significantly worse than chance.
+
+We are careful not to generalise this. The same measurement on MS MARCO gives
+the model's own readout $0.511$ with CI $[0.475,0.546]$---indistinguishable
+from chance---and a FiQA-fitted direction carried to MS MARCO scores only
+$0.482$, i.e.\ the transfer advantage \emph{reverses}. So the below-chance
+result is a property of FiQA, not a universal statement about the model's
+readout. What does hold on both datasets, and is all we need, is the weaker
+comparison: the model's own readout direction extracts less relevance than a
+probe trained on the same layer, and this is a statement about the model's
+readout direction being off-task rather than about the information being
+unreadable by a fixed linear map.
 
 What survives both caveats is the
 \emph{relative} pattern: the same fixed readout

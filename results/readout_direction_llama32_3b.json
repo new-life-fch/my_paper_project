@@ -1,0 +1,15 @@
+{
+  "dataset": "MS MARCO",
+  "model": "meta-llama/Llama-3.2-3B",
+  "layer": 9,
+  "n_test": 1117,
+  "logit_lens_auc": 0.5114,
+  "logit_lens_ci95": [
+    0.4749,
+    0.5462
+  ],
+  "logit_lens_p_ge_half": 0.726,
+  "fiqa_fitted_direction_on_msmarco": 0.4824,
+  "msmarco_fitted_direction_on_msmarco": 0.6133,
+  "n_boot": 2000
+}
