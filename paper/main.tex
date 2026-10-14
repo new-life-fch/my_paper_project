@@ -73,11 +73,11 @@ Our contribution is the \emph{relative} science of internals vs.\ output:
   network and declines toward the output layer. Comparing base vs.\ instruct
   models, alignment \emph{improves} the output readout but does not eliminate
   the internal--output gap.
-  \item \textbf{Causality.} A steering intervention that injects the internal
-  relevance direction at the output layer causally controls the verdict;
-  ablation is cleanly monotonic and, unlike the control directions, both moves
-  the verdict and keeps it discriminative---evidence that the output pathway
-  \emph{can} express the signal but normally under-expresses it.
+  \item \textbf{Causality.} We probe the causal role of the internal direction
+  with a steering intervention whose verdict we pre-committed to: the internal
+  direction has to produce a relevance-\emph{aligned} shift that lands in the
+  tail of a random-direction null distribution. We report the outcome in full,
+  including the arm where it does not.
 \end{itemize}
 
 We report query-clustered bootstrap confidence intervals throughout, and are
@@ -104,8 +104,9 @@ chance \citep{aiersilan2026}. We do \emph{not} claim to be first to observe
 that internals outstrip the output; our contribution is to localize this to a
 specific, controllable signal---query--passage \emph{relevance}---and to
 characterize it quantitatively: a depth-resolved decodability curve, a
-decomposition separating ``reading internals'' from ``being trained,'' a causal
-steering test, and a base-vs-instruct contrast. \textbf{Relevance mechanism}
+decomposition separating ``reading internals'' from ``being trained,'' a
+read-out-matched capacity control, a pre-registered causal steering test, and a
+base-vs-instruct contrast. \textbf{Relevance mechanism}
 work reverse-engineers how neural rankers compute relevance via causal
 interventions on attention heads \citep{chen2024relevance}; trained classifiers
 are also known to beat prompted LLM judges at relevance \citep{gienapp2025}. We
@@ -155,13 +156,26 @@ test predictions; the best layer is chosen on validation to avoid
 selection-on-test optimism. We additionally run a cross-model sign test on
 the direction of each edge.
 
-\textbf{Causal steering.} At the best internal layer we form a probe-free
-relevance direction $d = \overline{h}_{\text{rel}} - \overline{h}_{\text{irrel}}$
-(difference of class means, unit-normalized). During the forward pass we add
-$\alpha \|h\| d$ to the \emph{output-layer} residual at the answer token and
-sweep $\alpha$, reading the judge's $P(\text{yes})$ and the test \auc. We
-compare against the output layer's own difference-of-means direction and a
-random unit direction (norm-matched).
+\textbf{Causal steering.} At the validation-selected internal layer we form a
+probe-free relevance direction $d = \overline{h}_{\text{rel}} -
+\overline{h}_{\text{irrel}}$ (difference of class means, unit-normalized).
+During the forward pass we add $\alpha \|h\| d$ to the \emph{output-layer}
+residual at the answer token and sweep $\alpha$, reading the judge's
+$P(\text{yes})$ and the test \auc. Because a fixed step in $\alpha$ is not a
+fixed intervention---directions differ in how strongly they couple to the
+readout---we calibrate $\alpha$ per direction so that each sweep point
+corresponds to the same \emph{shift in the yes/no logit difference}, and we
+report both the intended and the measured shift. To ask whether steering is
+relevance-\emph{aligned} rather than a generic bias knob, we track the
+\emph{alignment gap} $\overline{P(\text{yes})}_{\text{rel}} -
+\overline{P(\text{yes})}_{\text{irrel}}$ separately over true-positive and
+true-negative rows: a relevance-bearing direction widens the gap, whereas a
+blunt shift moves both groups together. Each direction is then compared against
+a null distribution of twelve random unit directions (norm-matched, same
+calibration), so ``the internal direction works'' means it must land in the tail
+of that distribution---not merely that it moves the mean. The comparison set is
+the internal direction, the output layer's own difference-of-means direction,
+and the random directions.
 
 \section{Experiments}
 \label{sec:exp}
@@ -339,36 +353,51 @@ instruct), the reading is: \emph{alignment moves relevance signal toward the
 output representation but does not close the internal--output gap}---it does
 not merely ``suppress'' the output.
 
-\textbf{Causality.} Figure~\ref{fig:causal} shows the steering sweep. Injecting
-the internal relevance direction at the output layer drives the verdict
-monotonically on the ablation arm ($P(\text{yes})$ $0.79\to0.26$ as
-$\alpha{<}0$) while keeping the verdict discriminative (\auc{} $0.546\to0.541$,
-essentially flat). The three directions dissociate cleanly: the internal
-direction both moves the verdict \emph{and} preserves \auc; the output's own
-direction moves $P(\text{yes})$ strongly ($0.01\to0.99$) but \emph{destroys}
-\auc{} ($\to0.485$, a uniform logit shift); and a random direction leaves \auc{}
-flat ($\approx0.545$) but produces no relevance-aligned verdict shift. Only the
-internal direction does both---the diagnostic signature of a causal,
-relevance-bearing direction rather than a generic bias knob.
-The additive arm ($\alpha{>}0$) saturates because the judge is already
-yes-biased (baseline $0.79$ while only $\sim$22\% of test pairs are relevant),
-so we base the causal claim on the ablation arm and the \auc{} contrast. This
-indicates the output pathway \emph{can} express the internal relevance signal
-but normally under-expresses it: attenuation, not absence. The same protocol
-replicates across three variants (LLaMA-3.2-3B, LLaMA-3.1-8B base and
-instruct): the ablation arm collapses $P(\text{yes})$ in every case, and only
-the internal direction preserves \auc. The collapse is sharpest on the instruct
-model ($P(\text{yes})$ $0.87\to0.003$), mirroring the alignment mechanism above:
-alignment couples the verdict more tightly to the internal direction without
-letting the output representation overtake the residual stream.
+\textbf{Causality: what steering does and does not show.}
+We pre-committed to a directional criterion before running the intervention: for
+steering to count as \emph{relevance-aligned}, the internal direction's
+alignment gap (the relevant-minus-irrelevant split in $P(\text{yes})$) had to
+land in the upper tail ($\ge$95th percentile) of a null distribution formed by
+twelve random directions swept over the same calibrated logit shifts. It does
+not. On LLaMA-3.2-3B the internal direction's gap sits at the $0.55$ and
+$0.45$ percentile at the two ends of the sweep
+(Figure~\ref{fig:causal}, panel c). We report this as a null result, and the
+saturation-free calibration is what makes it interpretable: the three direction
+families are genuinely comparable after calibration (mean logit shift per unit
+$\alpha$: internal $-0.56$, final $+3.27$, random $-1.24$; i.e.\ roughly a
+sixfold spread that the per-direction calibration removes).
+
+The sweep also exposes \emph{why} the gap fails to grow, which is more
+informative than the null itself: the alignment gap shrinks monotonically with
+intervention strength for \emph{every} direction, including the random ones
+(mean random gap $0.0121 \to 0.0016$ from baseline to the strongest negative
+shift). Broadly perturbing the output residual compresses label separability
+rather than sharpening it, so the internal direction is a blunt verdict knob,
+not a relevance-aligned one.
+
+What survives is the ablation arm. Pushing the yes/no logit difference negative
+along the internal direction collapses the verdict monotonically
+($P(\text{yes})$: $0.814 \to 0.691 \to 0.573 \to 0.456 \to 0.393$), and the
+internal direction is the only one of the three that does so \emph{without}
+destroying discriminability (\auc{} stays in $[0.522,0.546]$); the output
+layer's own direction collapses $P(\text{yes})$ just as sharply
+($0.814 \to 0.011$) but drives \auc{} down to $0.481$, and the random
+directions move the mean without a label-aligned component. So the internal
+direction is causally coupled to the verdict, but we cannot show that it is
+causally coupled to relevance \emph{discrimination}. The correlational results
+above do not depend on this arm, and we prefer to bound them with a reported
+null than to rest them on a claim the data does not support.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/causal_steer_llama32_3b.png}
-\caption{Causal steering at the output layer (LLaMA-3.2-3B). (a) mean judge
-$P(\text{yes})$ vs.\ steering coefficient $\alpha$; (b) test \auc. Only the
-internal direction preserves \auc; the final-layer direction inflates
-$P(\text{yes})$ while collapsing \auc.}
+\caption{Steering at the output layer (LLaMA-3.2-3B), calibrated in logit-shift
+space so the three direction families are swept over the same yes/no logit
+differences rather than the same raw coefficient. (a) mean judge
+$P(\text{yes})$; (b) test \auc; (c) the alignment gap, with the random
+directions' mean and min--max band. All directions compress the gap as the
+intervention strengthens; the internal direction is not an outlier, which is
+the pre-registered null we report.}
 \label{fig:causal}
 \end{figure}
 
