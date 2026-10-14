@@ -2524,6 +2524,92 @@
       "logit_lens": "results/logit_lens_qwen25_7b_instruct_q1500.json",
       "capacity_control": "results/capacity_control_qwen25_7b_instruct_q1500.json",
       "layer_signal": "results/figures/qwen25_7b_instruct_layer_signal.json"
+    },
+    "llama32_3b_fiqa_bm25": {
+      "readers": "results/internals_vs_output_llama32_3b_fiqa_bm25_q1500.json",
+      "significance": "results/significance_llama32_3b_fiqa_bm25_q1500.json"
+    }
+  },
+  "datasets": {
+    "llama32_3b_fiqa_bm25": {
+      "display": "LLaMA-3.2-3B / FiQA (BM25 hard negatives)",
+      "readers": {
+        "judge": 0.597,
+        "final": 0.73,
+        "best_resid": 0.829,
+        "best_resid_layer": 15,
+        "best_resid_selection": "val",
+        "attn_topk": 0.884
+      },
+      "significance": {
+        "auc": {
+          "judge": {
+            "point": 0.597,
+            "ci95": [
+              0.564,
+              0.629
+            ]
+          },
+          "final": {
+            "point": 0.724,
+            "ci95": [
+              0.69,
+              0.756
+            ]
+          },
+          "best_resid": {
+            "point": 0.822,
+            "ci95": [
+              0.796,
+              0.848
+            ]
+          },
+          "attn": {
+            "point": 0.884,
+            "ci95": [
+              0.861,
+              0.906
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0986,
+            "ci95": [
+              0.066,
+              0.13
+            ],
+            "p_le0": 0.0
+          },
+          "train_edge(final-judge)": {
+            "mean": 0.1263,
+            "ci95": [
+              0.085,
+              0.169
+            ],
+            "p_le0": 0.0
+          },
+          "attn-final": {
+            "mean": 0.1605,
+            "ci95": [
+              0.131,
+              0.189
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.2249,
+            "ci95": [
+              0.188,
+              0.262
+            ],
+            "p_le0": 0.0
+          }
+        },
+        "best_layer_val": 15,
+        "n_test": 1125,
+        "n_boot": 5000
+      }
     }
   },
   "complete_models": [
@@ -2536,5 +2622,9 @@
     "qwen25_7b",
     "qwen25_7b_instruct"
   ],
-  "n_complete": 8
+  "n_complete": 8,
+  "complete_datasets": [
+    "llama32_3b_fiqa_bm25"
+  ],
+  "n_complete_datasets": 1
 }

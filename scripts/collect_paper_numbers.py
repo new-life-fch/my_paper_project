@@ -48,6 +48,14 @@ MODELS = [
     ("qwen25_7b_instruct", "Qwen2.5-7B-Instruct"),
 ]
 
+# Second in-domain dataset (TODO E-12). The tag already encodes the negative
+# construction ("bm25" = BM25 hard negatives), so it must NOT be looked up
+# with the plain model tag.
+EXTRA_DATASETS = [
+    ("llama32_3b_fiqa_bm25",
+     "LLaMA-3.2-3B / FiQA (BM25 hard negatives)"),
+]
+
 
 def load(path):
     if not os.path.exists(path):
@@ -192,10 +200,49 @@ def main():
         rep["models"][tag] = row
         rep["provenance"][tag] = src
 
+    # ---- second in-domain dataset (FiQA, BM25 hard negatives) ----------------
+    rep["datasets"] = {}
+    for tag, name in EXTRA_DATASETS:
+        row, src = {"display": name}, {}
+        p = f"results/internals_vs_output_{tag}_q{N}.json"
+        d = first(load(p))
+        if d:
+            src["readers"] = p
+            bl = d.get("resid_best_layer", {})
+            row["readers"] = {
+                "judge": d.get("llm_judge_zeroshot"),
+                "final": d.get("resid_final_layer(output_repr)"),
+                "best_resid": bl.get("auc"),
+                "best_resid_layer": bl.get("layer"),
+                "best_resid_selection": bl.get("selection"),
+                "attn_topk": d.get("attn_head_probe(ours)"),
+            }
+        else:
+            rep["missing"].append(p)
+        q = f"results/significance_{tag}_q{N}.json"
+        s = first(load(q))
+        if s:
+            src["significance"] = q
+            row["significance"] = {
+                "auc": {k: v for k, v in (s.get("auc") or {}).items()},
+                "edges": s.get("edges"),
+                "best_layer_val": s.get("best_layer_val"),
+                "n_test": s.get("n_test"),
+                "n_boot": s.get("n_boot"),
+            }
+        else:
+            rep["missing"].append(q)
+        rep["datasets"][tag] = row
+        rep["provenance"][tag] = src
+
     # ---- completeness report -------------------------------------------------
     have = [t for t, r in rep["models"].items() if "significance" in r and "readers" in r]
     rep["complete_models"] = have
     rep["n_complete"] = len(have)
+    have_ds = [t for t, r in rep["datasets"].items()
+               if "significance" in r and "readers" in r]
+    rep["complete_datasets"] = have_ds
+    rep["n_complete_datasets"] = len(have_ds)
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     json.dump(rep, open(args.out, "w"), indent=2)

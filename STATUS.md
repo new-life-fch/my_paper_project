@@ -408,17 +408,17 @@ Document: {passage}\nQuestion: {query}\nIs the document relevant to the question
 
 | # | 位置 | 问题 | 处理 |
 |---|---|---|---|
-| 1 | **Table 1**（8 行 × 4 列） | `final` **0/8 正确**、`best-resid` 0/8、`attn` 0/8；且**混用了两个正则来源**（残差 C=0.5 与 C=1.0），表内差值对不上它自己的 edge | 全部改从 `significance_<tag>_q1500.json` 的 `auc` 重出（§2.2 已给现成行）。统一后 **attn 在 8/8 上都是最优读者** |
-| 2 | **Table 2**（500q 表） | **无法重建**：LLaMA 的 500q artifact 从未入库且已删；存活的 500q 只有 4 个 Mistral/Qwen 模型 | **整表删除**，正文所有 500q 叙述一并删（含 "p≤0.016 at 500 queries"、6 模型符号检验、"0.2 range"） |
-| 3 | **Table 3** | 多处 stale：+0.146→**+0.148**、+0.097→**+0.100**、+0.090→**+0.088**、+0.060→**+0.059**；3B 的 p 0.0008→**0.0002**、Qwen-base 的 p 0.001→**0.0008**；caption 说"internal_edge 在 base 模型上显著"被 **Mistral-base 证伪**（+0.023, q=0.155） | 按 §2.3 重出；caption 改为"在 3B/8B/Qwen 三个 base 上显著" |
-| 4 | **FiQA 段**（L364–380） | 整段是**旧随机负例**的数，且**结论反转**：judge 0.739→**0.597**、best 0.993→**0.829**、final 0.976（贴天花板）→**0.724**、internal_edge +0.017→**+0.099**（全文最大）；解释句 "negatives are easier" 现在**是错的**（已换 BM25 难负例） | 按 §2.8 整段重写，并从"弱证据"升级为"强证据" |
-| 5 | **"attn 在 Mistral 上弱"**（摘要 / 深度段 / Limitations 三处） | **完全反了**：Mistral-base attn **0.684**（四个 reader 里最高）、inst **0.713**；`attn−final` +0.101/+0.117，q=0 | 三处全删。Limitations 里"以残差流为 canonical internal reader"的理由也随之失效 |
+| 1 | **Table 1**（8 行 × 4 列） | `final` **0/8 正确**、`best-resid` 0/8、`attn` 0/8；且**混用了两个正则来源**（残差 C=0.5 与 C=1.0），表内差值对不上它自己的 edge | 全部改从 `significance_<tag>_q1500.json` 的 `auc` 重出（§2.2 已给现成行）。统一后 **attn 在 8/8 上都是最优读者** | **✅ 已改（逐格核对通过 8/8）** |
+| 2 | **Table 2**（500q 表） | **无法重建**：LLaMA 的 500q artifact 从未入库且已删；存活的 500q 只有 4 个 Mistral/Qwen 模型 | **整表删除**，正文所有 500q 叙述一并删（含 "p≤0.016 at 500 queries"、6 模型符号检验、"0.2 range"） | **✅ 已删表+叙述** |
+| 3 | **Table 3** | 多处 stale：+0.146→**+0.148**、+0.097→**+0.100**、+0.090→**+0.088**、+0.060→**+0.059**；3B 的 p 0.0008→**0.0002**、Qwen-base 的 p 0.001→**0.0008**；caption 说"internal_edge 在 base 模型上显著"被 **Mistral-base 证伪**（+0.023, q=0.155） | 按 §2.3 重出；caption 改为"在 3B/8B/Qwen 三个 base 上显著" | **✅ 已并进新 Table 2（8 模型 + BH）** |
+| 4 | **FiQA 段**（L364–380） | 整段是**旧随机负例**的数，且**结论反转**：judge 0.739→**0.597**、best 0.993→**0.829**、final 0.976（贴天花板）→**0.724**、internal_edge +0.017→**+0.099**（全文最大）；解释句 "negatives are easier" 现在**是错的**（已换 BM25 难负例） | 按 §2.8 整段重写，并从"弱证据"升级为"强证据" | **✅ 已重写** |
+| 5 | **"attn 在 Mistral 上弱"**（摘要 / 深度段 / Limitations 三处） | **完全反了**：Mistral-base attn **0.684**（四个 reader 里最高）、inst **0.713**；`attn−final` +0.101/+0.117，q=0 | 三处全删。Limitations 里"以残差流为 canonical internal reader"的理由也随之失效 | **✅ 三处已删** |
 | 6 | **因果段 + 摘要 + Fig. 2** | 全部数字**当前不可验证**（3B 的 causal JSON 已删、重跑进行中；存活 3 个是旧协议） | 等重跑完，按 §12.1 判读后重写 |
-| 7 | **logit lens 段** | ①sanity 声称 "<0.001"，但 **8B 实测 absdiff 0.011**；②8B 峰值 0.577 **在任何现存文件里都不存在**（val 选层是 0.563@L31）；③"stays near chance at every depth" 与 §2.7 同层比较的结果不符 | 按 §2.7 重写（含"训练探针 8/8 全胜"与那条方法学限注） |
-| 8 | **capacity/readout 对照** | 论文**完全没写**，而它有一条对头条主张不利的结果：`attn − final逐块集成` 在 **Qwen2.5-7B-Instruct 上是 −0.050**（输出端反超） | 必须正面写入（§2.4），并把主张收窄为"读头 > 单向量线性探针" |
+| 7 | **logit lens 段** | ①sanity 声称 "<0.001"，但 **8B 实测 absdiff 0.011**；②8B 峰值 0.577 **在任何现存文件里都不存在**（val 选层是 0.563@L31）；③"stays near chance at every depth" 与 §2.7 同层比较的结果不符 | 按 §2.7 重写（含"训练探针 8/8 全胜"与那条方法学限注） | **✅ 已重写** |
+| 8 | **capacity/readout 对照** | 论文**完全没写**，而它有一条对头条主张不利的结果：`attn − final逐块集成` 在 **Qwen2.5-7B-Instruct 上是 −0.050**（输出端反超） | 必须正面写入（§2.4），并把主张收窄为"读头 > 单向量线性探针" | **✅ 已新增段落** |
 | 9 | few-shot judge 的 `0.566` | **无 artifact**（`*fs4*` 不存在） | 重跑 few-shot judge，或删掉这句话 |
-| 10 | "per model in the supplement" | **没有 supplement** | 删除，或真做附录（8 模型图已在 `results/figures/`，成本低） |
-| 11 | `internal_edge persists (and widens on LLaMA)` | 1500q 下 LLaMA 两对都是**收缩**（3B +0.078→+0.026、8B +0.059→+0.013），只有 Mistral **变宽** | 改成"收缩（Mistral 相反）"，与论文自己的 Table 3 对齐 |
+| 10 | "per model in the supplement" | **没有 supplement** | 删除，或真做附录（8 模型图已在 `results/figures/`，成本低） | **✅ 已删** |
+| 11 | `internal_edge persists (and widens on LLaMA)` | 1500q 下 LLaMA 两对都是**收缩**（3B +0.078→+0.026、8B +0.059→+0.013），只有 Mistral **变宽** | 改成"收缩（Mistral 相反）"，与论文自己的 Table 3 对齐 | **✅ 已改** |
 | 12 | `PAPER_NUMBERS.json` 不含 FiQA | FiQA 数字游离在"证据纪律"之外 | 扩 `collect_paper_numbers.py` 覆盖 FiQA |
 
 > **第 1–5、7、8、10、11 条是纯 CPU 可做的**（不需要 GPU、不需要新实验），

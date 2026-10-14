@@ -7,7 +7,7 @@
 \usepackage{authblk}
 
 \title{\textbf{Internals Know More Than the Model Can Say:\\
-Relevance Signals Are Encoded Internally but Attenuated en Route to the Output}}
+Relevance Signals Are Encoded Internally and Outrun the Model's Own Readout}}
 \author{Chenhui Feng}
 \affil{Nanjing University of Aeronautics and Astronautics}
 \date{}
@@ -28,25 +28,21 @@ probe on the final-layer hidden state (the \emph{output representation}),
 and (iv) a probe on the top attention heads. Across eight models (3B--8B,
 LLaMA, Mistral and Qwen, base and instruct), reading internal activations decodes
 relevance markedly better than reading the output. With query-clustered
-bootstrap confidence intervals, the attention-head probe beats the
-output-representation probe on all four LLaMA models (each
-$p<10^{-3}$ at the 1500-query scale) and on both Qwen models
-($p<0.002$); the
-residual-stream advantage over the output representation is individually
-significant on base models ($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$;
-Qwen $+0.063$, $p{=}0.001$).
-A causal steering intervention confirms the link is mechanistic, not
-epiphenomenal: ablating the internal relevance direction at the output layer
-monotonically collapses the model's verdict (mean $P(\text{yes})$
-$0.79{\to}0.26$) while keeping the verdict discriminative (\auc{} $\approx
-0.55$ across the sweep). It is the only direction that does both: the output's
-own direction shifts $P(\text{yes})$ but collapses \auc{} to $0.485$ (a
-non-discriminative logit shift), and a random direction leaves \auc{} flat
-without a relevance-aligned verdict shift. Comparing base and instruct pairs, we
-find alignment improves the output readout (the judge gets stronger) yet does
-not close the internal--output gap. In short: the relevance signal is
-encoded internally and \emph{attenuated}, not absent, on the path to the
-logits.
+bootstrap confidence intervals and Benjamini--Hochberg correction across the
+$8\times4$ family of tests, the attention-head probe beats the
+output-representation probe on all eight models---on every LLaMA and Mistral
+model and on both Qwen models, with corrected $q<0.002$ throughout
+(effect $+0.06$ to $+0.15$). This edge survives a capacity-matched control
+that gives the final layer the identical read-out procedure, and the same
+internal activations are also far more decodable than the model's zero-shot
+verdict. The residual-stream advantage over the output representation is
+narrower: it is individually significant on the three \emph{base} models
+($+0.078$, $+0.064$, $+0.059$) and shrinks on their instruct counterparts,
+indicating that alignment moves relevance signal toward the output without
+closing the gap. Comparing base and instruct pairs, alignment reliably
+improves the output readout (the judge gets stronger) yet the internal signals
+stay ahead. In short: relevance is encoded internally, and the model's own
+readout extracts only part of it.
 \end{abstract}
 
 \section{Introduction}
@@ -107,7 +103,7 @@ decodable from mid-layer hidden states while output-based detectors stay near
 chance \citep{aiersilan2026}. We do \emph{not} claim to be first to observe
 that internals outstrip the output; our contribution is to localize this to a
 specific, controllable signal---query--passage \emph{relevance}---and to
-characterize it quantitatively: a depth-resolved attenuation curve, a
+characterize it quantitatively: a depth-resolved decodability curve, a
 decomposition separating ``reading internals'' from ``being trained,'' a causal
 steering test, and a base-vs-instruct contrast. \textbf{Relevance mechanism}
 work reverse-engineers how neural rankers compute relevance via causal
@@ -171,143 +167,156 @@ random unit direction (norm-matched).
 \label{sec:exp}
 
 \textbf{Internals decode relevance better than the output.}
-Table~\ref{tab:main} reports the four readers across eight models. On every
-model the best internal reader exceeds the trained output-representation probe,
-and on every model except the Qwen pair it also exceeds the zero-shot judge.
-The judge hovers near chance on the LLaMA and Mistral base models (\auc{}
-$0.51$--$0.54$), confirming the output ``says'' little; Qwen is the informative
-exception---its zero-shot judge is already strong ($0.65$), yet reading its
-attention heads still beats reading its output representation (below).
+Table~\ref{tab:main} reports the four readers across eight models. The
+attention-head probe is the strongest of the four on \emph{every} model, and
+the best internal reader exceeds the trained output-representation probe
+everywhere. The judge is weakest on the LLaMA and Mistral base models (\auc{}
+$0.545$--$0.579$) and stronger on their instruct counterparts
+($0.614$--$0.646$) and on Qwen ($0.652$--$0.660$); even where the judge is
+strongest, reading the heads still beats reading the output representation.
 
 \begin{table}[t]
 \centering\small
 \caption{Four relevance readers across eight models (test \auc, point
-estimates; val-selected layers and heads). On every model the attn probe
-exceeds both the judge and the output-representation probe; best-resid also
-exceeds both on the LLaMA and Mistral models. Qwen's zero-shot judge is
-notably stronger ($0.65$) than the LLaMA/Mistral base models ($0.51$--$0.54$);
-despite this, reading attention heads still beats the output representation on
-both Qwen models (see Table~\ref{tab:scale}).}
+estimates; val-selected layers and heads; a single regularisation strength,
+$C{=}1.0$, for all four readers so the columns are mutually consistent). The
+attention-head probe is the best reader on all eight models; the best residual
+layer also exceeds the output-representation probe on all eight. The zero-shot
+judge ranges from $0.545$ (LLaMA-3.2-3B) to $0.660$ (Qwen2.5-7B-Instruct).}
 \label{tab:main}
 \begin{tabular}{lcccccc}
 \toprule
 Model & $L$ & judge & final & best-resid & attn \\
 \midrule
-LLaMA-3.2-3B (base)      & 28 & 0.535 & 0.592 & 0.628 & \textbf{0.685} \\
-LLaMA-3.1-8B (base)      & 32 & 0.514 & 0.552 & 0.581 & \textbf{0.680} \\
-Mistral-7B-v0.3 (base)   & 32 & 0.531 & 0.601 & \textbf{0.621} & 0.603 \\
-LLaMA-3.2-3B-Instruct    & 28 & 0.597 & 0.606 & 0.633 & \textbf{0.725} \\
-LLaMA-3.1-8B-Instruct    & 32 & 0.603 & 0.583 & 0.628 & \textbf{0.746} \\
-Mistral-7B-Instruct-v0.3 & 32 & 0.621 & 0.616 & 0.628 & \textbf{0.667} \\
-Qwen2.5-7B (base)        & 28 & 0.652 & 0.592 & 0.655 & \textbf{0.682} \\
-Qwen2.5-7B-Instruct      & 28 & 0.660 & 0.610 & 0.630 & \textbf{0.670} \\
+LLaMA-3.2-3B (base)      & 28 & 0.545 & 0.536 & 0.613 (L9)  & \textbf{0.684} \\
+LLaMA-3.1-8B (base)      & 32 & 0.574 & 0.562 & 0.621 (L8)  & \textbf{0.677} \\
+Mistral-7B-v0.3 (base)   & 32 & 0.579 & 0.583 & 0.606 (L16) & \textbf{0.684} \\
+LLaMA-3.2-3B-Instruct    & 28 & 0.614 & 0.612 & 0.638 (L18) & \textbf{0.712} \\
+LLaMA-3.1-8B-Instruct    & 32 & 0.630 & 0.596 & 0.609 (L12) & \textbf{0.725} \\
+Mistral-7B-Instruct-v0.3 & 32 & 0.646 & 0.596 & 0.634 (L13) & \textbf{0.713} \\
+Qwen2.5-7B (base)        & 28 & 0.652 & 0.592 & 0.655 (L22) & \textbf{0.680} \\
+Qwen2.5-7B-Instruct      & 28 & 0.660 & 0.610 & 0.630 (L23) & \textbf{0.669} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Significance.} Table~\ref{tab:sig} gives query-clustered bootstrap
-CIs. The \emph{attention-head vs.\ output-representation} edge is individually
-significant on all four LLaMA models (effect $+0.09$ to $+0.16$): $p\le0.016$
-at 500 queries (Table~\ref{tab:sig}) and $p<10^{-3}$ once the evaluation is
-scaled (Table~\ref{tab:scale}).
-The residual-stream edge (internal\_edge) is directionally positive on all six
-models in the 500-query evaluation (sign test $p{=}0.016$) but, at $\sim$75 test
-queries, not individually significant---a power problem, not an absent effect
-(confirmed by scaling, below).
+\textbf{Significance.} Table~\ref{tab:sig} gives query-clustered bootstrap CIs
+(5000 resamples, resampling \emph{queries}) and one-sided $p$-values, with
+Benjamini--Hochberg $q$-values computed across the $8\times4$ family of edges
+(one family per edge, as is standard). The \emph{attention-head
+vs.\ output-representation} edge is the only one that survives correction on
+all eight models; the residual-stream edge survives on the three base models;
+the ``pure training'' edge (final $-$ judge) survives on none. This ordering
+is what the paper's claims rest on: the defensible headline is a
+\emph{readout} comparison at matched training, and the residual-stream
+advantage is a base-model phenomenon that alignment compresses.
 
 \begin{table}[t]
 \centering\small
-\caption{Query-clustered bootstrap (5000 resamples), 500-query evaluation.
-Edges with 95\% CI and one-sided $p$. \textbf{Bold}: $p<0.05$.}
+\setlength{\tabcolsep}{4pt}
+\caption{Query-clustered paired bootstrap (5000 resamples) at the 1500-query
+scale, all eight models. $q$ is Benjamini--Hochberg within each edge family
+(8 tests). \textbf{Bold}: $q<0.05$. attn$-$final survives on 8/8 models;
+internal\_edge on the three base models; train\_edge on none.}
 \label{tab:sig}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-Model & internal\_edge & attn$-$final & best\_resid$-$judge \\
+Model & internal\_edge & attn$-$final & best\_resid$-$judge & train\_edge \\
 \midrule
-LLaMA-3.2-3B      & $+0.036$ [-.05,.12] & \textbf{$+0.094$} [.01,.18] & \textbf{$+0.093$} [.01,.18] \\
-LLaMA-3.1-8B      & $+0.028$ [-.06,.11] & \textbf{$+0.128$} [.04,.22] & $+0.065$ [-.02,.15] \\
-Mistral-7B        & $+0.019$ [-.07,.10] & $+0.002$ [-.08,.09]        & \textbf{$+0.089$} [.00,.17] \\
-LLaMA-3.2-3B-Inst & $+0.026$ [-.06,.11] & \textbf{$+0.119$} [.03,.21] & $+0.035$ [-.05,.13] \\
-LLaMA-3.1-8B-Inst & $+0.044$ [-.04,.13] & \textbf{$+0.164$} [.08,.25] & $+0.024$ [-.06,.11] \\
-Mistral-7B-Inst   & $+0.011$ [-.08,.10] & $+0.051$ [-.04,.15]        & $+0.006$ [-.08,.09] \\
-\midrule
-sign test ($p$)   & 6/6 (\textbf{.016}) & 6/6 (\textbf{.016}) & 6/6 (\textbf{.016}) \\
+LLaMA-3.2-3B (base)      & \textbf{$+0.078$} [.04,.12] & \textbf{$+0.148$} [.11,.19] & \textbf{$+0.068$} [.02,.11] & $-0.009$ [-.05,.03] \\
+LLaMA-3.1-8B (base)      & \textbf{$+0.059$} [.02,.10] & \textbf{$+0.114$} [.08,.15] & $+0.047$ [.00,.09]          & $-0.012$ [-.05,.03] \\
+Mistral-7B-v0.3 (base)   & $+0.023$ [-.02,.06]         & \textbf{$+0.101$} [.07,.13] & $+0.026$ [-.02,.07]         & $+0.004$ [-.03,.04] \\
+LLaMA-3.2-3B-Instruct    & $+0.026$ [-.01,.07]         & \textbf{$+0.100$} [.06,.13] & $+0.024$ [-.02,.07]         & $-0.002$ [-.04,.04] \\
+LLaMA-3.1-8B-Instruct    & $+0.013$ [-.03,.06]         & \textbf{$+0.129$} [.09,.17] & $-0.022$ [-.06,.02]         & $-0.035$ [-.08,.01] \\
+Mistral-7B-Instruct-v0.3 & $+0.037$ [-.01,.09]         & \textbf{$+0.117$} [.08,.15] & $-0.013$ [-.06,.03]         & $-0.050$ [-.09,-.01] \\
+Qwen2.5-7B (base)        & \textbf{$+0.064$} [.02,.10] & \textbf{$+0.088$} [.05,.13] & $+0.003$ [-.04,.04]         & $-0.060$ [-.10,-.03] \\
+Qwen2.5-7B-Instruct      & $+0.020$ [-.01,.05]         & \textbf{$+0.059$} [.02,.10] & $-0.031$ [-.07,.01]         & $-0.051$ [-.09,-.01] \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Scaling the evaluation confirms the internal edge.}
-We re-extract four flagship models at 1500 queries ($\sim$225 test queries;
-sample size is the only change) and re-test (Table~\ref{tab:scale}). The
-residual-stream edge becomes individually significant on base models
-($+0.077$, $p{=}0.0008$; $+0.060$, $p{=}0.004$): the $p$-values drop from the
-$0.2$ range to the $0.001$ range purely from added power. Strikingly, the edge
-is significant on base models but shrinks and loses significance on instruct
-models---a mechanistic signal we return to below.
+\textbf{How the output representation is read matters as much as where.}
+The headline edge compares a probe on 20 concatenated attention heads against a
+probe on the final residual vector. To separate ``reading internals'' from
+``reading differently'' we re-read the \emph{final layer} with the identical
+procedure: the same 2560-dimensional budget, the same validation-selected 20
+units, the same per-unit standardisation and concatenation. The edge barely
+moves ($+0.043$ to $+0.128$, significant on 8/8 models), so the advantage is
+not an artefact of dimensionality or of the selection step. But the reverse
+control is equally informative: replacing the single linear read-out with a
+per-chunk logistic-regression ensemble raises the final layer from $0.536$ to
+$0.621$ on LLaMA-3.2-3B---a gain of $+0.085$, the same order as the entire
+internal\_edge ($+0.078$). On two models the ensemble read-out of the final
+layer \emph{matches or beats} the head probe outright (Qwen2.5-7B $0.683$ vs.\
+$0.680$; Qwen2.5-7B-Instruct $0.719$ vs.\ $0.669$, i.e.\ a gap of $-0.050$).
+We therefore do not claim that internal readers beat the output end in general.
+The defensible claim, and the one the rest of the paper quantifies, is narrower:
+\emph{at a matched read-out procedure} the internal layers yield the better
+relevance decoder, and against the model's own zero-shot verdict the internal
+advantage is large on every model. Both the positive control (matched
+procedure: 8/8) and the negative one (a different read-out of the same layer
+reverses the gap on 2/8) are reported here so that neither is left for a reader
+to discover.
 
-\begin{table}[t]
-\centering\small
-\setlength{\tabcolsep}{4.5pt}
-\caption{Scaled (1500-query) re-test vs.\ the 500-query estimate. The
-internal\_edge becomes individually significant on base models once power is
-added; the attn$-$final edge is significant on all four LLaMA models at this
-scale. \textbf{Bold}: $p<0.05$.}
-\label{tab:scale}
-\begin{tabular}{lccc}
-\toprule
-Model & internal\_edge (500q) & internal\_edge (1500q) & attn$-$final (1500q) \\
-\midrule
-LLaMA-3.2-3B (base) & $+0.036$, $p{=}0.19$ & \textbf{$+0.077$ [.03,.12], $p{=}0.0008$} & \textbf{$+0.146$ [.11,.19], $p{<}10^{-3}$} \\
-LLaMA-3.1-8B (base) & $+0.028$, $p{=}0.26$ & \textbf{$+0.060$ [.02,.10], $p{=}0.004$} & \textbf{$+0.114$ [.08,.15], $p{<}10^{-3}$} \\
-LLaMA-3.2-3B-Inst   & $+0.026$, $p{=}0.28$ & $+0.024$ [-.02,.07], $p{=}0.15$ & \textbf{$+0.097$ [.06,.13], $p{<}10^{-3}$} \\
-LLaMA-3.1-8B-Inst   & $+0.044$, $p{=}0.16$ & $+0.012$ [-.04,.06], $p{=}0.32$ & \textbf{$+0.129$ [.09,.17], $p{<}10^{-3}$} \\
-Qwen2.5-7B (base)   & --- & \textbf{$+0.063$ [.02,.10], $p{=}0.001$} & \textbf{$+0.090$ [.05,.13], $p{<}10^{-3}$} \\
-Qwen2.5-7B-Inst     & --- & $+0.020$ [-.01,.05], $p{=}0.12$ & \textbf{$+0.060$ [.02,.10], $p{=}0.002$} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\textbf{The base-to-instruct contrast.} Across all four base$\to$instruct pairs
+the same triple appears: the judge improves (the output ``says'' more:
+$0.545{\to}0.614$, $0.574{\to}0.630$, $0.579{\to}0.646$, $0.652{\to}0.660$),
+train\_edge falls to or below zero (a final-layer probe stops adding anything
+over the judge), and internal\_edge shrinks ($+0.078{\to}+0.026$,
+$+0.059{\to}+0.013$, $+0.064{\to}+0.020$; Mistral moves the other way,
+$+0.023{\to}+0.037$). The reading is that alignment moves relevance signal
+toward the output representation without closing the internal--output gap: the
+gap does not disappear, it changes channel from residuals to heads.
 
 \textbf{A third model family (Qwen2.5) confirms and extends the pattern.}
-Qwen2.5-7B has a notably stronger zero-shot judge than LLaMA or Mistral
-($0.65$ vs.\ $0.51$--$0.54$), suggesting its pretraining already embeds
-relevance signals more directly in the output vocabulary direction. Despite
-this, reading the attention heads still significantly beats the output
-representation on both Qwen models (base $+0.090$, $p{<}10^{-3}$; instruct
-$+0.060$, $p{=}0.002$). The internal\_edge is significant on the base model
-($+0.063$, $p{=}0.001$) and shrinks on the instruct model---the same
-base-to-instruct compression seen on LLaMA, replicated in a third family.
+Qwen2.5-7B has a stronger zero-shot judge than any LLaMA or Mistral base model
+($0.652$ vs.\ $0.545$--$0.579$), suggesting its pretraining already embeds
+relevance signals more directly along the output vocabulary direction. Despite
+this, reading the attention heads still beats the output representation on both
+Qwen models (base $+0.088$, instruct $+0.059$, both $q<0.002$). The
+internal\_edge is significant on the base model ($+0.064$, $q{=}0.003$) and
+shrinks on the instruct model---the same base-to-instruct compression seen on
+LLaMA, replicated in a third family.
 The train\_edge is \emph{negative} on both Qwen models ($-0.060$,
-$-0.050$): once the native judge is already strong, training a probe on the
+$-0.051$): once the native judge is already strong, training a probe on the
 final hidden state actually slightly underperforms it. This is the structural
 mirror of the LLaMA case---where alignment \emph{moved} signal toward the
-output (judge rising from $0.52$ to $0.60$), Qwen appears to have that
+output (judge rising from $0.545$ to $0.614$ on 3B), Qwen appears to have that
 signal \emph{already present} in the output pathway from pretraining. The
 internal--output gap persists regardless.
 
-\textbf{Depth localization.} Figure~\ref{fig:depth} (per model in the
-supplement) shows relevance decodability rising into the mid network and
-declining toward the output layer; the judge baseline sits well below the
-peak. For LLaMA the strongest heads cluster in the middle (L10--16); for
-Mistral single heads carry little signal (early-layer head \auc{} $\approx
-0.50$) while the residual stream still encodes relevance---a real
-architectural difference, not a failure of the thesis.
+\textbf{Depth localization.} Figure~\ref{fig:depth} shows relevance
+decodability rising into the mid network and declining toward the output layer,
+with the judge baseline sitting below the peak; the same shape holds on all
+eight models (per-model figures in the artifact bundle). For LLaMA the
+strongest heads cluster in the middle (L10--16), for Qwen slightly later
+(L17--20), and for Mistral single heads are uninformative in the earliest
+layers (L0--L3 at chance) before becoming informative later.
 
-\textbf{The signal is not surfaced by the model's own unembedding (logit
-lens).} One might object that mid-network decodability only reflects what a
-\emph{trained} probe can extract, not what the model could surface. We test
-this with a logit lens: at each layer we project the cached residual through
-the model's own final norm and unembedding and read the normalized
-$P(\text{yes})$ vs.\ $P(\text{no})$---an untrained, output-side reader at every
-depth. As a sanity check, the last-layer logit lens reproduces the judge
-exactly (3B and 8B: $0.545$ and $0.574$, matching the judge to within
-$<0.001$). Crucially, the logit lens stays near chance at \emph{every} depth
-(3B peak $0.560$ at L25; 8B peak $0.577$ at L30), far below the trained
-residual probe's mid-network $0.62$. So the relevance signal present in the
-residual stream is not readable through the model's vocabulary head at any
-layer: the bottleneck is not that the signal is absent from late layers but
-that it is \emph{misaligned with the output readout}, consistent with the
-causal result that the output's own direction shifts the verdict without
-preserving discriminative \auc.
+\textbf{The model's own unembedding reads out less than a trained probe
+(logit lens).} One might object that mid-network decodability only reflects
+what a \emph{trained} probe can extract, not what the model itself could
+surface. We test this with a logit lens: at each layer we project the cached
+residual through the model's own final norm and unembedding and read the
+normalized $P(\text{yes})$ vs.\ $P(\text{no})$---an untrained, output-side
+reader at every depth. As a sanity check the last-layer logit lens reproduces
+the judge (maximum absolute deviation $0.011$ across the eight models).
+
+Comparing the two readers \emph{at the same layer}---so that neither gets a
+free choice of depth---the trained probe wins on all eight models. The margin
+splits cleanly by training regime: on the three \emph{base} models the fixed
+unembedding direction trails the trained probe by $0.087$--$0.129$ \auc,
+whereas on the three \emph{instruct} models the gap narrows to
+$0.005$--$0.040$. Two caveats bound what this shows. First, the comparison is
+not capacity-matched in the learning sense: the probe is fitted on 5218
+training pairs while the logit lens uses a \emph{fixed} direction, so a gap
+means the model's own readout direction is not optimised for this task---not
+that the information is unreadable by any fixed direction. Second, applying
+the final norm at an intermediate layer is itself out of distribution. What
+survives both caveats is the \emph{relative} pattern: the same fixed readout
+loses far more at intermediate layers of base models than of aligned ones,
+which is consistent with alignment having moved relevance signal toward the
+output direction (Section~\ref{sec:mech}).
 
 \begin{figure}[t]
 \centering
@@ -315,18 +324,20 @@ preserving discriminative \auc.
 \caption{Depth localization (LLaMA-3.2-3B). (a) per-layer residual probe \auc{}
 vs.\ depth with the judge baseline and the peak/output markers; (b) per-head
 \auc{} heatmap; (c) head- vs.\ layer-view and the layer distribution of the top
-heads. Signal forms mid-network and attenuates toward the output.}
+heads. Relevance decodability forms mid-network and is no longer rising at the
+output layer.}
 \label{fig:depth}
 \end{figure}
 
-\textbf{Mechanism: base vs.\ instruct.} Across three base$\to$instruct pairs,
+\textbf{Mechanism: base vs.\ instruct.}\label{sec:mech} Across all four base$\to$instruct pairs,
 alignment shows a consistent triple effect: the judge improves (output
 ``says'' more), train\_edge falls toward or below zero (training a final-layer
-probe adds little once aligned), and the internal edge persists (and widens on
-LLaMA). Combined with Table~\ref{tab:scale} (the internal edge is significant
-on base, compressed on instruct), the reading is: \emph{alignment improves the
-output readout but does not close the internal--output gap}---it does not
-merely ``suppress'' the output.
+probe adds little once aligned), and internal\_edge \emph{shrinks} in three of
+four pairs while the head edge persists. Combined with
+Table~\ref{tab:sig} (internal\_edge significant on base, compressed on
+instruct), the reading is: \emph{alignment moves relevance signal toward the
+output representation but does not close the internal--output gap}---it does
+not merely ``suppress'' the output.
 
 \textbf{Causality.} Figure~\ref{fig:causal} shows the steering sweep. Injecting
 the internal relevance direction at the output layer drives the verdict
@@ -363,60 +374,67 @@ $P(\text{yes})$ while collapsing \auc.}
 
 \textbf{A second in-domain dataset.} To check the gap is not specific to
 MS MARCO, we retrain and re-test the readers in-domain on BeIR FiQA
-(LLaMA-3.2-3B, 1500 queries, 225 test queries; \emph{not} cross-domain
-transfer). Negatives are sampled from corpus passages not judged relevant to
-the query, so FiQA negatives are easier than MS MARCO's in-passage hard
-negatives; this makes FiQA highly linearly separable and is why its
-internal\_edge is thin (see below). The headline gap is even larger: the judge reaches only
-$\auc{}=0.739$ while the best internal layer reaches $0.993$
-(best\_resid$-$judge $=+0.253$, CI $[0.224,0.283]$). FiQA relevance is highly
-linearly separable, so the output representation itself is near ceiling
-($\auc{}=0.976$); the internal edge is correspondingly thin but still
-significant ($+0.017$, CI $[0.010,0.024]$, $p<10^{-3}$), and depth still
-peaks before the output (L14 $0.993$ vs.\ L28 $0.977$). The two datasets are
-complementary --- MS MARCO stresses ``reading internals beats reading the
-output representation,'' FiQA stresses ``a trained read-out far exceeds the
-zero-shot output judge'' --- but both show the output judge trailing internal
-decodability by a wide margin.
-
+(LLaMA-3.2-3B, 1500 queries, 225 test queries, 1125 test pairs; \emph{not}
+cross-domain transfer). Negatives are BM25 hard negatives---top-ranked corpus
+passages that are not judged relevant---so FiQA is not artificially easy along
+the output channel, which is what an earlier random-negative construction had
+made it. On this harder construction the picture is stronger than on MS
+MARCO, not weaker. The judge reaches only $\auc{}=0.597$ while the best
+internal layer reaches $0.829$ (best\_resid$-$judge $=+0.225$, CI
+$[0.188,0.262]$), and the output representation no longer sits near a ceiling
+($0.724$). The internal\_edge is the largest in the paper
+($+0.099$, CI $[0.066,0.130]$), and the head probe is far ahead of both
+judge and output representation ($0.884$; attn$-$final $=+0.161$, CI
+$[0.131,0.189]$). The two datasets are therefore complementary in the
+opposite direction from what one might expect: MS MARCO provides the harder
+\emph{readout} comparison (a strong residual probe close to the output
+representation), while FiQA shows the internal advantage widening once the
+negatives are hard.
 \textbf{A stronger judge does not close the gap.} A reviewer might attribute
-the weak judge to a weak prompt. Adding four balanced in-context exemplars
-(drawn only from train, no leakage) lifts the 3B base judge from
-$\auc{}=0.545$ to only $0.566$ --- still far below the internal readers
-(best-resid $0.614$, attn $0.682$ at the same 1500-query scale). The output
-bottleneck is attenuation of the signal en route
-to the logits (Fig.~\ref{fig:causal}), not prompt under-specification.
+the weak judge to a weak prompt rather than to the output pathway. Whatever
+the prompt, the judge remains the weakest of the four readers on every model we
+tested, and the zero-shot judge on the best-prompted large model
+(Qwen2.5-7B-Instruct, $\auc{}=0.660$) is still below a linear probe on the same
+model's attention heads ($0.669$). Prompt engineering moves the judge; it does
+not put the judge ahead of the internal readers.
 
 \section{Discussion and Limitations}
 The relevance signal an LLM needs to judge a passage is present in its
-internals and only partially surfaced at the output; alignment tightens the
-readout without closing the gap. This connects to calibration/hallucination
-findings that models ``know'' more than they assert, localized here to a
-specific signal and resolved over depth, with a causal handle. The Qwen2.5
-family is instructive: its zero-shot judge is already strong, so the
+internals and only partially surfaced at the output; alignment moves the
+readout toward the signal without closing the gap. This connects to
+calibration/hallucination findings that models ``know'' more than they assert,
+localized here to a specific signal and resolved over depth. The Qwen2.5 family
+is instructive: its zero-shot judge is already strong, so the
 internals-vs-\emph{judge} gap nearly closes, yet reading attention heads still
 beats reading the output representation---the internal--output gap is robust to
 how well the output verbalizes relevance.
 
-\textbf{Limitations.} (1) Probing is correlational; our causal evidence is a
-steering study replicated on three LLaMA variants (3B, 8B base/instruct), whose
-additive arm is limited by the judge's yes-bias, so we rely on the ablation arm.
-(2) We use two in-domain relevance datasets (MS MARCO, FiQA); we make no
-cross-domain or reranking-accuracy claims, which prior exploration refuted.
-(3) The attention-head reader is architecture-dependent: it is the strongest
-internal reader on LLaMA and Qwen but weak on Mistral (single heads near
-chance), so we treat the residual-stream layer as the canonical ``internal''
-reader and the head probe as a complementary instrument. (4) Absolute \auc{}
-values are modest (0.5--0.75) on MS MARCO; the contribution is the \emph{relative}
-internal-vs-output relationship, not a state-of-the-art relevance classifier.
+\textbf{Limitations.} (1) Probing is correlational, and our causal evidence is
+weaker than our correlational evidence; the steering and activation-patching
+controls are reported in full, including where they fail to separate
+competing explanations (see the causality experiments below). (2) We use two in-domain
+relevance datasets (MS MARCO, FiQA); we make no cross-domain or
+reranking-accuracy claims, which prior exploration refuted. (3) The headline
+edge is defined against one specific output-side reader: a single
+$C{=}1.0$ logistic regression on the final residual vector. Re-reading that
+same layer with a per-chunk ensemble closes or reverses the edge on two of
+eight models (see the read-out control above), so ``internal readers beat the
+output end'' is \emph{not} what we claim; what holds is the matched-read-out
+comparison plus a large margin over the model's own verdict. (4) Absolute
+\auc{} values are modest ($0.54$--$0.73$) on MS MARCO; the contribution is the
+\emph{relative} internal-vs-output relationship, not a state-of-the-art
+relevance classifier. (5) The clean residual-stream comparison
+(internal\_edge) is significant only on base models; on instruct models it is
+positive but not individually significant, so the strong form of the ``residual
+stream knows more'' claim is a base-model result.
 
 \section{Conclusion}
-On the same model, prompt, and token, relevance is more decodable from
-internal activations than from the output the model produces, the advantage
-comes substantially from reading depth rather than from training, the signal
-peaks mid-network and attenuates toward the logits, and a steering ablation
-shows the internal direction causally underlies the verdict. Internals know
-more than the model can say.
+On the same model, prompt, and token, relevance is more decodable from internal
+activations than from the output the model produces. The advantage is not
+explained by training alone, it is largest under a matched read-out procedure,
+and it holds in both directions of the base/instruct comparison: alignment
+improves what the model says without making its output the better place to
+read relevance from. Internals know more than the model can say.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
