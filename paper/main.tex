@@ -470,8 +470,16 @@ not put the judge ahead of the internal readers.
 
 \section{Discussion and Limitations}
 The relevance signal an LLM needs to judge a passage is present in its
-internals and only partially surfaced at the output; alignment moves the
-readout toward the signal without closing the gap. This connects to
+internals and only partially surfaced at the output. The results above support a
+specific reading of why: the signal is \emph{linearly decodable} at
+mid-network layers (a trained direction reaches $0.61$--$0.83$) while the
+model's \emph{own} readout direction extracts much less from the same layer
+($0.45$--$0.61$, depending on dataset and layer). The limitation is in the
+readout, not in the availability of the information---which is a statement about
+\emph{misalignment} between where relevance lives and what the output head is
+pointed at, rather than about a signal that has been uniformly weakened along
+the forward pass. Alignment then moves the readout toward the signal without
+closing the gap. This connects to
 calibration/hallucination findings that models ``know'' more than they assert,
 localized here to a specific signal and resolved over depth. The Qwen2.5 family
 is instructive: its zero-shot judge is already strong, so the
