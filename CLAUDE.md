@@ -54,16 +54,35 @@
    - 读**内部**（中层残差 / 注意力头）到 0.632 / 0.685（读内部额外贡献 +0.092，是训练贡献的 1.6 倍）。
 3. **机制**：相关性信号沿网络深度的可解码性**中部（L12）最高（0.632），向输出层单调衰减（0.593）** → 信号在内部已形成，但在抵达 logits 前被稀释/抑制。
 
-### 3.2 已验证结果（截至 worktree 创建，commit a296676）
+### 3.2 已验证结果
 
-> ⚠️ **2026-10-12 加注——这张表是 P1 修复前的口径，勿再当作当前结果引用。**
-> 它用的是 **500q + 在 test 上 argmax 选层**（乐观偏差）。P1 之后论文一律改用 **val 选层**：
-> - 500q val 选层（`results/significance.json`）：judge 0.535 / final **0.592** / best_resid **0.628 (L13)** / attn 0.685
-> - 1500q val 选层（`results/significance_q1500.json`）：judge 0.545 / final 0.536 / best_resid **0.614 (L9)** / attn 0.682
+> ✅ **2026-10-14 现行权威结果（8 模型 × 1500q，val 选层，全部来自本机当前代码产出的 JSON）。**
+> 取数单一来源是 **`results/PAPER_NUMBERS.json`**（由 `scripts/collect_paper_numbers.py` 生成，
+> 每个值都带来源文件）。**本表只是快照；引用数字请以那份 JSON 为准。**
 >
-> 即 0.632@L12（test-argmax）→ 0.628@L13（val）。差异纯粹来自选层口径，不是新实验、也不是数据变化。
-> 同理，§3.1、`README.md` 与图 `figures/llama32_3b_layer_signal.png` 里的 0.593 / 0.632 / L12 都是这一版旧数
-> （图的峰值标注也是 test-argmax，见 `TODO.md` P0-1）。
+> | 模型 | judge | final | best_resid | attn | attn−final | p |
+> |---|---|---|---|---|---|---|
+> | LLaMA-3.2-3B | 0.545 | 0.538 | 0.616 (L9) | 0.684 | +0.148 | <2e-4 |
+> | LLaMA-3.2-3B-Instruct | 0.614 | 0.619 | 0.623 (L18) | 0.712 | +0.100 | <2e-4 |
+> | LLaMA-3.1-8B | 0.574 | 0.565 | 0.625 (L8) | 0.677 | +0.114 | <2e-4 |
+> | LLaMA-3.1-8B-Instruct | 0.630 | 0.601 | 0.614 (L12) | 0.725 | +0.129 | <2e-4 |
+> | Mistral-7B-v0.3 | 0.579 | 0.584 | 0.609 (L16) | 0.684 | +0.101 | <2e-4 |
+> | Mistral-7B-Instruct-v0.3 | 0.646 | 0.600 | 0.636 (L13) | 0.713 | +0.117 | <2e-4 |
+> | Qwen2.5-7B | 0.652 | 0.593 | 0.658 (L22) | 0.680 | +0.088 | <2e-4 |
+> | Qwen2.5-7B-Instruct | 0.660 | 0.617 | 0.637 (L23) | 0.669 | +0.059 | 0.001 |
+>
+> **BH 多重比较校正后（`results/significance_summary_q1500.json`）**：
+> **`attn−final` 是唯一 8/8 全存活**的 edge（逐模型 q<0.001）；
+> `internal_edge` 只 3/8（三个 base 模型）、`resid−judge` 1/8、`train_edge` 0/8。
+> → **论文的头条定量主张应建在 `attn−final` 上**，`internal_edge` 只能作为 base 模型上的证据。
+>
+> **⚠️ 子样本量的坑（必须记住）**：**500q（test 仅 373 行）对 +0.05 量级的效应没有功效。**
+> 实测：Mistral-7B 500q `attn−final` = +0.0069 (p=0.407)、Qwen2.5-7B = +0.0103 (p=0.387)，
+> 到 1500q 才分别变成 +0.101 / +0.088。**旧文档里"attn 在 Mistral 上弱"就是被这个坑骗了**
+> （见第六节第 8 次推进 ④-1）。**任何新结论都要用 1500q 以上的样本量。**
+>
+> ⚠️ **下表是 2026-06-27 的历史结果（test-argmax 选层 + 500q），保留仅为对照，勿再引用。**
+
 
 | 读取位置 | 训练 | test AUC | 数据来源 |
 |---|---|---|---|
@@ -259,6 +278,59 @@
 > - **仍未解决**：本机无 GPU / 无 `results/cache/`，故 Fig 1 无法重画（其逐层 AUC 与 per-head
 >   热力图数据**只存在于恢复出的那张 PNG 里**）；本机也无 LaTeX 工具链，`main.tex` 改了无法编译验证。
 
+> 🖥️ **2026-10-13/14（第 8 次推进）换了新机器：从零重建环境 + 8 模型全量重跑 + 四项补充实验 + 三个结论级更正**
+>
+> **前提变了（读后面所有内容前必知）**：原 GPU 主机已回收，本次在**新租的 AutoDL 实例**上从零开始。
+> 环境与此前完全不同，别照旧文档里的路径/机器假设操作：
+> - 机器：**RTX 4080 SUPER 32G 显存档**（非原 3090 24G）；系统盘 30G、数据盘 150G（`/root/autodl-tmp`）
+> - 仓库位置：`/root/autodl-tmp/my_paper_project`（**不是** `/root/shared-nvme/paper_A_internals`）
+> - 依赖：**torch 2.8.0+cu128 用服务器自带的**，未重装；补齐 transformers 5.19.0 / datasets 5.1.0 /
+>   nnsight 0.7.0 / sklearn 1.9.1 等，并**钉进 `requirements.txt`**（P1-13）
+> - 缓存全在数据盘：`HF_HOME=/root/autodl-tmp/hf_cache`，写进 `~/.autodl_cache_env.sh`
+>   + `/etc/profile.d` + `BASH_ENV`（覆盖交互/登录/非交互三种 shell）
+> - 下载通道：**hf-mirror.com 直连**（实测 huggingface.co 走 AutoDL 代理拉多 GB 分片会停滞；
+>   hf-mirror 带代理反而卡死）。见 `scripts/setup_autodl.sh` 文件头
+> - **9 个原主机 artifact 已删除**（用户决定），只用新跑的数；仓库外留参考副本
+>   `/root/autodl-tmp/_old_host_artifacts_20261014/`。见 `TODO.md`「⚠️ 证据纪律」
+> - LaTeX：`paper/tools/tectonic`（0.15.0 静态二进制，**已入库**，`.gitignore` 加了白名单），
+>   首次编译经代拉拉 CTAN 包，之后离线可复现
+>
+> **① 环境重建 + 3 个「新主机必炸」的坑（commit `9b20e7f`/`5147d18`）**
+> - `datasets` 5.x **移除了 `trust_remote_code` 且是报错而非忽略** → `src/data.py` 两处去掉该参数
+>   （MS MARCO v1.1 是纯 Parquet，数据与标签口径不变）。
+> - BeIR 的 `abs(hash(q))` → `zlib.crc32`（P1-16，此前 FiQA 的 judge 与探针可能落在不同 query 集）。
+> - `setup_env.sh` 的 `total_mem` → `total_memory`（P1-14，实测前者不存在）。
+> - 四个驱动脚本仍硬编码旧主机路径（`run_scaleup.sh` 会直接 cd 失败）→ 改为脚本相对定位。
+>
+> **② B 组前置 bug 全修（commit `4336584`）**：val 选层（`internals_vs_output`/`logit_lens`/
+> `plot_layer_signal`，后者连正则 C 也对齐到 1.0）、`query_id` 对齐断言（6 个脚本）、
+> bootstrap 逐模型 RNG 子流（P1-17）、因果协议四项（按标签分组/12 随机方向/val 选层/去截断/统一 token 集）。
+>
+> **③ 8 模型 × 1500q 全量重跑 + 四项补充实验（commit `365d61a`）** —— 结论见下节表格。
+>
+> **④ 三个结论级更正（诚实优先，都必须改论文）**
+> 1. 🔴 **「attn 在 Mistral 上弱」是假阴性，不是架构特性。** 原主机上 **Mistral 从来没有 1500q 数据**
+>    （旧 `significance_q1500.json` 只有 4 个 LLaMA、Qwen 那份只有 2 个 Qwen），那条 Limitations
+>    只建立在 500q（test 仅 373 行）上。受控复算查明：**同一份新代码在 500q 复现了旧数**
+>    （base +0.0069 p=0.407 vs 旧 +0.0021 p=0.474），差异**纯粹来自样本量**；且该假阴性
+>    **跨家族系统性存在**（Qwen-7B 500q 只有 +0.0103 p=0.387，1500q 才 +0.0882）。→ **删除该 Limitations**。
+> 2. 🔴 **因果实验的新判据没能支持旧结论。** 旧判据（只看总体 mean P(yes)）在逻辑上无效——
+>    随机方向平移同样改变总均值。改成按真实标签分组的 `alignment_gap` + 12 个随机方向零分布后：
+>    **internal 方向排不进前 5%**（分位 0.00~0.83），且"internal 保持 AUC"在 3B 上与 random
+>    完全重叠、在 Qwen 上反而崩到 0.427。唯一仍成立的是**消融臂单调崩塌**。
+>    → 因果章节降级到这一条，并补一个"修掉概率饱和"的重跑（改到对数几率空间标定）。
+> 3. ⚠️ **「读出方式」的贡献与「读哪层」相当，必须正面写入论文。** capacity 对照（8/8 模型）：
+>    给最终层**完全相同的读出流程**后 `attn − 选20块` 仍 8/8 显著（优势不全来自读出自由度）；
+>    **但**换一种读出（逐块 LR ensemble）后，**LLaMA-3.2-3B-Instruct 上 `attn − headmean`
+>    只有 +0.0071 CI[−0.015,+0.029] 不显著**。→ E-5 的核心内容。
+>
+> **⑤ 新增「证据纪律」**：写进论文的每个数字都必须能指到 `results/` 里一个**现存且当前代码产出**
+> 的 JSON；`scripts/collect_paper_numbers.py` → `results/PAPER_NUMBERS.json` 是取数单一来源
+> （每个值带 provenance）。这条把"论文必须有据"变成机械可查的动作。
+>
+> **⑥ 新增的多重比较校正**：`scripts/aggregate_significance.py` 做 BH 校正并**拒收旧格式 artifact**。
+> 8 模型结果：**BH 后唯一 8/8 全存活的是 `attn−final`**（internal_edge 3/8、resid−judge 1/8、train_edge 0/8）。
+
 
 1. ✅ **扩样本加固 internal_edge（已完成 —— 见上文第 3 次推进）**：500q→1500q（test 75→~225 query），4 旗舰模型跑完并重测 `significance.py`。结论：**base 模型 internal_edge 单模型显著**（3B +0.077 p=0.0008、8B +0.060 p=0.004），instruct 收缩；attn−final 4/4 极显著。~~"这是当前最高优先"~~ 已结案。
 2. ✅ **因果证据（顶会真正缺口，已完成）**：`scripts/causal_steer.py`(原生 transformers+forward hook+批处理，nnsight 循环会 OOM 故弃用)。3B 上把 L13 内部相关性方向(diff-of-means，probe-free)注入输出层残差，扫 α∈[−8,8]。**消融臂(α<0)干净单调**：P(yes) 0.79→0.26，抽掉内部方向 yes 判断逐级崩塌(信号因果必要)；**internal 唯一保持 AUC**(0.546→0.553)，对照 final 方向摧毁 AUC(→0.485，只平移 logits)、random 方向 AUC 全程平(对照成立)。增益臂受 judge 正例偏置(baseline P(yes)=0.79，真实正例仅 22%)饱和，论文以消融臂+AUC 对照为主证据。结论:输出通路本可表达相关性信号，自然前向只是被衰减(attenuation not absence)。结果 `results/causal_steer_llama32_3b_q1500.json`，写进 REPORT §11。
@@ -282,40 +354,56 @@
 
 ## 七、环境（新容器必看，会复现的坑）
 
+> 🖥️ **2026-10-13 起：本工作区跑在 AutoDL 新实例上**（原主机已回收）。下表是**现行**环境；
+> 旧主机（3090 24G / `/root/shared-nvme/...`）的一切路径与假设**都已失效**，见第六节第 8 次推进。
+
 | 项 | 值 |
 |---|---|
-| 工作区目录 | `/root/shared-nvme/paper_A_internals`（分支 paper-A） |
-| GPU | RTX 3090 24GB | Python 3.12 | torch 2.7 | nnsight 0.7.0 | transformers 5.x | datasets 3.6.0 |
+| 仓库位置 | `/root/autodl-tmp/my_paper_project`（分支 `paper-A`） |
+| GPU | **RTX 4080 SUPER，32G 显存档**（`nvidia-smi` 报 32760 MiB） |
+| 磁盘 | 系统盘 30G（只放依赖）／数据盘 150G（`/root/autodl-tmp`，模型+缓存+结果） |
+| Python / torch | Python 3.12.3 ／ **torch 2.8.0+cu128（服务器自带，勿重装）** ／ CUDA 12.8 |
+| 关键依赖 | transformers 5.19.0 · datasets 5.1.0 · nnsight 0.7.0 · sklearn 1.9.1 · numpy 2.3.2（已钉进 `requirements.txt`） |
+| 缓存 | `HF_HOME=/root/autodl-tmp/hf_cache`（`~/.autodl_cache_env.sh` + `/etc/profile.d` + `BASH_ENV` 三处兜底） |
+| 下载通道 | **hf-mirror.com 直连**（`HF_ENDPOINT`）；huggingface.co 走 AutoDL 代理拉大分片会停滞 |
+| LaTeX | `paper/tools/tectonic`（0.15.0 静态二进制，**已入库**）；`TECTONIC_CACHE_DIR=/root/autodl-tmp/tectonic_cache` |
+| 模型权重 | 8 个（LLaMA-3.2-3B/-Inst、LLaMA-3.1-8B/-Inst、Mistral-7B/-Inst、Qwen2.5-7B/-Inst），约 104 GB |
 
-> ⚠️ **非 GPU 机器上的能力边界（2026-10-12 记录，实测）**：仓库可以 clone 到任何机器上阅读和改文档，
+**新主机上会复现的坑（都已踩过并修好）：**
+1. **`datasets` 5.x 移除了 `trust_remote_code`，且是报错而非忽略** —— 老代码会直接崩。
+   `src/data.py` 已去掉该参数（MS MARCO v1.1 是纯 Parquet，无 loading script）。
+2. **hf_xet 必须卸载**，且 `HF_HUB_DISABLE_XET=1`：与代理不兼容会卡死。
+   注意 `pip install nnsight` 会把它作为依赖**带回来**，装完 nnsight 后要再卸一次。
+3. **下载通道别用代理**：实测 `huggingface.co`+AutoDL 代理拉多 GB 分片会停滞（首个 3B 模型
+   靠超时续传磨了 6.9 分钟），而 `hf-mirror.com` 直连稳定 3–5 MB/s、**带代理反而卡死**。
+4. **GPU 阶段必须串行**：手工并发跑两个实验会 CUDA OOM（实测 7B 模型两进程各占 ~15–16 GB）。
+   多实验请排队（见 `scripts/run_experiments.sh` / `run_second_round.sh` 的幂等串行设计）。
+5. **`pgrep -f` 会匹配到自己的 shell**：用 `pkill -f <脚本名>` 会把自己杀掉（本会话踩了两次）。
+   判活/杀进程请用 PID 文件或 `pgrep -f "scrip[t].py"` 这种括号写法。
+6. **`du -sm` 的取整会骗人**：估算下载/写入进度请用 `stat -c%s` 精确字节数。
+
+> ⚠️ **非 GPU 机器上的能力边界（2026-10-12 记录，仍然适用）**：仓库可以 clone 到任何机器上阅读和改文档，
 > 但**只有 `results/cache/*.pt` 在手时才能重算、重画任何东西**。在普通笔记本（macOS）上：
 > - ✅ **能（纯 CPU，不需要显卡）**：`plot_layer_signal.py`、`internals_vs_output.py`、`significance.py`
 >   —— 它们只做 `torch.load` 缓存 + sklearn 逻辑回归。**前提是把缓存从主机拷过来。**
-> - ✅ **能（连缓存都不需要）**：`plot_causal.py`（只读 JSON）、`extract_figures_from_pdf.py`（只读 PDF）。
+> - ✅ **能（连缓存都不需要）**：`plot_causal.py`（只读 JSON）、`aggregate_significance.py`（只读 JSON）、
+>   `collect_paper_numbers.py`（只读 JSON）、`extract_figures_from_pdf.py`（只读 PDF）。
 > - ❌ **不能**：`extract_instruct.py` / `llm_judge.py` / `llm_judge_fewshot.py` / `causal_steer.py` /
->   `logit_lens.py` —— 这些要加载模型，必须有 GPU。
-> - ❌ **不能**：编译 `paper/main.tex` —— tectonic/pdflatex 都不在仓库里（`tools/` 被 gitignore）。
+>   `patch_internal.py` / `logit_lens.py` —— 这些要加载模型，必须有 GPU。
+> - ❌ **不能**：编译 `paper/main.tex` —— 除非把 `paper/tools/tectonic` 一起带过去（现在是入库的）。
 > - CPU 环境需补装：`torch`（CPU 版即可）+ `scikit-learn` + `joblib` + `matplotlib`。
 
-**会复现的坑：**
-1. **新容器依赖需重装**：仅 torch/sklearn/numpy/matplotlib 预装，需装 transformers/datasets/sentence-transformers/nnsight/accelerate/seaborn。
-2. **dill pip 约束**：`/etc/pip/constraint.txt` 把 dill 钉死 0.3.9，直接 `pip install datasets` 会静默装成远古 1.1.1。解法：`PIP_CONSTRAINT="" pip install 'datasets>=3.0,<4'`。
-3. **hf_xet 与代理不兼容**：下载大文件卡死。解法：`pip uninstall hf_xet` + `export HF_HUB_DISABLE_XET=1`。
-4. **代理**（下载 HF/PyPI 慢时）：凭据**从环境注入，绝不写进仓库**：
-   ```bash
-   export https_proxy="http://<user>:<pass>@<proxy-host>:<port>"
-   export http_proxy="$https_proxy"
-   export no_proxy="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,*.paracloud.com,*.paratera.com,*.blsc.cn"
-   export HF_HUB_DISABLE_XET=1
-   ```
-   > 🔴 **2026-10-12 安全事件**：本节原先硬编码了一个真实的 `user:pass`，而本仓库是**公开**的
-   > （`private: false`），该凭据已随 **8 个提交**进入 git 历史。已从工作区移除，但**历史里仍在**。
-   > 处理见 `TODO.md` S-1：**必须轮换密码**，并考虑 `git filter-repo` 清历史。
-5. **缓存是软链**：`results/cache` → 主仓库真实目录。删 worktree 前勿 `rm -rf` 跟随软链误删主缓存。
+> 🔴 **S-1（旧代理口令泄露）在新主机上已无关**：`/etc/network_turbo` 是 AutoDL 的**无凭据**本地代理，
+> 那条泄露的 `10.255.128.102` 内网凭据从这里**不可达**、在本机毫无用处。
+> 它仍留在 `TODO.md` S-1 里，只因为公开仓库的历史中还留着那串字符。
 
-**常用命令：**
+**常用命令（现行）：**
 ```bash
-cd /root/shared-nvme/paper_A_internals
-export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1   # 模型已缓存
-python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct   # 复现核心结果
+cd /root/autodl-tmp/my_paper_project
+bash scripts/setup_autodl.sh                 # 环境变量 + 下载通道（模型已缓存则跳过）
+python scripts/collect_paper_numbers.py --n 1500   # 论文取数单一来源（纯 CPU）
+python scripts/aggregate_significance.py --suffix _q1500   # BH 校正 + 跨模型符号检验（纯 CPU）
+python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q1500_instruct   # 复现核心结果（纯 CPU）
+cd paper && ../paper/tools/tectonic main.tex   # 编译论文（首次需联网拉 CTAN 包）
 ```
+
