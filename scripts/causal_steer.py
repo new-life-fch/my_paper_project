@@ -103,6 +103,10 @@ def main():
     ap.add_argument("--max-passages", type=int, default=5)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--alphas", default="-8,-4,-2,-1,0,1,2,4,8")
+    ap.add_argument("--shift-targets", default="0,-1,-2,-4,-8,1,2,4,8",
+                    help="sweep points in units of the yes/no LOGIT DIFFERENCE shift; "
+                         "alpha is derived per direction from the calibration pass. "
+                         "Use 'alpha' to fall back to the legacy fixed-alpha sweep.")
     ap.add_argument("--n-random", type=int, default=12,
                     help="random control directions (null distribution for the gap)")
     ap.add_argument("--batch-size", type=int, default=16)
@@ -111,6 +115,9 @@ def main():
     args.cache = resolve_cache(args.cache)   # docs/CACHE_NAMING.md
     out = args.out or f"results/causal_steer_{args.tag}.json"
     alphas = [float(a) for a in args.alphas.split(",")]
+    shift_mode = args.shift_targets.lower() != "alpha"
+    shift_targets = ([] if not shift_mode
+                     else [float(x) for x in args.shift_targets.split(",")])
 
     # --- directions from cache (CPU) ---------------------------------------
     # diff-of-means is fit on TRAIN (it is a probe; fitting on train is correct),
@@ -190,9 +197,15 @@ def main():
     tok.padding_side = "left"   # last real token sits at position -1 for every row
 
     @torch.no_grad()
-    def judge_scores(dvec, alpha):
+    def judge_scores(dvec, alpha, want_logitdiff=False):
+        """P(yes) per row; optionally also the yes/no LOGIT DIFFERENCE.
+
+        The logit difference is what the steering actually moves, so it is the
+        natural unit for comparing directions and for detecting saturation
+        (TODO.md E-1 / 2026-10-14 fix)."""
         steer["vec"], steer["alpha"] = dvec, alpha
         scores = []
+        logitdiffs = []
         for i in range(0, len(test_s), args.batch_size):
             batch = test_s[i:i + args.batch_size]
             prompts = [build_prompt(x["query"], x["passage"]) for x in batch]
@@ -205,26 +218,56 @@ def main():
                 yes = torch.logsumexp(lg[yes_ids], 0)
                 no = torch.logsumexp(lg[no_ids], 0)
                 scores.append(torch.softmax(torch.stack([yes, no]), 0)[0].item())
+                if want_logitdiff:
+                    logitdiffs.append(float((yes - no).item()))
             del enc, logits
+        if want_logitdiff:
+            return np.array(scores), np.array(logitdiffs)
         return np.array(scores)
 
-    def sweep(dvec, name):
+    def sweep(dvec, name, alpha_list=None):
         """Run the alpha sweep for one direction; return per-alpha curves."""
-        pyes_all, pyes_pos, pyes_neg, aucs = [], [], [], []
-        for a in alphas:
-            s = judge_scores(dvec, a)
+        al = alphas if alpha_list is None else alpha_list
+        ld_curves, pyes_all, pyes_pos, pyes_neg, aucs = [], [], [], [], []
+        for a in al:
+            s, ld = judge_scores(dvec, a, want_logitdiff=True)
+            ld_curves.append(round(float(ld.mean()), 3))
             pyes_all.append(round(float(s.mean()), 4))
             pyes_pos.append(round(float(s[labels == 1].mean()), 4))
             pyes_neg.append(round(float(s[labels == 0].mean()), 4))
             try: aucs.append(round(float(roc_auc_score(labels, s)), 3))
             except ValueError: aucs.append(0.5)
             torch.cuda.empty_cache()
-            print(f"    {name:10s} alpha={a:+.0f}  all={pyes_all[-1]:.3f} "
+            tgt = shift_targets[len(ld_curves) - 1] if shift_mode else float("nan")
+            print(f"    {name:10s} shift_target={tgt:+5.1f} alpha={a:+.3f} "
+                  f"measured_shift={ld_curves[-1]:+6.2f}  all={pyes_all[-1]:.3f} "
                   f"rel={pyes_pos[-1]:.3f} irrel={pyes_neg[-1]:.3f} auc={aucs[-1]:.3f}")
         gap = [round(p - n, 4) for p, n in zip(pyes_pos, pyes_neg)]
         return {"mean_pyes": pyes_all, "mean_pyes_relevant": pyes_pos,
-                "mean_pyes_irrelevant": pyes_neg, "alignment_gap": gap, "auc": aucs}
+                "mean_pyes_irrelevant": pyes_neg, "alignment_gap": gap, "auc": aucs,
+                "alphas_used": [round(x, 4) for x in al],
+                "mean_logitdiff": ld_curves}
 
+    # ---- calibrate the injection in LOGIT-SHIFT space (2026-10-14, E-1 fix) ----
+    # The old sweep fixed alpha in units of |h|. Measured consequence: on Qwen2.5-7B
+    # alpha=+-1 already saturated P(yes) to exactly 0/1, so the alignment gap and
+    # the AUC collapsed to constants -- i.e. the "no directionality" reading was a
+    # saturation artefact, not a measurement. Here we instead measure how far each
+    # unit direction moves the yes/no logit difference at alpha=1, and then choose
+    # alpha so every direction is swept over the SAME logit shifts. That makes
+    # directions comparable AND keeps every point out of saturation (|shift| <= ~8
+    # logits still leaves the sigmoid responsive for most rows).
+    print("  calibrating injection strength (logit shift per unit alpha) ...")
+    base_scores, base_ld = judge_scores(None, 0.0, want_logitdiff=True)
+    k_dir = {}
+    for nm, dv in (("internal", d_internal), ("final", d_final),
+                   ("random", randoms[0])):
+        t = torch.tensor(dv, device=dev, dtype=torch.float16)
+        _, ld1 = judge_scores(t, 1.0, want_logitdiff=True)
+        slope = float(np.mean(ld1 - base_ld))       # logits per unit alpha
+        k_dir[nm] = slope
+        print(f"    {nm:9s}: mean logit-diff shift at alpha=1 = {slope:+8.2f} "
+              f"-> alpha for 1 logit = {1.0/slope if slope else float('nan'):+.4f}")
     from tqdm import tqdm
     report = {
         "tag": args.tag, "model": args.model,
@@ -245,21 +288,43 @@ def main():
                      "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"},
         "sweep": {},
     }
+    report["calibration"] = {
+        "mean_logitdiff_at_alpha0": round(float(base_ld.mean()), 4),
+        "logit_shift_per_unit_alpha": {k: round(v, 3) for k, v in k_dir.items()},
+        "shift_targets_logits": shift_targets,
+        "note": ("alpha is chosen per direction so that every direction is swept over "
+                 "the same yes/no logit shifts; this removes the cross-model saturation "
+                 "that made the Qwen run uninterpretable (TODO.md E-1)."),
+    }
+    def alphas_for(dvec):
+        """Per-direction alpha list so every direction hits the same logit shifts."""
+        if not shift_mode:
+            return None
+        _, ld1 = judge_scores(torch.tensor(dvec, device=dev, dtype=torch.float16),
+                              1.0, want_logitdiff=True)
+        slope = float(np.mean(ld1 - base_ld))
+        if abs(slope) < 1e-6:
+            return None                       # direction does nothing measurable
+        return [t / slope for t in shift_targets]
+
     for name, dvec in [("internal", d_internal), ("final", d_final)]:
         print(f"  direction: {name}")
-        report["sweep"][name] = sweep(torch.tensor(dvec, device=dev, dtype=torch.float16), name)
+        report["sweep"][name] = sweep(torch.tensor(dvec, device=dev, dtype=torch.float16),
+                                      name, alphas_for(dvec))
 
     rand_reports = []
     for i, dvec in enumerate(tqdm(randoms, desc="random directions")):
-        rand_reports.append(sweep(torch.tensor(dvec, device=dev, dtype=torch.float16), f"rnd{i:02d}"))
+        rand_reports.append(sweep(torch.tensor(dvec, device=dev, dtype=torch.float16),
+                                  f"rnd{i:02d}", alphas_for(dvec)))
     report["sweep"]["random_all"] = rand_reports
 
     # --- null distribution for the alignment gap --------------------------
     # Steer "toward relevant" (most negative alpha for the internal direction's
     # convention is the ABLATION arm); we summarize the gap at both extremes and
     # at the ablation end specifically, then ask where internal sits vs random.
-    ai = {a: i for i, a in enumerate(alphas)}
-    for a in (min(alphas), max(alphas)):
+    axis = shift_targets if shift_mode else alphas
+    ai = {a: i for i, a in enumerate(axis)}
+    for a in (min(axis), max(axis)):
         g = [r["alignment_gap"][ai[a]] for r in rand_reports]
         report[f"gap_at_alpha{a:+.0f}"] = {
             "internal": report["sweep"]["internal"]["alignment_gap"][ai[a]],

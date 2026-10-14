@@ -115,7 +115,17 @@ def _bm25_rank_all(qids, qid2text, all_cids, cid2text, pool=300,
     cache = os.path.join("results", "cache", "bm25", f"{dataset}_pool{pool}_seed{seed}.json")
     if os.path.exists(cache):
         with open(cache) as f:
-            return json.load(f)
+            cached = json.load(f)
+        # A cache written by a run with a different query set must NOT be reused:
+        # entries would be missing and those queries would silently get ZERO
+        # negatives (observed: 1500-query run picking up a 50-query cache -> 0/4
+        # negatives for most queries). Only reuse if it covers every query asked.
+        missing = [q for q in qids if q not in cached]
+        if not missing:
+            print(f"  BM25: reusing cached rankings ({len(cached)} queries) -> {cache}")
+            return {q: cached[q] for q in qids}
+        print(f"  BM25: cache has only {len(cached)} queries but {len(missing)} of "
+              f"{len(qids)} requested are missing -> rebuilding")
 
     from rank_bm25 import BM25Okapi
     from collections import Counter, defaultdict
@@ -167,9 +177,16 @@ def _bm25_rank_all(qids, qid2text, all_cids, cid2text, pool=300,
             print(f"    ranked {i+1}/{len(qids)} queries", flush=True)
 
     os.makedirs(os.path.dirname(cache), exist_ok=True)
+    if os.path.exists(cache):
+        with open(cache) as f:
+            old_cache = json.load(f)
+        old_cache.update(ranked)          # merge so different query sets coexist
+        ranked_out = old_cache
+    else:
+        ranked_out = ranked
     with open(cache, "w") as f:
-        json.dump(ranked, f)
-    print(f"  BM25 rankings cached -> {cache}")
+        json.dump(ranked_out, f)
+    print(f"  BM25 rankings cached -> {cache} ({len(ranked_out)} queries total)")
     return ranked
 
 
@@ -226,6 +243,21 @@ def load_beir_relevance(name: str = "fiqa", n_queries: int = 1500,
 
     rng = random.Random(seed)
     qids = [q for q in pos_by_q if pos_by_q[q]]
+    # ---- eligibility filter (2026-10-14, bug fix) ---------------------------
+    # `pos_cids = pos_by_q[q][:n_pos_per]` takes only the FIRST n_pos_per relevant
+    # passages and silently DROPS the rest. On FiQA that is severe: 36.3% of
+    # queries have >2 relevant passages (2439 have 1, 1796 have 2, tail to 8+),
+    # so positives were dropped en masse while negatives kept accruing -> the
+    # built sample came out 2454 pos / 169 neg instead of the designed 2 pos :
+    # 3 neg. AUC is threshold-free so it still computed, but a 94%-positive test
+    # set measures something different from the retrieval-relevance task the
+    # paper describes.
+    # Fix: build only from queries whose relevant-passage count is within
+    # [1, max_pos_per_query], so each kept query contributes ALL its qrels
+    # positives and the label balance is the designed one.
+    max_pos = max(1, max_passages_per_query // 2)
+    if negatives == "bm25":
+        qids = [q for q in qids if 1 <= len(pos_by_q[q]) <= max_pos]
     rng.shuffle(qids)
     qids = qids[:n_queries]
 
