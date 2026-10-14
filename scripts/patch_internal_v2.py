@@ -237,11 +237,15 @@ def main():
         Returns (scores, pos_mean, neg_mean, captured[h]).
         """
         state["site"], state["alpha"], state["src"], state["norm_ref"] = site, alpha, src, norm_ref
-        cap = {}
+        cap = {"chunks": []}
 
         def cap_hook(_m, _inp, out):
+            # ACCUMULATE across batches. Overwriting here was a real bug: the
+            # hook fires once per forward pass, so a single slot ends up holding
+            # only the LAST batch (16 rows of 1117), which then fails the
+            # row-count assertion far downstream instead of at the source.
             h = out[0] if isinstance(out, tuple) else out
-            cap["h"] = h[:, -1, :].detach().clone()
+            cap["chunks"].append(h[:, -1, :].detach())
             return out
 
         # prepend=True so we always read the layer's natural output, never the
@@ -266,7 +270,8 @@ def main():
             state["site"], state["src"], state["norm_ref"] = None, None, None
             torch.cuda.empty_cache()
         s = np.array(scores)
-        return s, cap.get("h")
+        cap_h = torch.cat(cap["chunks"], dim=0) if cap["chunks"] else None
+        return s, cap_h
 
     t0 = time.time()
     # ---- 1. natural pass + capture real L* activations --------------------
