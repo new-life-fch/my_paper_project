@@ -339,14 +339,17 @@ the final norm at an intermediate layer is itself out of distribution.
 
 We can measure the first caveat rather than assert it, on the FiQA cache where
 the two can be compared on identical data at an identical layer. There, the
-model's own fixed direction scores $\auc{}=0.453$ at $L9$---\emph{below
-chance}---while a direction fitted on a \emph{different} dataset (MS MARCO) and
-carried over with no target-domain fitting at all scores $0.568$, and one
-fitted in-domain scores $0.777$. A direction that has never seen FiQA beats the
-model's own readout on FiQA. So the logit-lens deficit is a statement about the
-model's readout direction being off-task, not about the information being
-unreadable by a fixed linear map---which is precisely the distinction the
-misalignment reading requires, and it is measured here rather than assumed.
+model's own fixed direction scores $\auc{}=0.453$ at $L9$ with a
+query-clustered 95\% CI of $[0.417,0.489]$---\emph{entirely below chance}
+($P(\auc\ge0.5)=0.005$)---while a direction fitted on a \emph{different}
+dataset (MS MARCO) and carried over with no target-domain fitting at all
+scores $0.568$, and one fitted in-domain scores $0.777$. A direction that has
+never seen FiQA beats the model's own readout on FiQA, and the model's own
+readout is significantly \emph{worse than chance}. So the logit-lens deficit is
+a statement about the model's readout direction being off-task, not about the
+information being unreadable by a fixed linear map---which is precisely the
+distinction the misalignment reading requires, and it is measured here rather
+than assumed.
 
 What survives both caveats is the
 \emph{relative} pattern: the same fixed readout

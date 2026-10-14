@@ -58,8 +58,55 @@ def fit_direction(X, y, C=1.0):
     return m
 
 
+def fiqa_logit_lens_scores(model_name, cache, layer, batch=512):
+    """Raw logit-lens P(yes) on the FiQA test split at one layer.
+
+    Needed only for the bootstrap CI; returns (scores, labels, query_ids) or
+    None if the model cannot be loaded (e.g. offline).
+    """
+    try:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+    except ImportError:
+        return None
+    try:
+        tok = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name, dtype=torch.float32)
+        model.eval()
+    except Exception as e:  # pragma: no cover - environment dependent
+        print(f"  (skipping bootstrap: cannot load {model_name}: {e})")
+        return None
+
+    def first(words):
+        s = set()
+        for w in words:
+            e = tok.encode(w, add_special_tokens=False)
+            if e:
+                s.add(e[0])
+        return sorted(s)
+    yi = first(["yes", "Yes", "YES", " yes", " YES"])
+    ni = first(["no", "No", "NO", " no", " NO"])
+
+    d = torch.load(os.path.join(cache, "resid_test.pt"), map_location="cpu")
+    R = d["acts"].to(torch.float32)[:, layer, :]
+    y = d["labels"].numpy()
+    q = d["query_ids"].numpy() if "query_ids" in d else np.arange(len(y))
+    out = np.zeros(len(y), dtype=np.float32)
+    with torch.no_grad():
+        for i in range(0, len(y), batch):
+            h = model.model.norm(R[i:i + batch])
+            lg = model.lm_head(h)
+            s = torch.softmax(torch.stack([
+                torch.logsumexp(lg[:, yi], -1),
+                torch.logsumexp(lg[:, ni], -1)], -1), -1)[:, 0]
+            out[i:i + batch] = s.numpy()
+    return out, y, q
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="meta-llama/Llama-3.2-3B",
+                    help="needed only for the FiQA logit-lens bootstrap CI")
+    ap.add_argument("--batch", type=int, default=512)
     ap.add_argument("--tag", default="llama32_3b")
     ap.add_argument("--fiqa-tag", default="llama32_3b_fiqa_bm25")
     ap.add_argument("--n-queries", type=int, default=1500)
@@ -135,6 +182,28 @@ def main():
         res["fiqa_logit_lens_path"] = fq_ll_path
         if L < len(per):
             res["fiqa_logit_lens_at_L"] = per[L]
+            # Is the model's own readout BELOW CHANCE here, or just weak?
+            # A point estimate near 0.5 cannot answer that, so bootstrap it
+            # (query-clustered, matching the paper's protocol).
+            s_ll = fiqa_logit_lens_scores(args.model, fq_cache, L, args.batch)
+            if s_ll is not None:
+                scores, y_fq, q_fq = s_ll
+                rng = np.random.default_rng(42)
+                uq = np.unique(q_fq)
+                by_q = {qq: np.where(q_fq == qq)[0] for qq in uq}
+                boot = []
+                for _ in range(2000):
+                    pick = rng.choice(uq, size=len(uq), replace=True)
+                    ii = np.concatenate([by_q[qq] for qq in pick])
+                    boot.append(roc_auc_score(y_fq[ii], scores[ii])
+                                if len(np.unique(y_fq[ii])) > 1 else 0.5)
+                boot = np.array(boot)
+                res["fiqa_logit_lens_bootstrap"] = {
+                    "n_boot": 2000,
+                    "ci95": [round(float(np.percentile(boot, 2.5)), 4),
+                             round(float(np.percentile(boot, 97.5)), 4)],
+                    "p_auc_ge_half": round(float((boot >= 0.5).mean()), 4),
+                }
         res["fiqa_logit_lens_best_layer"] = fq_ll.get("logit_lens_best_layer")
         res["fiqa_judge"] = fq_ll.get("llm_judge_auc")
 

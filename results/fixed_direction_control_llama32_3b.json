@@ -16,6 +16,14 @@
   },
   "fiqa_logit_lens_path": "results/logit_lens_llama32_3b_fiqa_bm25_q1500.json",
   "fiqa_logit_lens_at_L": 0.4533,
+  "fiqa_logit_lens_bootstrap": {
+    "n_boot": 2000,
+    "ci95": [
+      0.4173,
+      0.489
+    ],
+    "p_auc_ge_half": 0.0045
+  },
   "fiqa_logit_lens_best_layer": {
     "layer": 23,
     "auc": 0.5933,
