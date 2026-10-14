@@ -416,16 +416,24 @@ test: at those points every direction has been pushed hardest, and the
 alignment gap is compressed toward zero for \emph{all} of them, so a direction
 whose effect lives at moderate strength is structurally invisible there. We do
 not move the criterion---post-hoc adjustment is exactly what pre-registration
-prevents---but we report the full profile, and on Qwen2.5-7B it matters: at a
-$-2$-logit shift the internal direction's gap ($0.166$) exceeds the maximum of
-all twelve random directions ($0.143$), i.e.\ the $1.00$ percentile, a genuine
-pass at that point; at the endpoints the same direction drops to the $0.00$
-percentile as its verdict saturates. Two qualifications keep this from being a
-positive result: it appears at a single point rather than an interval, and it
-does not replicate on either LLaMA model (whose best percentiles anywhere in
-the sweep are $0.75$ and $0.42$). Our statement is therefore narrow: on Qwen,
-moderate-strength injection produces a relevance-aligned effect beyond the
-random-direction null; at the registered endpoints, and on LLaMA, we find none.
+prevents---but we report the full profile, and it changes the picture for two
+of the four models. On Qwen2.5-7B, at a $-2$-logit shift the internal
+direction's gap ($0.166$) exceeds the maximum of all twelve random directions
+($0.143$), i.e.\ the $1.00$ percentile. On LLaMA-3.2-3B-Instruct the effect is
+broader rather than a single point: the gap roughly \emph{triples} over baseline
+($0.026 \to 0.083$) and lands at the $1.00$ percentile at both $-1$ and
+$-2$-logit shifts. The two base LLaMA models, by contrast, never exceed the
+$0.75$ and $0.42$ percentile anywhere in the sweep.
+
+So the honest summary has three parts. At the registered endpoint criterion,
+the result is a null on all four models. At moderate strength, two of four
+models (both instruct) show a relevance-aligned effect beyond the
+random-direction null, while both LLaMA base models do not---a split that runs
+in the same direction as the base/instruct split in internal\_edge, though four
+models (one a single point, one with only five random directions) are too few
+to call it a finding. And the endpoint choice itself was a weakness of our
+registered criterion: separating directions works worst exactly where we chose
+to test. We report the criterion as registered, and the profile as measured.
 The saturation-free calibration is what makes these comparisons interpretable
 at all: the three direction families are comparable after calibration (mean
 logit shift per unit $\alpha$ on 3B: internal $-0.56$, final $+3.27$, random
