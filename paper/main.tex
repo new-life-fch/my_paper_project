@@ -585,17 +585,27 @@ not put the judge ahead of the internal readers.
 \section{Discussion and Limitations}
 The relevance signal an LLM needs to judge a passage is present in its
 internals and only partially surfaced at the output. The results above support a
-specific reading of why: the signal is \emph{linearly decodable} at
-mid-network layers while the model's \emph{own} readout direction extracts much
-less from the \emph{same} layer. At $L9$ of LLaMA-3.2-3B, a trained direction
-reaches $0.61$ on MS MARCO and $0.78$ on FiQA, whereas the model's own direction
-reaches $0.51$ and $0.45$ respectively (and on FiQA that $0.45$ is
-significantly below chance). The limitation is in the
-readout, not in the availability of the information---which is a statement about
-\emph{misalignment} between where relevance lives and what the output head is
-pointed at, rather than about a signal that has been uniformly weakened along
-the forward pass. Alignment then moves the readout toward the signal without
-closing the gap. This connects to
+specific reading of why, and it is a claim about \emph{misalignment} rather than
+about uniform weakening. Three measurements point the same way. First, the
+signal is \emph{linearly decodable} at mid-network layers while the model's
+\emph{own} readout direction extracts much less from the \emph{same} layer: at
+$L9$ of LLaMA-3.2-3B a trained direction reaches $0.61$ on MS MARCO and $0.78$
+on FiQA, whereas the model's own direction reaches $0.51$ and $0.45$
+respectively (and on FiQA that $0.45$ is significantly below chance). Second,
+activation patching shows this is not a matter of format incompatibility: a
+mid-layer representation transplanted into the output layer transfers no
+discriminability, and rescaling it to the output layer's own norm does not help,
+so the failure is not that the vector arrives too small. Third---and this is the
+sharpest test---the model's verdict is, to first order, \emph{not locally
+sensitive to the direction a probe reads relevance from}: the cosine between the
+gradient of the verdict with respect to $h_{L^*}$ and the probe's direction is
+$0.008$ (LLaMA-3.2-3B) and $0.006$ (Qwen2.5-7B), against a random-direction
+spread reaching $|0.037|$ and $|0.035|$, placing the probe direction at the
+$0.56$ and $0.38$ percentile of that null. Crucially this holds \emph{even for
+the model whose verdict is demonstrably driven by $L^*$ content}, which is why
+we read the mechanism as the readout being pointed elsewhere rather than as the
+downstream network being unable to use the representation. Alignment then moves
+the readout toward the signal without closing the gap. This connects to
 calibration/hallucination findings that models ``know'' more than they assert,
 localized here to a specific signal and resolved over depth. The Qwen2.5 family
 is instructive: its zero-shot judge is already strong, so the
