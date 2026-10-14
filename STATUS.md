@@ -546,6 +546,7 @@ Document: {passage}\nQuestion: {query}\nIs the document relevant to the question
 | 14 | **patch/steering 的注入量纲** | 注入范数不匹配会污染结论（§2 第 5 节）。任何注入实验都要报范数/位移并做尺度对照 |
 | 15 | 因果输出曾写裸 `NaN`（非法 JSON） | 已加 `_finite()` + `allow_nan=False`；严格解析器会拒收 |
 | 16 | `run_second_round.sh` 曾把 `--json` 写成 `--in` 且带 `\|\| true` | **静默失败**。队列脚本里不要用 `\|\| true` 掩盖错误 |
+| 17 | **`tectonic` 的缓存不是自足的，编译必须开代理** | 缓存里缺 `size10.clo`、`cmmi8.pfb` 等宏包/字体，每次成功编译都靠联网补。实测不开代理会 `operation timed out`（`data1b.fullyjustified.net`）且**不写出 PDF**——看起来"编译没报错但 PDF 没更新"。**编译前先 `source /etc/network_turbo`**，编译后用 `ls -la paper/main.pdf` 确认 mtime 变了 |
 
 ---
 
