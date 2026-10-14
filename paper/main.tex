@@ -419,10 +419,16 @@ forward pass from $L^*$ onward extracts almost none of that.
 For comparison, transplanting the same real mid-layer activation into the
 \emph{output} layer also fails to transfer discriminability, and---this is the
 point of the control---\emph{norm-matching the payload to the target layer's own
-norm does not rescue it} ($0.4987$ norm-matched vs.\ $0.4988$ raw at
-$\alpha{=}1$). An earlier version of this experiment omitted that control, and
-the observed collapse could have been an artefact of injecting a vector an order
-of magnitude too small; with the control in place, the collapse is real.
+norm does not rescue it}: at $\alpha{=}1$ the norm-matched payload gives
+$\auc=0.499$ and the unmatched one $0.499$ on LLaMA-3.2-3B, and $0.515$ versus
+$0.515$ on LLaMA-3.1-8B. An earlier version of this experiment omitted that
+control, and the observed collapse could have been an artefact of injecting a
+vector an order of magnitude too small; with the control in place, rescaled and
+unscaled injections are indistinguishable, so the collapse is not a scale
+artefact. (The earlier version patched each example with its \emph{own}
+activation and therefore measured a different quantity; its point estimates
+differ by $0.01$--$0.02$ from the cross-sample version here and the two should
+not be compared numerically.)
 
 The honest caveat is that cross-example patching introduces activations the
 network never produced for \emph{this} input, so part of the insensitivity could

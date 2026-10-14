@@ -330,7 +330,10 @@ def main():
         "protocol": {
             "site": "hook on decoder-layer output (residual stream coordinate)",
             "norm_match": "payload rescaled to the TARGET row's own L2 norm",
-            "partner": "random test row, preferentially a different label",
+            "partner": "random test row, preferentially a different label; "
+                       "this is a CROSS-sample patch, so `final_raw` here is NOT "
+                       "a reproduction of patch_internal.py v1 (which used "
+                       "SELF-patches) and the two must not be compared numerically",
             "note": "residual cache == layers[i].output[0,-1,:]; same coordinate as hook",
         },
         "sweep": {}, "edges": {},
