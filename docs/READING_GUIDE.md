@@ -1,4 +1,13 @@
+
 # 阅读指引 — 怎么在 15 分钟内接手这个项目
+
+
+> ⚠️ **本文档已于 2026-10-14 归档，不再维护。**
+> 项目状态、实测数据、判据与规划**一律以 [`STATUS.md`](STATUS.md) 为准**。
+> 保留本文档只为查历史（它记录的当时口径与路径多为旧主机，**不要再据此操作**）。
+> 归档原因：七份分散文档对同一个量给出过不同数值（其中一次写进了论文同一张表），
+> 手工维护的状态文档会腐烂；`STATUS.md` 的实测部分由
+> `python scripts/build_status.py` 从 `results/*.json` 直接生成。
 
 > 建立于 **2026-10-12**。目标读者：**下一个接手的人或 agent**（包括在云容器里继续做实验的你）。
 > 这个项目有 6+ 份 Markdown，且**它们不是同一时间写的**，口径会打架。本文告诉你：
@@ -241,7 +250,6 @@ python scripts/significance.py --suffix _q1500
 - ✅ **有缓存时纯 CPU 可跑**：`plot_layer_signal.py`、`internals_vs_output.py`、`significance.py`
 - ❌ **必须 GPU**：`extract_instruct.py`、`llm_judge*.py`、`causal_steer.py`、`logit_lens.py`
 - 💡 `plot_causal.py` 只读 JSON，**既不需要 GPU 也不需要缓存** —— 这是最快能出的一张图
-
 
 
 ```bash

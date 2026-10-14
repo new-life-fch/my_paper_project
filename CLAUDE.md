@@ -1,5 +1,13 @@
 # CLAUDE.md — 工作区 A：Internals > Output（探针主线）
 
+
+> ⚠️ **本文档已于 2026-10-14 归档，不再维护。**
+> 项目状态、实测数据、判据与规划**一律以 [`STATUS.md`](STATUS.md) 为准**。
+> 保留本文档只为查历史（它记录的当时口径与路径多为旧主机，**不要再据此操作**）。
+> 归档原因：七份分散文档对同一个量给出过不同数值（其中一次写进了论文同一张表），
+> 手工维护的状态文档会腐烂；`STATUS.md` 的实测部分由
+> `python scripts/build_status.py` 从 `results/*.json` 直接生成。
+
 > 🖥️ **2026-10-13 起跑在 AutoDL 新实例上**（原主机已回收）。当前只有这一个 clone：
 > `/root/autodl-tmp/my_paper_project`，分支 `paper-A`。原文里"本工作区是 git worktree、
 > 主仓库在 `/root/shared-nvme/my_paper_project`"的描述**在旧主机上才成立**，这里没有那个主仓库，

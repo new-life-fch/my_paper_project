@@ -1,64 +1,47 @@
-# results/figures/ — provenance and recovery notes
+# results/figures/ — 图的来源与重生成方式
 
-## Why this file exists
+> **2026-10-14 重写**。本文档此前的内容已失效（它描述的是旧主机上"图只存在于 PDF 里"
+> 的状态；换到 AutoDL 新实例后所有图都从缓存重新生成过了）。旧版本留在 git 历史里。
 
-The figures in this directory were **nearly lost**. `.gitignore` used to contain
-`results/` and `*.png`, so a figure only survived a clone if it was explicitly
-`git add -f`'d. Two paper figures had never been force-added, so they vanished
-from every copy of the project — while the newer `qwen25_7b_layer_signal.png`
-(force-added later) survived. `paper/main.tex` still referenced the two missing
-files, so the paper could no longer compile.
+## 现在这里有什么
 
-They were recovered from `paper/main.pdf`, which had been compiled while the
-files still existed: LaTeX embeds each `\includegraphics` as an image XObject
-(RGB + grayscale `/SMask` alpha), so the original pixels were still inside the
-PDF. See `scripts/extract_figures_from_pdf.py`.
+**8 个模型 × 2 类图**，全部由本机当前代码从 `results/cache/` 重新生成：
 
-**Fixed 2026-10-12**: `.gitignore` was narrowed to `results/cache/` +
-`results/**/*.pt` + `results/logs/`, so figures and result JSONs are tracked by
-default now. This cannot happen again by the same route.
-
-## What is here
-
-| File | Referenced by | Regenerable? |
+| 文件 | 生成脚本 | 论文里用哪张 |
 |---|---|---|
-| `llama32_3b_layer_signal.png` (3133×887) | `main.tex` Fig. 1 (`fig:depth`) | ❌ needs `.pt` caches |
-| `causal_steer_3b.png` (1634×609) | `main.tex` Fig. 2 (`fig:causal`) | ✅ from `results/causal_steer_llama32_3b_q1500.json` |
-| `qwen25_7b_layer_signal.png` (3133×887) | supplement (not in `main.tex`) | ❌ needs `.pt` caches |
+| `<tag>_layer_signal.png` + `.json` | `scripts/plot_layer_signal.py` | **Fig. 1**（深度定位三联图）用 `llama32_3b_layer_signal.png` |
+| `causal_steer_<tag>.png` | `scripts/plot_causal.py` | **Fig. 2**（因果 steering）用 `causal_steer_llama32_3b.png` |
 
-## How to regenerate / re-recover
+`<tag>` ∈ `llama32_3b`、`llama32_3b_instruct`、`llama31_8b`、`llama31_8b_instruct`、
+`mistral_7b`、`mistral_7b_instruct`、`qwen25_7b`、`qwen25_7b_instruct`（共 8 个）。
+
+`.json` 是同一张图的数字转储（逐层 AUC、top-k 头所在层等），**论文里任何引用图内数值的
+句子都应指向它，而不是指向 PNG**。
+
+## 怎么重新生成
 
 ```bash
-# 1. Recover from the compiled PDF (no GPU, no caches needed)
-python scripts/extract_figures_from_pdf.py --pdf paper/main.pdf \
-    --outdir results/figures            # add --dry-run to just list XObjects
+# 深度定位图（需要 results/cache/<tag>_q1500_instruct/ 的 .pt 缓存，纯 CPU）
+python scripts/plot_layer_signal.py --cache results/cache/llama32_3b_q1500_instruct \
+    --judge-cache results/cache/llama32_3b_q1500_judge --tag llama32_3b
 
-# 2. Fig. 2 is fully reproducible from its result JSON
-python scripts/plot_causal.py \
-    --json results/causal_steer_llama32_3b_q1500.json \
-    --out  results/figures/causal_steer_3b.png
+# 因果图（只读 JSON，连缓存都不需要）
+python scripts/plot_causal.py --json results/causal_steer_llama32_3b_q1500.json \
+    --tag llama32_3b
 ```
 
-`plot_layer_signal.py` (Fig. 1) **cannot** be re-run from this checkout: it needs
-`results/cache/<tag>_instruct/{attn,resid}_{train,val,test}.pt` plus `meta.json`
-(1–2 GB per model, served from a symlink on the GPU host, never committed).
-The per-layer residual AUC array and the per-head heatmap underlying Fig. 1 exist
-**only** in this PNG — `internals_vs_output_llama32_3b_q1500.json` did not survive.
-Re-running it requires the GPU host and the activation caches.
+⚠️ `plot_layer_signal.py` 会**重新计算**逐层 AUC 与 per-head AUC，所以它产出的 `.json`
+是这些数字的唯一可复现来源。图与 `.json` 必须成对提交，否则以后无法核对图里的数。
 
-## Also missing (not referenced by `main.tex`)
+## 历史：这些图曾经丢过一次（2026-10-12）
 
-Figures mentioned in `REPORT.md` / `CLAUDE.md` but absent here:
-`llama31_8b_layer_signal.png`, `llama31_8b_instruct_layer_signal.png`,
-`llama32_3b_instruct_layer_signal.png`, `mistral_7b_layer_signal.png`,
-`mistral_7b_instruct_layer_signal.png`, `causal_steer_8b_base.png`,
-`causal_steer_8b_inst.png`. The paper still compiles because it only includes
-Fig. 1 and Fig. 2.
+当时 `.gitignore` 里同时有 `results/` 和 `*.png`，一张图只有被 `git add -f` 过才能活下来。
+两张论文图从未被强制提交，于是从所有副本里消失，而 `main.tex` 还引用着它们 → 编译失败。
+它们是从 `paper/main.pdf` 里恢复的（LaTeX 把每个 `\includegraphics` 作为图像 XObject
+嵌在 PDF 中，原始像素还在）。脚本：`scripts/extract_figures_from_pdf.py`。
 
-## Guard against recurrence
+**已修**：`.gitignore` 收窄为 `results/cache/` + `results/**/*.pt` + `results/logs/`，
+图与结果 JSON 现在默认入库，同样的路走不通了。
 
-Done on 2026-10-12 — `.gitignore` now ignores only `results/cache/`,
-`results/**/*.pt` and `results/logs/`, so everything in this directory is
-tracked without needing `git add -f`. See `docs/CACHE_NAMING.md` for how the
-cache directories underneath are named, and `TODO.md` P2 for what is still
-missing from the GPU host.
+> 从 PDF 恢复出来的那两张是**旧主机、旧代码口径**（test-argmax 选层）的产物。
+> 现在目录里的同名文件**已经是在新主机上用 val 选层重生成的版本**，不要混淆。
