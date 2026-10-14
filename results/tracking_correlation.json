@@ -1,5 +1,5 @@
 {
-  "n": 5,
+  "n": 7,
   "per_model": [
     {
       "tag": "llama32_3b",
@@ -66,6 +66,38 @@
       "identity_max_absdiff": 0.0
     },
     {
+      "tag": "mistral_7b",
+      "L": 16,
+      "probe_at_Lstar": 0.6056,
+      "final": 0.583,
+      "judge": 0.579,
+      "probe_minus_final": 0.0226,
+      "probe_minus_judge": 0.0266,
+      "delta_gap": 0.0428,
+      "auc_vs_target_at_1": 0.4378,
+      "norm_matched_vs_raw_at_1": [
+        0.4509,
+        0.451
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "mistral_7b_instruct",
+      "L": 13,
+      "probe_at_Lstar": 0.6335,
+      "final": 0.596,
+      "judge": 0.646,
+      "probe_minus_final": 0.0375,
+      "probe_minus_judge": -0.0125,
+      "delta_gap": 0.0082,
+      "auc_vs_target_at_1": 0.6412,
+      "norm_matched_vs_raw_at_1": [
+        0.45,
+        0.4499
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
       "tag": "qwen25_7b",
       "L": 22,
       "probe_at_Lstar": 0.6553,
@@ -82,8 +114,8 @@
       "identity_max_absdiff": 0.0
     }
   ],
-  "corr_probe_minus_final_dgap": 0.2043,
-  "corr_probe_minus_judge_dgap": -0.3873,
+  "corr_probe_minus_final_dgap": 0.2146,
+  "corr_probe_minus_judge_dgap": -0.2351,
   "worst_identity_max_absdiff": 0.0,
   "worst_norm_matched_minus_raw": 0.0001
 }
