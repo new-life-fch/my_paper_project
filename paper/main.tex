@@ -391,35 +391,36 @@ We pre-committed to a directional criterion before running the intervention: for
 steering to count as \emph{relevance-aligned}, the internal direction's
 alignment gap (the relevant-minus-irrelevant split in $P(\text{yes})$) had to
 land in the upper tail ($\ge$95th percentile) of a null distribution formed by
-twelve random directions swept over the same calibrated logit shifts. It does
-not. On LLaMA-3.2-3B the internal direction's gap sits at the $0.55$ and
-$0.45$ percentile at the two ends of the sweep
-(Figure~\ref{fig:causal}, panel c). We report this as a null result, and the
-saturation-free calibration is what makes it interpretable: the three direction
-families are genuinely comparable after calibration (mean logit shift per unit
-$\alpha$: internal $-0.56$, final $+3.27$, random $-1.24$; i.e.\ roughly a
-sixfold spread that the per-direction calibration removes).
+twelve random directions swept over the same calibrated logit shifts. It does not. On LLaMA-3.2-3B the internal direction's gap sits at the $0.55$ and
+$0.45$ percentile at the two ends of the sweep, and on LLaMA-3.1-8B at the
+$0.33$ and $0.25$ percentile (Figure~\ref{fig:causal}, panel c). Two
+independently trained base models therefore agree: the internal direction is
+not a relevance-\emph{aligned} intervention. We report this as a null result,
+and the saturation-free calibration is what makes it interpretable: the three
+direction families are genuinely comparable after calibration (mean logit shift
+per unit $\alpha$ on 3B: internal $-0.56$, final $+3.27$, random $-1.24$;
+i.e.\ roughly a sixfold spread that the per-direction calibration removes).
 
 The sweep also exposes \emph{why} the gap fails to grow, which is more
 informative than the null itself: the alignment gap shrinks monotonically with
 intervention strength for \emph{every} direction, including the random ones
-(mean random gap $0.0121 \to 0.0016$ from baseline to the strongest negative
-shift). Broadly perturbing the output residual compresses label separability
-rather than sharpening it, so the internal direction is a blunt verdict knob,
-not a relevance-aligned one.
+(on 3B the mean random gap falls from $0.0121$ at baseline to $0.0016$ at the
+strongest negative shift; on 8B from $0.0164$ to $0.0012$). Broadly perturbing
+the output residual compresses label separability rather than sharpening it, so
+the internal direction is a blunt verdict knob, not a relevance-aligned one.
 
 What survives is the ablation arm. Pushing the yes/no logit difference negative
 along the internal direction collapses the verdict monotonically
-($P(\text{yes})$: $0.814 \to 0.691 \to 0.573 \to 0.456 \to 0.393$), and the
-internal direction is the only one of the three that does so \emph{without}
-destroying discriminability (\auc{} stays in $[0.522,0.546]$); the output
-layer's own direction collapses $P(\text{yes})$ just as sharply
-($0.814 \to 0.011$) but drives \auc{} down to $0.481$, and the random
-directions move the mean without a label-aligned component. So the internal
-direction is causally coupled to the verdict, but we cannot show that it is
-causally coupled to relevance \emph{discrimination}. The correlational results
-above do not depend on this arm, and we prefer to bound them with a reported
-null than to rest them on a claim the data does not support.
+($P(\text{yes})$ $0.814 \to 0.691 \to 0.573 \to 0.456 \to 0.393$ on 3B;
+$0.886 \to 0.260$ on 8B), and the internal direction is the only one of the
+three that does so \emph{without} destroying discriminability: \auc{} stays in
+$[0.522,0.546]$ on 3B and moves by $0.007$ on 8B, whereas the output layer's
+own direction drives \auc{} down to $0.481$ (3B) and $0.501$ (8B), and the
+random directions move the mean without a label-aligned component. So the
+internal direction is causally coupled to the verdict, but we cannot show that
+it is causally coupled to relevance \emph{discrimination}. The correlational
+results above do not depend on this arm, and we prefer to bound them with a
+reported null than to rest them on a claim the data does not support.
 
 \begin{figure}[t]
 \centering
