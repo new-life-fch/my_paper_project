@@ -404,41 +404,72 @@ same layer.
 
 Three checks confirm the intervention is sound. Patching a sample with its
 \emph{own} activation reproduces the natural verdict bit-for-bit
-(max $|\Delta|=0$), so the hook is inert when the payload is the identity.
-The freshly captured activations match the cache row-by-row (relative mean
-absolute error $0.003$), ruling out a silent row misalignment. And the payload
-is not merely noise: replacing $L^*$ with a \emph{random} activation at matched
-norm gives $\auc=0.505$. Yet as $\alpha$ goes from $0$ to $1$---i.e.\ as the
-internal representation is progressively replaced by an opposite-label
-example's---the verdict barely moves: \auc{} against the target label falls only
-from $0.545$ to $0.534$, \auc{} against the \emph{source} label rises only from
-$0.455$ to $0.466$, and the relevant-minus-irrelevant gap in $P(\text{yes})$
-changes by $0.003$. A probe reads $L^*$ at $\auc=0.613$; the model's own
-forward pass from $L^*$ onward extracts almost none of that.
+(max $|\Delta|=0$) on every model, so the hook is inert when the payload is the
+identity. The freshly captured activations match the cache row-by-row (relative
+mean absolute error $\le0.004$), ruling out a silent row misalignment. And the
+payload is not merely noise: replacing $L^*$ with a \emph{random} activation at
+matched norm stays near chance ($0.499$--$0.520$).
+
+The result is model-dependent, and the split is informative. On both LLaMA base
+models the verdict does not follow the transplanted content at all: as $\alpha$
+goes from $0$ to $1$ the \auc{} against the target label moves only
+$0.545\!\to\!0.534$ (3B) and $0.563\!\to\!0.550$ (8B), \auc{} against the
+\emph{source} label only $0.455\!\to\!0.466$ and $0.437\!\to\!0.450$, and the
+relevant-minus-irrelevant gap in $P(\text{yes})$ changes by $0.003$ and
+$0.006$. A probe reads $L^*$ at $\auc=0.61$--$0.62$; the model's own forward
+pass from $L^*$ onward extracts almost none of it. The instruct variant and
+Qwen2.5-7B behave differently, tracking the transplanted activation
+progressively ($\Delta$gap $+0.040$ and $+0.176$): on the instruct variant the
+target-label \auc{} falls from $0.607$ to $0.392$ while the source-label \auc{}
+rises from $0.393$ to $0.608$, and on Qwen the verdict ends up
+\emph{anti}-correlated with the target label ($\auc=0.337$) and correlated with
+the source label ($0.663$). So ``the model cannot use its own internal
+representation'' is false in general---these models' computations demonstrably
+can.
+
+\emph{What distinguishes the models?} Not probe strength: the probe's margin
+over the final-layer probe is largest exactly where tracking is weakest
+($+0.068$ and $+0.058$ \auc on the two LLaMA base models, $+0.031$ on the
+instruct variant, $+0.004$ on Qwen), but the ordering within that is not
+monotone, so we report the association without claiming it is the mechanism. A
+controller measurement makes the picture sharper: we compute the directional
+derivative of the model's own verdict with respect to $h_{L^*}$---a local
+property of the network \emph{at the activation it actually produced}, so no
+editing is involved and the out-of-distribution objection does not apply. Its
+cosine with the probe's relevance direction is $+0.008$ on LLaMA-3.2-3B and
+$+0.006$ on Qwen2.5-7B, while the spread of the same statistic over sixteen
+random directions reaches $|0.037|$ and $|0.035|$; the probe direction sits at
+the $0.56$ and $0.38$ percentile of those nulls. The output readout is
+therefore, to first order, \emph{not pointed at the direction from which a probe
+reads relevance}---and this holds for Qwen too, i.e.\ \emph{even in the model
+whose verdict is demonstrably sensitive to $L^*$ content}. That is the
+misalignment, measured without perturbing anything: the information is present
+and the downstream network uses $L^*$, but the direction the verdict is locally
+sensitive to is not the relevance direction.
 
 For comparison, transplanting the same real mid-layer activation into the
 \emph{output} layer also fails to transfer discriminability, and---this is the
 point of the control---\emph{norm-matching the payload to the target layer's own
 norm does not rescue it}: at $\alpha{=}1$ the norm-matched payload gives
-$\auc=0.499$ and the unmatched one $0.499$ on LLaMA-3.2-3B, and $0.515$ versus
-$0.515$ on LLaMA-3.1-8B. An earlier version of this experiment omitted that
-control, and the observed collapse could have been an artefact of injecting a
-vector an order of magnitude too small; with the control in place, rescaled and
-unscaled injections are indistinguishable, so the collapse is not a scale
-artefact. (The earlier version patched each example with its \emph{own}
-activation and therefore measured a different quantity; its point estimates
-differ by $0.01$--$0.02$ from the cross-sample version here and the two should
-not be compared numerically.)
+$\auc=0.499$ and the unmatched one $0.499$ on LLaMA-3.2-3B, $0.515$ versus
+$0.515$ on LLaMA-3.1-8B, and $0.353$ versus $0.353$ on Qwen. An earlier version
+of this experiment omitted that control, and the observed collapse could have
+been an artefact of injecting a vector an order of magnitude too small; with the
+control in place, rescaled and unscaled injections are indistinguishable, so the
+collapse is not a scale artefact. (The earlier version patched each example with
+its \emph{own} activation and therefore measured a different quantity; its point
+estimates differ by $0.01$--$0.02$ from the cross-sample version here and the two
+should not be compared numerically.)
 
 The honest caveat is that cross-example patching introduces activations the
-network never produced for \emph{this} input, so part of the insensitivity could
+network never produced for \emph{this} input, so part of any insensitivity could
 reflect the model ignoring out-of-distribution content rather than ignoring
-relevance specifically. At $\alpha=0.5$, where the source and target
-contributions are both present and the mixture remains closer to the data
-manifold, the gap still moves by only $0.001$. We therefore state the result in
-the weaker, defensible form: \emph{the model's verdict is largely insensitive to
-the relevance content that a linear probe can decode from $L^*$}, and this is
-not explained by the scale of the injected vector.
+relevance specifically. That caveat does not apply to the gradient measurement
+above, which is why we rely on it for the misalignment claim and treat the
+patching as corroborating rather than primary evidence. It also cuts against
+over-reading the Qwen result: tracking a transplanted activation is not the same
+as using relevance, and Qwen's own gradient alignment is what would settle
+whether its readout is pointed at relevance.
 
 \textbf{Mechanism: base vs.\ instruct.}\label{sec:mech} Across all four base$\to$instruct pairs,
 alignment shows a consistent triple effect: the judge improves (output

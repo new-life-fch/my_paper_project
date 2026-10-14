@@ -1,0 +1,38 @@
+{
+  "tag": "llama32_3b",
+  "model": "meta-llama/Llama-3.2-3B",
+  "layer": 9,
+  "n_rows": 256,
+  "n_random": 16,
+  "probe_direction_cosine": {
+    "mean": 0.0082,
+    "median": 0.00798,
+    "frac_positive": 0.7539
+  },
+  "random_directions_cosine": {
+    "mean_of_means": 0.00256,
+    "mean_abs_of_means": 0.01279,
+    "max_abs_mean": 0.03662,
+    "per_direction_means": [
+      0.00669,
+      -0.00239,
+      0.00475,
+      -0.0056,
+      -0.02542,
+      -0.00531,
+      0.00455,
+      -0.00299,
+      -0.0209,
+      0.02838,
+      0.03662,
+      -0.01828,
+      0.01327,
+      0.0058,
+      -0.00091,
+      0.02271
+    ]
+  },
+  "probe_vs_random_abs_mean_percentile": 0.5625,
+  "protocol": "g = grad of (yes-no logit difference) wrt the L* answer-token residual; cosine with the probe's unit relevance direction vs random unit directions. No activation is edited, so no out-of-distribution concern.",
+  "elapsed_sec": 39.0
+}

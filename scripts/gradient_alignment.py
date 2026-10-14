@@ -89,6 +89,10 @@ def main():
                     help="test rows to differentiate (backward pass each); "
                          "0 = all")
     ap.add_argument("--layer", type=int, default=None)
+    ap.add_argument("--dtype", default="float32", choices=["float32", "float16"],
+                    help="float32 keeps the gradient clean; float16 halves the "
+                         "footprint, which a 7B model needs for the backward pass "
+                         "(fp32 7B = 28 GB weights, leaving no room on 32 GB)")
     ap.add_argument("--out", default="results/gradient_alignment.json")
     args = ap.parse_args()
     args.cache = resolve_cache(args.cache)
@@ -131,8 +135,9 @@ def main():
     from transformers import AutoModelForCausalLM, AutoTokenizer
     print(f"loading {args.model} ...")
     tok = AutoTokenizer.from_pretrained(args.model)
+    _dt = torch.float16 if args.dtype == "float16" else torch.float32
     model = AutoModelForCausalLM.from_pretrained(args.model, device_map="auto",
-                                                 dtype=torch.float32)
+                                                 dtype=_dt)
     model.eval()
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
@@ -164,7 +169,13 @@ def main():
     captured = {}
 
     def cap_hook(_m, _inp, out):
+        # The tensor handed to a forward hook is a non-leaf; `.grad` stays None
+        # unless we ask for it explicitly. retain_grad() is what makes the
+        # gradient of the (yes-no) logit difference w.r.t. THIS activation
+        # available after backward(). Without it the hook silently yields None
+        # and the whole matrix ends up empty.
         h = out[0] if isinstance(out, tuple) else out
+        h.retain_grad()
         captured["h"] = h
         return out
 
@@ -214,6 +225,7 @@ def main():
     report = {
         "tag": args.tag, "model": args.model, "layer": int(L),
         "n_rows": int(G.shape[0]), "n_random": args.n_random,
+        "dtype": args.dtype,
         "probe_direction_cosine": summ(probe_cos),
         "random_directions_cosine": {
             "mean_of_means": round(float(np.mean([np.mean(r) for r in rand_mat])), 5),

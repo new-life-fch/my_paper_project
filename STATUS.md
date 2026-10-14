@@ -195,14 +195,12 @@ v1（`patch_internal.py`）把 L\* 的真实激活按 `h_final ← α·h_L* + (1
 
 #### 2.5.3 patch v2（无尺度混淆）
 
-_尚未运行。脚本已就绪：_
-
-```bash
-bash scripts/run_patch_v2.sh                 # 4 变体（与 v1 同集合，可直接对照）
-MODELS=all8 bash scripts/run_patch_v2.sh     # E-10：8 模型
-WAIT_PID=<pid> bash scripts/run_patch_v2.sh  # 等别的 GPU 任务退出后再开始
-```
-
+| 模型 | 恒等(自patch) | 跨样本 auc_vs_source | follow_gap | 末层范数匹配后 |
+|---|---|---|---|---|
+| llama31_8b | 0.563 | 0.4497 | -0.0103 | 0.5152 |
+| llama32_3b_instruct | 0.6067 | 0.6079 | 0.0184 | 0.3489 |
+| llama32_3b | 0.5447 | 0.4659 | -0.0094 | 0.4987 |
+| qwen25_7b | 0.6515 | 0.6629 | 0.0901 | 0.3534 |
 **四个实验的分工（判据见 §11）**：
 
 | 实验 | 问的问题 | 无尺度问题的理由 |

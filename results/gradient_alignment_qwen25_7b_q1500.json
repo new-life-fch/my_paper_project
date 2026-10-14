@@ -1,0 +1,39 @@
+{
+  "tag": "qwen25_7b",
+  "model": "Qwen/Qwen2.5-7B",
+  "layer": 22,
+  "n_rows": 256,
+  "n_random": 16,
+  "dtype": "float16",
+  "probe_direction_cosine": {
+    "mean": 0.00611,
+    "median": 0.00687,
+    "frac_positive": 0.8711
+  },
+  "random_directions_cosine": {
+    "mean_of_means": 0.00174,
+    "mean_abs_of_means": 0.01203,
+    "max_abs_mean": 0.03452,
+    "per_direction_means": [
+      0.01396,
+      -0.00357,
+      0.00639,
+      0.0194,
+      0.02435,
+      -0.00037,
+      0.00497,
+      0.00526,
+      -0.00806,
+      0.0013,
+      -0.00844,
+      -0.00176,
+      -0.03004,
+      0.03452,
+      -0.0065,
+      -0.02358
+    ]
+  },
+  "probe_vs_random_abs_mean_percentile": 0.375,
+  "protocol": "g = grad of (yes-no logit difference) wrt the L* answer-token residual; cosine with the probe's unit relevance direction vs random unit directions. No activation is edited, so no out-of-distribution concern.",
+  "elapsed_sec": 34.5
+}
