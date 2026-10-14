@@ -332,11 +332,13 @@ reader at every depth. As a sanity check the last-layer logit lens reproduces
 the judge (maximum absolute deviation $0.011$ across the eight models).
 
 Comparing the two readers \emph{at the same layer}---so that neither gets a
-free choice of depth---the trained probe wins on all eight models. The margin
-splits cleanly by training regime: on the three \emph{base} models the fixed
-unembedding direction trails the trained probe by $0.087$--$0.129$ \auc,
-whereas on the three \emph{instruct} models the gap narrows to
-$0.005$--$0.040$. Two caveats bound what this shows. First, the comparison is
+free choice of depth---the trained probe wins on all eight models, by
+$0.005$ to $0.129$ \auc. The size of that gap is not cleanly predicted by
+training regime: it is largest on two base models ($-0.129$ LLaMA-3.1-8B,
+$-0.102$ LLaMA-3.2-3B) but also on an instruct model ($-0.117$
+Mistral-7B-Instruct), and smallest on an instruct model ($-0.005$
+LLaMA-3.2-3B-Instruct) and a base model ($-0.040$ Qwen2.5-7B). What is robust
+is the direction, not the split. Two caveats bound what this shows. First, the comparison is
 not capacity-matched in the learning sense: the probe is fitted on 5218
 training pairs while the logit lens uses a \emph{fixed} direction, so a gap
 means the model's own readout direction is not optimised for this task---not
