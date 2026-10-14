@@ -174,7 +174,13 @@ $P(\text{yes})$ and the test \auc. Because a fixed step in $\alpha$ is not a
 fixed intervention---directions differ in how strongly they couple to the
 readout---we calibrate $\alpha$ per direction so that each sweep point
 corresponds to the same \emph{shift in the yes/no logit difference}, and we
-report both the intended and the measured shift. To ask whether steering is
+report both the intended and the measured shift. This calibration has one
+boundary worth stating: when a direction's coupling to the readout is very
+weak, matching a large logit shift drives $\alpha$ into a numerically unstable
+range (we observe one random direction whose required $\alpha$ reaches
+$\pm1266$, where the logits overflow). Such points are dropped and the number
+of usable random directions is reported per endpoint ($11$ of $12$ in that
+case). To ask whether steering is
 relevance-\emph{aligned} rather than a generic bias knob, we track the
 \emph{alignment gap} $\overline{P(\text{yes})}_{\text{rel}} -
 \overline{P(\text{yes})}_{\text{irrel}}$ separately over true-positive and
