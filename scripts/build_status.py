@@ -306,23 +306,31 @@ def collect():
     A("消融臂 = 注入强度的负端点（α 最负那一点）。`P(yes)` 崩塌说明该方向与判决耦合；")
     A("`gap 分位` 是 internal 的 alignment gap 在 N 个随机方向零分布中的分位，")
     A("**判据是 ≥ 0.95 才算定向性成立**。\n")
-    A("| 模型 | 协议 | 消融臂 P(yes)（全部/相关/不相关） | gap 分位 | 可用? |")
-    A("|---|---|---|---|---|")
+    A("| 模型 | 协议 | 消融臂 P(yes)（自然→最强负位移） | AUC（自然→负端点） | gap 分位（判据 ≥0.95） | 可用? |")
+    A("|---|---|---|---|---|---|")
     for tag, disp in MODELS:
         c = load(os.path.join(ROOT, f"results/causal_steer_{tag}_q{NQ}.json"))
         if not c:
-            A(f"| {disp} | — | — | — | 缺 |")
+            A(f"| {disp} | — | — | — | — | 缺 |")
             continue
         proto = ("对数几率标定" if "calibration" in c else "**旧固定-α（饱和）**")
         ab = c["sweep"]["internal"]
-        alphas = c.get("alphas", [])
-        i = 0 if alphas and alphas[0] < alphas[-1] else 0   # first sweep point
+        st = (c.get("calibration") or {}).get("shift_targets_logits")
+        # the arrays are in shift-target order; index 0 is target shift 0 (baseline),
+        # and the strongest NEGATIVE shift is the largest index with target < 0
+        bi = list(st).index(0.0) if st else 4
+        neg = [i for i, t in enumerate(st) if t < 0] if st else [0]
+        ni = max(neg, key=lambda i: abs(st[i])) if st else 0
         A(f"| {disp} | {proto} | "
-          f"{ab['mean_pyes'][i]:.3f} / {ab['mean_pyes_relevant'][i]:.3f} / "
-          f"{ab['mean_pyes_irrelevant'][i]:.3f} | "
+          f"{ab['mean_pyes'][bi]:.3f} → {ab['mean_pyes'][ni]:.3f} | "
+          f"{ab['auc'][bi]:.3f} → {ab['auc'][ni]:.3f} | "
           f"{c.get('gap_at_alpha-8', {}).get('internal_percentile_vs_random', float('nan')):.2f} | "
           f"{'✅' if 'calibration' in c else '❌ 须重跑'} |")
-    A("\n> 判读标准事先写死在 §11，**不得事后调整**。\n")
+    A("\n> 判读标准事先写死在 §12.1，**不得事后调整**。")
+    A("> 结论（3B，2026-10-14）：**判据未通过**（分位 0.55/0.45），")
+    A("> 因果章节只保留消融臂单调崩塌。详见 `docs/E11_JUDGEMENT.md`。")
+    A("> 顺带发现的机制：**所有方向（含随机）的 alignment gap 都随注入强度收缩到零**，")
+    A("> 即大范围扰动压掉标签可分性 —— internal 是钝的平移旋钮，不是相关性对齐的。\n")
 
     # ------------------------------------------------------------ logit lens --
     A("### 2.7 零训练读出（logit lens）——不受尺度影响的关键对照\n")
