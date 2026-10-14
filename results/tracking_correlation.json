@@ -1,0 +1,89 @@
+{
+  "n": 5,
+  "per_model": [
+    {
+      "tag": "llama32_3b",
+      "L": 9,
+      "probe_at_Lstar": 0.6133,
+      "final": 0.536,
+      "judge": 0.545,
+      "probe_minus_final": 0.0773,
+      "probe_minus_judge": 0.0683,
+      "delta_gap": 0.0027,
+      "auc_vs_target_at_1": 0.5341,
+      "norm_matched_vs_raw_at_1": [
+        0.4987,
+        0.4988
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "llama31_8b",
+      "L": 8,
+      "probe_at_Lstar": 0.6207,
+      "final": 0.562,
+      "judge": 0.574,
+      "probe_minus_final": 0.0587,
+      "probe_minus_judge": 0.0467,
+      "delta_gap": 0.0061,
+      "auc_vs_target_at_1": 0.5503,
+      "norm_matched_vs_raw_at_1": [
+        0.5152,
+        0.5153
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "llama32_3b_instruct",
+      "L": 18,
+      "probe_at_Lstar": 0.638,
+      "final": 0.612,
+      "judge": 0.614,
+      "probe_minus_final": 0.026,
+      "probe_minus_judge": 0.024,
+      "delta_gap": 0.0397,
+      "auc_vs_target_at_1": 0.3921,
+      "norm_matched_vs_raw_at_1": [
+        0.3489,
+        0.3489
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "llama31_8b_instruct",
+      "L": 12,
+      "probe_at_Lstar": 0.609,
+      "final": 0.596,
+      "judge": 0.63,
+      "probe_minus_final": 0.013,
+      "probe_minus_judge": -0.021,
+      "delta_gap": 0.0121,
+      "auc_vs_target_at_1": 0.5983,
+      "norm_matched_vs_raw_at_1": [
+        0.4264,
+        0.4264
+      ],
+      "identity_max_absdiff": 0.0
+    },
+    {
+      "tag": "qwen25_7b",
+      "L": 22,
+      "probe_at_Lstar": 0.6553,
+      "final": 0.592,
+      "judge": 0.652,
+      "probe_minus_final": 0.0633,
+      "probe_minus_judge": 0.0033,
+      "delta_gap": 0.1758,
+      "auc_vs_target_at_1": 0.3371,
+      "norm_matched_vs_raw_at_1": [
+        0.3534,
+        0.3534
+      ],
+      "identity_max_absdiff": 0.0
+    }
+  ],
+  "corr_probe_minus_final_dgap": 0.2043,
+  "corr_probe_minus_judge_dgap": -0.3873,
+  "worst_identity_max_absdiff": 0.0,
+  "worst_norm_matched_minus_raw": 0.0001
+}

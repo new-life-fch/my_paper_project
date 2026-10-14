@@ -427,12 +427,15 @@ the source label ($0.663$). So ``the model cannot use its own internal
 representation'' is false in general---these models' computations demonstrably
 can.
 
-\emph{What distinguishes the models?} Not probe strength: the probe's margin
-over the final-layer probe is largest exactly where tracking is weakest
-($+0.068$ and $+0.058$ \auc on the two LLaMA base models, $+0.031$ on the
-instruct variant, $+0.004$ on Qwen), but the ordering within that is not
-monotone, so we report the association without claiming it is the mechanism. A
-controller measurement makes the picture sharper: we compute the directional
+\emph{What distinguishes the models?} We tested the obvious candidate---that
+tracking is weaker where the probe's margin over the output-side readers is
+larger---and found no support. Across the models measured so far the correlation
+between $\Delta$gap and the probe's margin over the final-layer probe is
+$+0.20$, and with its margin over the judge $-0.39$ ($n=5$; both far too small
+and too few to be a finding either way). We therefore report the pattern as
+model-dependent and leave the mechanism open rather than assert one.
+
+A controller measurement sharpens what \emph{is} common across models: we compute the directional
 derivative of the model's own verdict with respect to $h_{L^*}$---a local
 property of the network \emph{at the activation it actually produced}, so no
 editing is involved and the out-of-distribution objection does not apply. Its

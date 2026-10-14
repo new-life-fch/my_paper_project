@@ -1,0 +1,220 @@
+{
+  "tag": "llama31_8b_instruct",
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "layer": 12,
+  "layer_selection": "val",
+  "n_test": 1117,
+  "n_test_relevant": 245,
+  "n_layers": 32,
+  "hidden": 4096,
+  "probe_test_auc_at_Lstar": 0.609,
+  "judge_auc_natural": 0.6319,
+  "n_cross_label_differ": 1117,
+  "row_alignment_rel_mae": 0.003372,
+  "alphas_cross": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "alphas_final": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "protocol": {
+    "site": "hook on decoder-layer output (residual stream coordinate)",
+    "norm_match": "payload rescaled to the TARGET row's own L2 norm",
+    "partner": "random test row, preferentially a different label; this is a CROSS-sample patch, so `final_raw` here is NOT a reproduction of patch_internal.py v1 (which used SELF-patches) and the two must not be compared numerically",
+    "note": "residual cache == layers[i].output[0,-1,:]; same coordinate as hook"
+  },
+  "sweep": {
+    "cross_Lstar@0.0": {
+      "auc_vs_target": 0.6319,
+      "auc_vs_source": 0.3681,
+      "follow_gap_vs_source": -0.0367,
+      "mean_pyes": 0.901,
+      "mean_pyes_label1": 0.9297,
+      "mean_pyes_label0": 0.893,
+      "mean_pyes_srclabel1": 0.893,
+      "mean_pyes_srclabel0": 0.9297
+    },
+    "cross_Lstar@0.25": {
+      "auc_vs_target": 0.6248,
+      "auc_vs_source": 0.3752,
+      "follow_gap_vs_source": -0.0337,
+      "mean_pyes": 0.904,
+      "mean_pyes_label1": 0.9303,
+      "mean_pyes_label0": 0.8966,
+      "mean_pyes_srclabel1": 0.8966,
+      "mean_pyes_srclabel0": 0.9303
+    },
+    "cross_Lstar@0.5": {
+      "auc_vs_target": 0.6171,
+      "auc_vs_source": 0.3829,
+      "follow_gap_vs_source": -0.0306,
+      "mean_pyes": 0.9065,
+      "mean_pyes_label1": 0.9303,
+      "mean_pyes_label0": 0.8998,
+      "mean_pyes_srclabel1": 0.8998,
+      "mean_pyes_srclabel0": 0.9303
+    },
+    "cross_Lstar@0.75": {
+      "auc_vs_target": 0.6081,
+      "auc_vs_source": 0.3919,
+      "follow_gap_vs_source": -0.0276,
+      "mean_pyes": 0.9082,
+      "mean_pyes_label1": 0.9297,
+      "mean_pyes_label0": 0.9021,
+      "mean_pyes_srclabel1": 0.9021,
+      "mean_pyes_srclabel0": 0.9297
+    },
+    "cross_Lstar@1.0": {
+      "auc_vs_target": 0.5983,
+      "auc_vs_source": 0.4017,
+      "follow_gap_vs_source": -0.0246,
+      "mean_pyes": 0.9091,
+      "mean_pyes_label1": 0.9283,
+      "mean_pyes_label0": 0.9037,
+      "mean_pyes_srclabel1": 0.9037,
+      "mean_pyes_srclabel0": 0.9283
+    },
+    "final_normmatched@0.0": {
+      "auc_vs_target": 0.6319,
+      "auc_vs_source": 0.3681
+    },
+    "final_raw@0.0": {
+      "auc_vs_target": 0.6319,
+      "auc_vs_source": 0.3681
+    },
+    "final_normmatched@0.25": {
+      "auc_vs_target": 0.6089,
+      "auc_vs_source": 0.3911,
+      "mean_pyes": 0.96
+    },
+    "final_raw@0.25": {
+      "auc_vs_target": 0.6308,
+      "auc_vs_source": 0.3692,
+      "mean_pyes": 0.9092
+    },
+    "final_normmatched@0.5": {
+      "auc_vs_target": 0.5607,
+      "auc_vs_source": 0.4393,
+      "mean_pyes": 0.9837
+    },
+    "final_raw@0.5": {
+      "auc_vs_target": 0.6277,
+      "auc_vs_source": 0.3723,
+      "mean_pyes": 0.9233
+    },
+    "final_normmatched@0.75": {
+      "auc_vs_target": 0.4806,
+      "auc_vs_source": 0.5194,
+      "mean_pyes": 0.9894
+    },
+    "final_raw@0.75": {
+      "auc_vs_target": 0.6166,
+      "auc_vs_source": 0.3834,
+      "mean_pyes": 0.9523
+    },
+    "final_normmatched@1.0": {
+      "auc_vs_target": 0.4264,
+      "auc_vs_source": 0.5736,
+      "mean_pyes": 0.995
+    },
+    "final_raw@1.0": {
+      "auc_vs_target": 0.4264,
+      "auc_vs_source": 0.5736,
+      "mean_pyes": 0.995
+    }
+  },
+  "edges": {
+    "cross_Lstar@0.25": {
+      "auc_source_minus_natural_on_srclabels": {
+        "mean": 0.0071,
+        "ci95": [
+          0.0033,
+          0.0109
+        ],
+        "p_le0": 0.0
+      },
+      "auc_target_minus_judge": {
+        "mean": -0.0071,
+        "ci95": [
+          -0.0109,
+          -0.0033
+        ],
+        "p_le0": 1.0
+      }
+    },
+    "cross_Lstar@0.5": {
+      "auc_source_minus_natural_on_srclabels": {
+        "mean": 0.0148,
+        "ci95": [
+          0.0076,
+          0.022
+        ],
+        "p_le0": 0.0
+      },
+      "auc_target_minus_judge": {
+        "mean": -0.0148,
+        "ci95": [
+          -0.022,
+          -0.0076
+        ],
+        "p_le0": 1.0
+      }
+    },
+    "cross_Lstar@0.75": {
+      "auc_source_minus_natural_on_srclabels": {
+        "mean": 0.0238,
+        "ci95": [
+          0.0132,
+          0.0346
+        ],
+        "p_le0": 0.0
+      },
+      "auc_target_minus_judge": {
+        "mean": -0.0238,
+        "ci95": [
+          -0.0346,
+          -0.0132
+        ],
+        "p_le0": 1.0
+      }
+    },
+    "cross_Lstar@1.0": {
+      "auc_source_minus_natural_on_srclabels": {
+        "mean": 0.0337,
+        "ci95": [
+          0.0203,
+          0.0478
+        ],
+        "p_le0": 0.0
+      },
+      "auc_target_minus_judge": {
+        "mean": -0.0337,
+        "ci95": [
+          -0.0478,
+          -0.0203
+        ],
+        "p_le0": 1.0
+      }
+    }
+  },
+  "controls_Lstar": {
+    "self_patch_auc": 0.6319,
+    "self_patch_max_absdiff_vs_natural": 0.0,
+    "shuffled_payload_auc": 0.621,
+    "random_payload_auc": 0.5331
+  },
+  "env": {
+    "torch": "2.8.0+cu128",
+    "numpy": "2.3.2",
+    "transformers": "5.19.0"
+  },
+  "elapsed_sec": 604.5
+}
