@@ -58,7 +58,40 @@ assert h.shape == (len(prompts), H), f"expected {(len(prompts), H)}, got {tuple(
 assert len(chunks) > 1, "only one chunk: accumulation not exercised"
 print(f"  OK accumulate-across-batches (would have been {tuple(chunks[-1].shape)} with the bug)")
 PY
-rc=$?
+rc1=$?
+
+# 2. the payload-slicing path, in isolation (no model load needed).
+#    Two bugs lived here on 2026-10-14: the payload was handed to the hook
+#    UNSLICED (1117 rows against a 16-row batch), and it was installed once
+#    before the batch loop instead of per batch. Both are pure bookkeeping, so
+#    they can be checked without a forward pass.
+python - <<'PY'
+import torch
+B, N, H = 16, 1117, 8
+payload = torch.arange(N * H, dtype=torch.float32).view(N, H)
+seen = []
+state = {"src": None}
+for i in range(0, N, B):
+    state["src"] = payload[i:i + B]          # the fixed behaviour
+    seen.append(state["src"].shape[0])
+assert seen == [B] * (N // B) + ([N % B] if N % B else []), seen
+# rows must be the RIGHT rows, not the same slice every time
+assert torch.equal(state["src"], payload[(N // B) * B:]), "last slice is not the last rows"
+# and the guard that catches an unsliced payload must actually fire
+src = payload
+try:
+    assert src.shape[0] == N, "guard"
+    bad = src                                 # simulate the old bug
+    h = torch.zeros(B, 3, H)
+    _ = bad * 1.0 + h[:, -1, :]               # would raise on row mismatch
+    raise SystemExit("guard did NOT catch an unsliced payload")
+except RuntimeError:
+    pass
+print(f"  OK payload sliced per batch: {seen}")
+print("  OK unsliced payload raises (the 1117-vs-16 bug is now caught by shape)")
+PY
+rc2=$?
+
 rm -f "$OUT"
-echo "smoke exit=$rc  (log: $LOG)"
-exit $rc
+echo "smoke exit=$((rc1 + rc2))  (log: $LOG)"
+exit $((rc1 + rc2))

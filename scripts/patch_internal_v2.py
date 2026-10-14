@@ -234,9 +234,17 @@ def main():
     def run(prompt_list, capture=None, site=None, alpha=1.0, src=None, norm_ref=None):
         """One pass. capture='Lstar' collects the L* answer-token hidden states.
 
-        Returns (scores, pos_mean, neg_mean, captured[h]).
+        `src` is the FULL payload for `prompt_list`; it is sliced per batch here
+        and must have one row per prompt. (Passing the whole thing to the hook
+        was a bug: the hook receives a [batch, seq, hidden] tensor, so an
+        unsliced payload of 1117 rows against a batch of 16 rows raised
+        "The size of tensor a (1117) must match the size of tensor b (16)".)
+
+        Returns (scores, captured[h]).
         """
-        state["site"], state["alpha"], state["src"], state["norm_ref"] = site, alpha, src, norm_ref
+        if src is not None:
+            assert src.shape[0] == len(prompt_list), (
+                f"payload rows {src.shape[0]} != prompts {len(prompt_list)}")
         cap = {"chunks": []}
 
         def cap_hook(_m, _inp, out):
@@ -256,6 +264,13 @@ def main():
         try:
             for i in range(0, len(prompt_list), args.batch_size):
                 chunk = prompt_list[i:i + args.batch_size]
+                # slice the payload to this batch, and set the injection state
+                # ONLY here -- the hook fires per forward pass, so state has to
+                # match the batch it is about to see
+                state["site"] = site
+                state["alpha"] = alpha
+                state["norm_ref"] = norm_ref
+                state["src"] = None if src is None else src[i:i + args.batch_size]
                 enc = tok(chunk, return_tensors="pt", padding=True).to(dev)
                 logits = model(**enc).logits
                 for r in range(len(chunk)):
