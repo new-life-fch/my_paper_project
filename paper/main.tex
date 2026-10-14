@@ -47,8 +47,10 @@ indicating that alignment moves relevance signal toward the output without
 closing the gap. Comparing base and instruct pairs, alignment reliably
 improves the output readout (the judge gets stronger), and the model's own
 readout direction still extracts less than a probe trained on the same layer on
-every model. In short: relevance is encoded internally, and the model's own
-readout extracts only part of it.
+every model. A gradient control that edits nothing locates why: the direction
+the verdict is locally sensitive to is not the direction a probe reads relevance
+from, on all eight models. In short: relevance is encoded internally, and the
+model's own readout extracts only part of it.
 \end{abstract}
 
 \section{Introduction}
@@ -701,7 +703,11 @@ activations than from the output the model produces. The advantage is not
 explained by training alone, it is largest under a matched read-out procedure,
 and it holds in both directions of the base/instruct comparison: alignment
 improves what the model says without making its output the better place to
-read relevance from. Internals know more than the model can say.
+read relevance from. The mechanism is best described as \emph{misalignment}
+rather than attenuation: the information is present and the downstream network
+does use the internal layer, but the direction the verdict is locally sensitive
+to is not the relevance direction---a mismatch we can measure at every depth we
+tried and on every model in our set. Internals know more than the model can say.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
