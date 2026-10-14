@@ -278,6 +278,38 @@
 > - **仍未解决**：本机无 GPU / 无 `results/cache/`，故 Fig 1 无法重画（其逐层 AUC 与 per-head
 >   热力图数据**只存在于恢复出的那张 PNG 里**）；本机也无 LaTeX 工具链，`main.tex` 改了无法编译验证。
 
+> ✅ **2026-10-13/14（第 8 次推进）压缩摘要 —— 换新机器 + 全量重跑 + 三个结论级更正**
+>
+> **前提**：原 GPU 主机已回收，现跑在 **AutoDL 新实例**（RTX 4080 SUPER 32G 显存档 /
+> 仓库 `/root/autodl-tmp/my_paper_project` / torch 2.8.0 用服务器自带的 / 缓存与下载走数据盘与
+> hf-mirror / 9 个旧 artifact 已删 / tectonic 已入库）。**旧文档里的 `/root/shared-nvme/...`
+> 与 3090 假设全部失效。** 详见 §七 与 `docs/HANDOVER_20261014_STOP.md`。
+>
+> **规模**：24 个提交 / 119 个文件。8 模型 × 1500q 全流水线 + 四项补充实验 + 500q 受控复算 +
+> FiQA 换难负例重做，全部跑完并入库。
+>
+> **结论（三条硬结论）**：
+> 1. ✅ **`attn−final` 是 8/8 全模型唯一过 BH 校正的效应**（q<0.001）；`internal_edge` 只 3/8
+>    （三个 base）。→ **论文头条定量主张应建在 `attn−final` 上。**
+> 2. ❌ **因果章节被自己的新判据推翻**：旧判据（只看总体 mean P(yes)）逻辑上无效；
+>    改为按标签分组的 `alignment_gap` + 12 随机方向零分布后，internal 排不进前 5%，
+>    "保持 AUC"在 3B 上与 random 重叠、在 Qwen 上崩到 0.427（且 Qwen 上 α=±1 即概率饱和，
+>    是**假象不是测量**）。唯一仍成立的是**消融臂单调崩塌**。
+> 3. ❌ **标题词 "attenuated" 被 patch 实验反向证伪**：把 val 选层**真实**中层激活移植到输出层，
+>    4 变体里 3 个判别力**低于 judge** → 证据指向 **misalignment（错位）**。
+>
+> **净判断**（`docs/CCFB_READINESS.md`）：**描述性那半篇比旧版更扎实，机制/因果那半篇是空的；
+> 目前不足以支撑 CCF-B 投稿，差距不在数据量而在论证结构。**
+>
+> **新增的两条纪律**：①「证据纪律」——写进论文的每个数字都必须能指到 `results/` 里现存且
+> 当前代码产出的 JSON，`results/PAPER_NUMBERS.json` 是取数单一来源；
+> ②**任何 edge 主张必须配 BH 校正**（`scripts/aggregate_significance.py`）。
+>
+> **停机状态**：用户 2026-10-14 停机扩容（数据盘 94%）。因果 4 变体重跑只完成第 1 个
+> （且含 NaN 需重跑）。**恢复步骤见 `docs/HANDOVER_20261014_STOP.md` §七。**
+>
+> ⬇️ 以下是同一推进的**详细流水账**（含环境坑清单与逐项更正）。
+
 > 🖥️ **2026-10-13/14（第 8 次推进）换了新机器：从零重建环境 + 8 模型全量重跑 + 四项补充实验 + 三个结论级更正**
 >
 > **前提变了（读后面所有内容前必知）**：原 GPU 主机已回收，本次在**新租的 AutoDL 实例**上从零开始。
@@ -361,7 +393,7 @@
 |---|---|
 | 仓库位置 | `/root/autodl-tmp/my_paper_project`（分支 `paper-A`） |
 | GPU | **RTX 4080 SUPER，32G 显存档**（`nvidia-smi` 报 32760 MiB） |
-| 磁盘 | 系统盘 30G（只放依赖）／数据盘 150G（`/root/autodl-tmp`，模型+缓存+结果） |
+| 磁盘 | 系统盘 30G（只放依赖）／数据盘 `/root/autodl-tmp`——**2026-10-14 用户正扩容（原 150G 用到 94%，建议扩到 200–250G）** |
 | Python / torch | Python 3.12.3 ／ **torch 2.8.0+cu128（服务器自带，勿重装）** ／ CUDA 12.8 |
 | 关键依赖 | transformers 5.19.0 · datasets 5.1.0 · nnsight 0.7.0 · sklearn 1.9.1 · numpy 2.3.2（已钉进 `requirements.txt`） |
 | 缓存 | `HF_HOME=/root/autodl-tmp/hf_cache`（`~/.autodl_cache_env.sh` + `/etc/profile.d` + `BASH_ENV` 三处兜底） |
@@ -379,7 +411,7 @@
 4. **GPU 阶段必须串行**：手工并发跑两个实验会 CUDA OOM（实测 7B 模型两进程各占 ~15–16 GB）。
    多实验请排队（见 `scripts/run_experiments.sh` / `run_second_round.sh` 的幂等串行设计）。
 5. **`pgrep -f` 会匹配到自己的 shell**：用 `pkill -f <脚本名>` 会把自己杀掉（本会话踩了两次）。
-   判活/杀进程请用 PID 文件或 `pgrep -f "scrip[t].py"` 这种括号写法。
+   判活/杀进程请用 PID 文件或 `pgrep -f "scrip[t].py"` 这种括号写法。（本次会话共踩 3 次）
 6. **`du -sm` 的取整会骗人**：估算下载/写入进度请用 `stat -c%s` 精确字节数。
 
 > ⚠️ **非 GPU 机器上的能力边界（2026-10-12 记录，仍然适用）**：仓库可以 clone 到任何机器上阅读和改文档，
