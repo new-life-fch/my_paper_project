@@ -1,8 +1,11 @@
 # CLAUDE.md — 工作区 A：Internals > Output（探针主线）
 
-> 本工作区是 git worktree（分支 `paper-A`），与工作区 B（`paper-B`，cheap-adaptation）**物理隔离**。
-> 主仓库 `/root/shared-nvme/my_paper_project`（main 分支）保留全部历史，请勿在此改动它。
-> 语言：回复与文档优先用中文。状态：主线已验证，进入论文化实验阶段。
+> 🖥️ **2026-10-13 起跑在 AutoDL 新实例上**（原主机已回收）。当前只有这一个 clone：
+> `/root/autodl-tmp/my_paper_project`，分支 `paper-A`。原文里"本工作区是 git worktree、
+> 主仓库在 `/root/shared-nvme/my_paper_project`"的描述**在旧主机上才成立**，这里没有那个主仓库，
+> 也没有工作区 B。
+> 语言：回复与文档优先用中文。状态：**实验已重跑完，进入"按新结论重写论文"阶段**
+> （关键前提见 §六 第 8 次推进的压缩摘要；投稿就绪度见 `docs/CCFB_READINESS.md`）。
 
 ---
 
@@ -411,7 +414,7 @@
 4. **GPU 阶段必须串行**：手工并发跑两个实验会 CUDA OOM（实测 7B 模型两进程各占 ~15–16 GB）。
    多实验请排队（见 `scripts/run_experiments.sh` / `run_second_round.sh` 的幂等串行设计）。
 5. **`pgrep -f` 会匹配到自己的 shell**：用 `pkill -f <脚本名>` 会把自己杀掉（本会话踩了两次）。
-   判活/杀进程请用 PID 文件或 `pgrep -f "scrip[t].py"` 这种括号写法。（本次会话共踩 3 次）
+   判活/杀进程请用 PID 文件或 `pgrep -f "scrip[t].py"` 这种括号写法（本次会话踩了 3 次）。
 6. **`du -sm` 的取整会骗人**：估算下载/写入进度请用 `stat -c%s` 精确字节数。
 
 > ⚠️ **非 GPU 机器上的能力边界（2026-10-12 记录，仍然适用）**：仓库可以 clone 到任何机器上阅读和改文档，
