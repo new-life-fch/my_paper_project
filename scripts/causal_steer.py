@@ -242,7 +242,10 @@ def main():
             print(f"    {name:10s} shift_target={tgt:+5.1f} alpha={a:+.3f} "
                   f"measured_shift={ld_curves[-1]:+6.2f}  all={pyes_all[-1]:.3f} "
                   f"rel={pyes_pos[-1]:.3f} irrel={pyes_neg[-1]:.3f} auc={aucs[-1]:.3f}")
-        gap = [round(p - n, 4) for p, n in zip(pyes_pos, pyes_neg)]
+        # P(yes)|rel and P(yes)|irrel are conditional means, so they are defined
+        # even when the overall P(yes) saturates; guard only against a NaN result.
+        gap = [(None if not np.isfinite(p - n) else round(p - n, 4))
+               for p, n in zip(pyes_pos, pyes_neg)]
         return {"mean_pyes": pyes_all, "mean_pyes_relevant": pyes_pos,
                 "mean_pyes_irrelevant": pyes_neg, "alignment_gap": gap, "auc": aucs,
                 "alphas_used": [round(x, 4) for x in al],
@@ -325,17 +328,33 @@ def main():
     axis = shift_targets if shift_mode else alphas
     ai = {a: i for i, a in enumerate(axis)}
     for a in (min(axis), max(axis)):
-        g = [r["alignment_gap"][ai[a]] for r in rand_reports]
-        report[f"gap_at_alpha{a:+.0f}"] = {
-            "internal": report["sweep"]["internal"]["alignment_gap"][ai[a]],
-            "final": report["sweep"]["final"]["alignment_gap"][ai[a]],
-            "random_mean": round(float(np.mean(g)), 4),
-            "random_std": round(float(np.std(g)), 4),
-            "random_min": round(float(np.min(g)), 4),
-            "random_max": round(float(np.max(g)), 4),
-            "internal_percentile_vs_random": round(
-                float((np.array(g) < report["sweep"]["internal"]["alignment_gap"][ai[a]]).mean()), 4),
-        }
+        # A random direction can drive EVERY row to a saturated probability, which
+        # makes the relevance-split gap undefined (0/0 -> NaN). Such a direction
+        # carries no directional information at this shift, so drop it instead of
+        # letting one NaN poison the percentile and the whole summary row
+        # (observed on the first logit-shift-calibrated 3B run).
+        g_all = [r["alignment_gap"][ai[a]] for r in rand_reports]
+        g = [x for x in g_all if x is not None and np.isfinite(x)]
+        g_int = report["sweep"]["internal"]["alignment_gap"][ai[a]]
+        if not g or g_int is None or not np.isfinite(g_int):
+            report[f"gap_at_alpha{a:+.0f}"] = {
+                "internal": g_int, "final": report["sweep"]["final"]["alignment_gap"][ai[a]],
+                "n_random_total": len(g_all), "n_random_usable": len(g),
+                "note": "gap undefined for the internal direction or for all random "
+                        "directions at this shift (probability saturation)",
+            }
+        else:
+            report[f"gap_at_alpha{a:+.0f}"] = {
+                "internal": g_int,
+                "final": report["sweep"]["final"]["alignment_gap"][ai[a]],
+                "n_random_total": len(g_all), "n_random_usable": len(g),
+                "random_mean": round(float(np.mean(g)), 4),
+                "random_std": round(float(np.std(g)), 4),
+                "random_min": round(float(np.min(g)), 4),
+                "random_max": round(float(np.max(g)), 4),
+                "internal_percentile_vs_random": round(
+                    float((np.array(g) < g_int).mean()), 4),
+            }
         a_auc = [r["auc"][ai[a]] for r in rand_reports]
         report[f"auc_at_alpha{a:+.0f}"] = {
             "internal": report["sweep"]["internal"]["auc"][ai[a]],
