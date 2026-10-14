@@ -472,9 +472,11 @@ not put the judge ahead of the internal readers.
 The relevance signal an LLM needs to judge a passage is present in its
 internals and only partially surfaced at the output. The results above support a
 specific reading of why: the signal is \emph{linearly decodable} at
-mid-network layers (a trained direction reaches $0.61$--$0.83$) while the
-model's \emph{own} readout direction extracts much less from the same layer
-($0.45$--$0.61$, depending on dataset and layer). The limitation is in the
+mid-network layers while the model's \emph{own} readout direction extracts much
+less from the \emph{same} layer. At $L9$ of LLaMA-3.2-3B, a trained direction
+reaches $0.61$ on MS MARCO and $0.78$ on FiQA, whereas the model's own direction
+reaches $0.51$ and $0.45$ respectively (and on FiQA that $0.45$ is
+significantly below chance). The limitation is in the
 readout, not in the availability of the information---which is a statement about
 \emph{misalignment} between where relevance lives and what the output head is
 pointed at, rather than about a signal that has been uniformly weakened along
