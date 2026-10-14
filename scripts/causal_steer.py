@@ -365,7 +365,23 @@ def main():
         }
 
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-    json.dump(report, open(out, "w"), indent=2)
+
+    def _finite(o):
+        """Strip NaN/Inf before dumping.
+
+        Python's json writes bare `NaN`/`Infinity` tokens by default, which are
+        NOT valid JSON: strict parsers (jq, most non-Python readers, many CI
+        checks) reject the file outright. Any non-finite float becomes null.
+        """
+        if isinstance(o, float):
+            return o if o == o and o not in (float("inf"), float("-inf")) else None
+        if isinstance(o, dict):
+            return {k: _finite(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [_finite(v) for v in o]
+        return o
+
+    json.dump(_finite(report), open(out, "w"), indent=2, allow_nan=False)
     print(f"Saved: {out}")
 
 

@@ -1,0 +1,87 @@
+[
+  {
+    "tag": "llama32_3b_fiqa_bm25",
+    "model": "LLaMA-3.2-3B FiQA(BM25)",
+    "n_layers": 28,
+    "best_layer_val": 15,
+    "n_test": 1125,
+    "n_boot": 5000,
+    "cache": "results/cache/llama32_3b_fiqa_bm25_q1500_instruct",
+    "judge_cache": "results/cache/llama32_3b_fiqa_bm25_q1500_judge",
+    "env": {
+      "python": "3.12.3",
+      "torch": "2.8.0+cu128",
+      "transformers": "5.19.0",
+      "numpy": "2.3.2",
+      "sklearn": "1.9.1",
+      "scipy": "1.18.1",
+      "datasets": "5.1.0",
+      "nnsight": "0.7.0",
+      "joblib": "1.6.0"
+    },
+    "auc": {
+      "judge": {
+        "point": 0.597,
+        "ci95": [
+          0.564,
+          0.629
+        ]
+      },
+      "final": {
+        "point": 0.724,
+        "ci95": [
+          0.69,
+          0.756
+        ]
+      },
+      "best_resid": {
+        "point": 0.822,
+        "ci95": [
+          0.796,
+          0.848
+        ]
+      },
+      "attn": {
+        "point": 0.884,
+        "ci95": [
+          0.861,
+          0.906
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.0986,
+        "ci95": [
+          0.066,
+          0.13
+        ],
+        "p_le0": 0.0
+      },
+      "train_edge(final-judge)": {
+        "mean": 0.1263,
+        "ci95": [
+          0.085,
+          0.169
+        ],
+        "p_le0": 0.0
+      },
+      "attn-final": {
+        "mean": 0.1605,
+        "ci95": [
+          0.131,
+          0.189
+        ],
+        "p_le0": 0.0
+      },
+      "best_resid-judge": {
+        "mean": 0.2249,
+        "ci95": [
+          0.188,
+          0.262
+        ],
+        "p_le0": 0.0
+      }
+    }
+  }
+]

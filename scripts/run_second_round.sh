@@ -71,10 +71,18 @@ if [ "$KIND" = "all" ] || [ "$KIND" = "causal" ]; then
     IC="results/cache/${MID}_q${NQ}_instruct"
     OUT="results/causal_steer_${MID}_q${NQ}.json"
     [ -f "$IC/resid_test.pt" ] || { log "SKIP causal $MID (no cache)"; continue; }
-    if [ -f "$OUT" ]; then log "SKIP causal $MID (exists)"; continue; fi
+    # only skip if the artifact came from the CURRENT protocol (logit-shift
+    # calibration); the old fixed-alpha JSONs lack a "calibration" key and were
+    # measured with a protocol that saturated on Qwen (TODO.md E-1)
+    if [ -f "$OUT" ] && python -c "
+import json,sys; d=json.load(open('$OUT')); sys.exit(0 if 'calibration' in d else 1)"; then
+      log "SKIP causal $MID (up-to-date artifact)"; continue
+    fi
+    [ -f "$OUT" ] && log "STALE causal $MID (old protocol -> regenerating)"
     log "START causal $MID (n_random=$NR)"
     python scripts/causal_steer.py --model "$MODEL" --cache "$IC" --tag "$MID" \
-      --n-queries "$NQ" --n-random "$NR" --out "$OUT" >> "$LOG" 2>&1 \
+      --n-queries "$NQ" --n-random "$NR" --shift-targets "0,-1,-2,-4,-8,1,2,4,8" \
+      --out "$OUT" >> "$LOG" 2>&1 \
       && log "DONE  causal $MID" || log "FAIL  causal $MID"
     python scripts/plot_causal.py --json "$OUT" --tag "$MID" >> "$LOG" 2>&1 || true
   done
