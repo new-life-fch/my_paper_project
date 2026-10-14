@@ -1,0 +1,2595 @@
+{
+  "n_queries": 1500,
+  "models": {
+    "llama32_3b": {
+      "display": "LLaMA-3.2-3B",
+      "readers": {
+        "judge": 0.545,
+        "final": 0.538,
+        "best_resid": 0.616,
+        "best_resid_layer": 9,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.621,
+        "attn_topk": 0.684,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 14,
+          "auc": 0.62
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 9,
+        "auc": {
+          "judge": {
+            "point": 0.545,
+            "ci95": [
+              0.515,
+              0.574
+            ]
+          },
+          "final": {
+            "point": 0.536,
+            "ci95": [
+              0.504,
+              0.568
+            ]
+          },
+          "best_resid": {
+            "point": 0.613,
+            "ci95": [
+              0.578,
+              0.649
+            ]
+          },
+          "attn": {
+            "point": 0.684,
+            "ci95": [
+              0.65,
+              0.717
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0777,
+            "ci95": [
+              0.036,
+              0.121
+            ],
+            "p_le0": 0.0002
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0093,
+            "ci95": [
+              -0.051,
+              0.031
+            ],
+            "p_le0": 0.6734
+          },
+          "attn-final": {
+            "mean": 0.148,
+            "ci95": [
+              0.106,
+              0.189
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.0684,
+            "ci95": [
+              0.024,
+              0.113
+            ],
+            "p_le0": 0.0014
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 25,
+        "peak_auc": 0.56,
+        "peak_val_auc": 0.565,
+        "final_layer_auc": 0.544,
+        "judge_auc": 0.545,
+        "sanity_absdiff": 0.001
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 3072,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5356,
+          "attn_linear": 0.6835,
+          "final_select20_chunks": 0.5549,
+          "final_headmean_ensemble": 0.6205,
+          "final_mlp_sameparams": 0.5937,
+          "final_mlp_wide": 0.5599
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.1478,
+            "ci95": [
+              0.1077,
+              0.1869
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.1281,
+            "ci95": [
+              0.092,
+              0.1636
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0197,
+            "ci95": [
+              0.0004,
+              0.0397
+            ],
+            "p_le0": 0.0225
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0629,
+            "ci95": [
+              0.0321,
+              0.0945
+            ],
+            "p_le0": 0.0
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0583,
+            "ci95": [
+              0.0211,
+              0.0983
+            ],
+            "p_le0": 0.002
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0247,
+            "ci95": [
+              -0.0088,
+              0.058
+            ],
+            "p_le0": 0.076
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.5452,
+          "min": 0.529,
+          "max": 0.5547
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6343,
+          "5": 0.6602,
+          "10": 0.6664,
+          "20": 0.6835,
+          "40": 0.6724,
+          "80": 0.6714
+        }
+      },
+      "patch_internal": {
+        "layer": 9,
+        "probe_test_auc_at_layer": 0.6133,
+        "judge_natural": {
+          "auc": 0.5447,
+          "mean_pyes": 0.8142,
+          "mean_pyes_relevant": 0.8236,
+          "mean_pyes_irrelevant": 0.8115,
+          "alignment_gap": 0.0121
+        },
+        "sweep": {
+          "0.0": {
+            "patch_internal": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_final": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_shuffled": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            }
+          },
+          "0.25": {
+            "patch_internal": {
+              "auc": 0.5441,
+              "mean_pyes": 0.8199,
+              "mean_pyes_relevant": 0.8292,
+              "mean_pyes_irrelevant": 0.8173,
+              "alignment_gap": 0.0119
+            },
+            "patch_final": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_shuffled": {
+              "auc": 0.5451,
+              "mean_pyes": 0.8199,
+              "mean_pyes_relevant": 0.8294,
+              "mean_pyes_irrelevant": 0.8173,
+              "alignment_gap": 0.0121
+            }
+          },
+          "0.5": {
+            "patch_internal": {
+              "auc": 0.5426,
+              "mean_pyes": 0.8297,
+              "mean_pyes_relevant": 0.8388,
+              "mean_pyes_irrelevant": 0.8272,
+              "alignment_gap": 0.0116
+            },
+            "patch_final": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_shuffled": {
+              "auc": 0.5453,
+              "mean_pyes": 0.8295,
+              "mean_pyes_relevant": 0.8388,
+              "mean_pyes_irrelevant": 0.8269,
+              "alignment_gap": 0.0119
+            }
+          },
+          "0.75": {
+            "patch_internal": {
+              "auc": 0.5394,
+              "mean_pyes": 0.8475,
+              "mean_pyes_relevant": 0.8559,
+              "mean_pyes_irrelevant": 0.8451,
+              "alignment_gap": 0.0107
+            },
+            "patch_final": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_shuffled": {
+              "auc": 0.543,
+              "mean_pyes": 0.847,
+              "mean_pyes_relevant": 0.8561,
+              "mean_pyes_irrelevant": 0.8445,
+              "alignment_gap": 0.0117
+            }
+          },
+          "1.0": {
+            "patch_internal": {
+              "auc": 0.5114,
+              "mean_pyes": 0.8647,
+              "mean_pyes_relevant": 0.8636,
+              "mean_pyes_irrelevant": 0.865,
+              "alignment_gap": -0.0013
+            },
+            "patch_final": {
+              "auc": 0.5447,
+              "mean_pyes": 0.8142,
+              "mean_pyes_relevant": 0.8236,
+              "mean_pyes_irrelevant": 0.8115,
+              "alignment_gap": 0.0121
+            },
+            "patch_shuffled": {
+              "auc": 0.494,
+              "mean_pyes": 0.8647,
+              "mean_pyes_relevant": 0.8646,
+              "mean_pyes_irrelevant": 0.8647,
+              "alignment_gap": -0.0
+            }
+          }
+        },
+        "edges": {
+          "patch_internal-judge@a=0.0": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "p_le0": 1.0
+          },
+          "patch_internal-judge@a=0.25": {
+            "mean": -0.0006,
+            "ci95": [
+              -0.0031,
+              0.0017
+            ],
+            "p_le0": 0.687
+          },
+          "patch_internal-judge@a=0.5": {
+            "mean": -0.0022,
+            "ci95": [
+              -0.009,
+              0.004
+            ],
+            "p_le0": 0.742
+          },
+          "patch_internal-judge@a=0.75": {
+            "mean": -0.0055,
+            "ci95": [
+              -0.0239,
+              0.011
+            ],
+            "p_le0": 0.7345
+          },
+          "patch_internal-judge@a=1.0": {
+            "mean": -0.0339,
+            "ci95": [
+              -0.0804,
+              0.0125
+            ],
+            "p_le0": 0.9285
+          }
+        }
+      },
+      "causal_steer": {
+        "layer": 13,
+        "layer_selection": "val",
+        "proj_auc_internal": {
+          "train": 0.602,
+          "val": 0.594
+        },
+        "proj_auc_final": {
+          "train": 0.577,
+          "val": 0.557
+        },
+        "n_random": 12,
+        "protocol": {
+          "truncation": "none (pad to batch max)",
+          "yes_no_variants": 5,
+          "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"
+        },
+        "gap_summary": {
+          "gap_at_alpha-8": {
+            "internal": 0.0014,
+            "final": 0.0,
+            "random_mean": 0.0013,
+            "random_std": 0.0006,
+            "random_min": 0.0002,
+            "random_max": 0.0026,
+            "internal_percentile_vs_random": 0.5833
+          },
+          "gap_at_alpha+8": {
+            "internal": 0.0022,
+            "final": 0.0,
+            "random_mean": 0.0015,
+            "random_std": 0.0006,
+            "random_min": 0.0007,
+            "random_max": 0.0026,
+            "internal_percentile_vs_random": 0.8333
+          }
+        },
+        "auc_summary": {
+          "auc_at_alpha-8": {
+            "internal": 0.523,
+            "final": 0.498,
+            "random_mean": 0.535,
+            "random_min": 0.523,
+            "random_max": 0.547
+          },
+          "auc_at_alpha+8": {
+            "internal": 0.541,
+            "final": 0.481,
+            "random_mean": 0.538,
+            "random_min": 0.525,
+            "random_max": 0.55
+          }
+        }
+      },
+      "layer_signal": {
+        "judge": 0.5447,
+        "resid_peak": {
+          "layer": 9,
+          "auc": 0.6133,
+          "selection": "val",
+          "val_auc_at_selected": 0.6134
+        },
+        "resid_final": 0.5355,
+        "topk_head_layers": [
+          11,
+          14,
+          11,
+          11,
+          14,
+          11,
+          12,
+          11,
+          11,
+          10,
+          11,
+          11,
+          14,
+          11,
+          11,
+          10,
+          11,
+          10,
+          11,
+          11
+        ]
+      }
+    },
+    "llama32_3b_instruct": {
+      "display": "LLaMA-3.2-3B-Instruct",
+      "readers": {
+        "judge": 0.614,
+        "final": 0.619,
+        "best_resid": 0.623,
+        "best_resid_layer": 12,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.645,
+        "attn_topk": 0.712,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 16,
+          "auc": 0.659
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 18,
+        "auc": {
+          "judge": {
+            "point": 0.614,
+            "ci95": [
+              0.583,
+              0.644
+            ]
+          },
+          "final": {
+            "point": 0.612,
+            "ci95": [
+              0.584,
+              0.64
+            ]
+          },
+          "best_resid": {
+            "point": 0.638,
+            "ci95": [
+              0.602,
+              0.674
+            ]
+          },
+          "attn": {
+            "point": 0.712,
+            "ci95": [
+              0.68,
+              0.744
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0263,
+            "ci95": [
+              -0.013,
+              0.066
+            ],
+            "p_le0": 0.0978
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0023,
+            "ci95": [
+              -0.042,
+              0.037
+            ],
+            "p_le0": 0.5448
+          },
+          "attn-final": {
+            "mean": 0.0997,
+            "ci95": [
+              0.064,
+              0.134
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.024,
+            "ci95": [
+              -0.018,
+              0.067
+            ],
+            "p_le0": 0.134
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 16,
+        "peak_auc": 0.618,
+        "peak_val_auc": 0.584,
+        "final_layer_auc": 0.607,
+        "judge_auc": 0.614,
+        "sanity_absdiff": 0.007
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 3072,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.6119,
+          "attn_linear": 0.7114,
+          "final_select20_chunks": 0.6343,
+          "final_headmean_ensemble": 0.7042,
+          "final_mlp_sameparams": 0.6506,
+          "final_mlp_wide": 0.6493
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.0993,
+            "ci95": [
+              0.0636,
+              0.135
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.0771,
+            "ci95": [
+              0.046,
+              0.1088
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0222,
+            "ci95": [
+              0.0031,
+              0.0411
+            ],
+            "p_le0": 0.011
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0071,
+            "ci95": [
+              -0.0149,
+              0.0291
+            ],
+            "p_le0": 0.26
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0389,
+            "ci95": [
+              0.0009,
+              0.0749
+            ],
+            "p_le0": 0.0225
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0371,
+            "ci95": [
+              0.0056,
+              0.0684
+            ],
+            "p_le0": 0.008
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.6345,
+          "min": 0.6236,
+          "max": 0.6389
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6922,
+          "5": 0.7081,
+          "10": 0.7137,
+          "20": 0.7114,
+          "40": 0.7059,
+          "80": 0.7071
+        }
+      },
+      "patch_internal": {
+        "layer": 18,
+        "probe_test_auc_at_layer": 0.638,
+        "judge_natural": {
+          "auc": 0.6067,
+          "mean_pyes": 0.9215,
+          "mean_pyes_relevant": 0.9382,
+          "mean_pyes_irrelevant": 0.9168,
+          "alignment_gap": 0.0213
+        },
+        "sweep": {
+          "0.0": {
+            "patch_internal": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_final": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_shuffled": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            }
+          },
+          "0.25": {
+            "patch_internal": {
+              "auc": 0.6101,
+              "mean_pyes": 0.9588,
+              "mean_pyes_relevant": 0.9688,
+              "mean_pyes_irrelevant": 0.956,
+              "alignment_gap": 0.0127
+            },
+            "patch_final": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_shuffled": {
+              "auc": 0.6013,
+              "mean_pyes": 0.9631,
+              "mean_pyes_relevant": 0.9709,
+              "mean_pyes_irrelevant": 0.9609,
+              "alignment_gap": 0.0099
+            }
+          },
+          "0.5": {
+            "patch_internal": {
+              "auc": 0.6154,
+              "mean_pyes": 0.9865,
+              "mean_pyes_relevant": 0.9904,
+              "mean_pyes_irrelevant": 0.9854,
+              "alignment_gap": 0.0051
+            },
+            "patch_final": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_shuffled": {
+              "auc": 0.584,
+              "mean_pyes": 0.9911,
+              "mean_pyes_relevant": 0.9929,
+              "mean_pyes_irrelevant": 0.9906,
+              "alignment_gap": 0.0023
+            }
+          },
+          "0.75": {
+            "patch_internal": {
+              "auc": 0.6252,
+              "mean_pyes": 0.9983,
+              "mean_pyes_relevant": 0.999,
+              "mean_pyes_irrelevant": 0.9981,
+              "alignment_gap": 0.0009
+            },
+            "patch_final": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_shuffled": {
+              "auc": 0.5448,
+              "mean_pyes": 0.9994,
+              "mean_pyes_relevant": 0.9995,
+              "mean_pyes_irrelevant": 0.9994,
+              "alignment_gap": 0.0001
+            }
+          },
+          "1.0": {
+            "patch_internal": {
+              "auc": 0.6333,
+              "mean_pyes": 0.9999,
+              "mean_pyes_relevant": 1.0,
+              "mean_pyes_irrelevant": 0.9999,
+              "alignment_gap": 0.0
+            },
+            "patch_final": {
+              "auc": 0.6067,
+              "mean_pyes": 0.9215,
+              "mean_pyes_relevant": 0.9382,
+              "mean_pyes_irrelevant": 0.9168,
+              "alignment_gap": 0.0213
+            },
+            "patch_shuffled": {
+              "auc": 0.4678,
+              "mean_pyes": 0.9999,
+              "mean_pyes_relevant": 0.9999,
+              "mean_pyes_irrelevant": 0.9999,
+              "alignment_gap": -0.0
+            }
+          }
+        },
+        "edges": {
+          "patch_internal-judge@a=0.0": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "p_le0": 1.0
+          },
+          "patch_internal-judge@a=0.25": {
+            "mean": 0.0034,
+            "ci95": [
+              0.0014,
+              0.0056
+            ],
+            "p_le0": 0.0005
+          },
+          "patch_internal-judge@a=0.5": {
+            "mean": 0.0087,
+            "ci95": [
+              0.0042,
+              0.0132
+            ],
+            "p_le0": 0.0
+          },
+          "patch_internal-judge@a=0.75": {
+            "mean": 0.0184,
+            "ci95": [
+              0.0096,
+              0.0275
+            ],
+            "p_le0": 0.0
+          },
+          "patch_internal-judge@a=1.0": {
+            "mean": 0.0263,
+            "ci95": [
+              0.0069,
+              0.0461
+            ],
+            "p_le0": 0.0045
+          }
+        }
+      },
+      "causal_steer": {
+        "layer": 14,
+        "layer_selection": "val",
+        "proj_auc_internal": {
+          "train": 0.649,
+          "val": 0.633
+        },
+        "proj_auc_final": {
+          "train": 0.617,
+          "val": 0.607
+        },
+        "n_random": 5,
+        "protocol": {
+          "truncation": "none (pad to batch max)",
+          "yes_no_variants": 5,
+          "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"
+        },
+        "gap_summary": {
+          "gap_at_alpha-8": {
+            "internal": 0.0001,
+            "final": 0.0,
+            "random_mean": 0.006,
+            "random_std": 0.0026,
+            "random_min": 0.0012,
+            "random_max": 0.0082,
+            "internal_percentile_vs_random": 0.0
+          },
+          "gap_at_alpha+8": {
+            "internal": 0.0,
+            "final": 0.0,
+            "random_mean": 0.0083,
+            "random_std": 0.0027,
+            "random_min": 0.0046,
+            "random_max": 0.0129,
+            "internal_percentile_vs_random": 0.0
+          }
+        },
+        "auc_summary": {
+          "auc_at_alpha-8": {
+            "internal": 0.621,
+            "final": 0.514,
+            "random_mean": 0.626,
+            "random_min": 0.623,
+            "random_max": 0.63
+          },
+          "auc_at_alpha+8": {
+            "internal": 0.577,
+            "final": 0.496,
+            "random_mean": 0.61,
+            "random_min": 0.603,
+            "random_max": 0.614
+          }
+        }
+      },
+      "layer_signal": {
+        "judge": 0.6139,
+        "resid_peak": {
+          "layer": 18,
+          "auc": 0.6378,
+          "selection": "val",
+          "val_auc_at_selected": 0.6399
+        },
+        "resid_final": 0.612,
+        "topk_head_layers": [
+          14,
+          13,
+          13,
+          11,
+          14,
+          11,
+          12,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          11,
+          14,
+          12,
+          12,
+          11
+        ]
+      }
+    },
+    "llama31_8b": {
+      "display": "LLaMA-3.1-8B",
+      "readers": {
+        "judge": 0.574,
+        "final": 0.565,
+        "best_resid": 0.625,
+        "best_resid_layer": 8,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.617,
+        "attn_topk": 0.677,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 15,
+          "auc": 0.635
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 8,
+        "auc": {
+          "judge": {
+            "point": 0.574,
+            "ci95": [
+              0.543,
+              0.604
+            ]
+          },
+          "final": {
+            "point": 0.562,
+            "ci95": [
+              0.534,
+              0.59
+            ]
+          },
+          "best_resid": {
+            "point": 0.621,
+            "ci95": [
+              0.586,
+              0.655
+            ]
+          },
+          "attn": {
+            "point": 0.677,
+            "ci95": [
+              0.644,
+              0.708
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0589,
+            "ci95": [
+              0.015,
+              0.101
+            ],
+            "p_le0": 0.0044
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0118,
+            "ci95": [
+              -0.053,
+              0.03
+            ],
+            "p_le0": 0.714
+          },
+          "attn-final": {
+            "mean": 0.1144,
+            "ci95": [
+              0.077,
+              0.151
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.0471,
+            "ci95": [
+              0.004,
+              0.091
+            ],
+            "p_le0": 0.0168
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 31,
+        "peak_auc": 0.563,
+        "peak_val_auc": 0.544,
+        "final_layer_auc": 0.563,
+        "judge_auc": 0.574,
+        "sanity_absdiff": 0.011
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 4096,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5621,
+          "attn_linear": 0.6765,
+          "final_select20_chunks": 0.5754,
+          "final_headmean_ensemble": 0.6335,
+          "final_mlp_sameparams": 0.5951,
+          "final_mlp_wide": 0.579
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.1146,
+            "ci95": [
+              0.0766,
+              0.1518
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.1015,
+            "ci95": [
+              0.0641,
+              0.1367
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0131,
+            "ci95": [
+              -0.0051,
+              0.0328
+            ],
+            "p_le0": 0.098
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0433,
+            "ci95": [
+              0.0088,
+              0.0775
+            ],
+            "p_le0": 0.008
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0331,
+            "ci95": [
+              -0.0034,
+              0.0711
+            ],
+            "p_le0": 0.037
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0167,
+            "ci95": [
+              -0.0213,
+              0.0554
+            ],
+            "p_le0": 0.2025
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.5683,
+          "min": 0.5504,
+          "max": 0.5844
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6187,
+          "5": 0.6543,
+          "10": 0.661,
+          "20": 0.6765,
+          "40": 0.6859,
+          "80": 0.6862
+        }
+      },
+      "patch_internal": {
+        "layer": 8,
+        "probe_test_auc_at_layer": 0.6207,
+        "judge_natural": {
+          "auc": 0.563,
+          "mean_pyes": 0.886,
+          "mean_pyes_relevant": 0.8988,
+          "mean_pyes_irrelevant": 0.8824,
+          "alignment_gap": 0.0164
+        },
+        "sweep": {
+          "0.0": {
+            "patch_internal": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_final": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_shuffled": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            }
+          },
+          "0.25": {
+            "patch_internal": {
+              "auc": 0.563,
+              "mean_pyes": 0.895,
+              "mean_pyes_relevant": 0.907,
+              "mean_pyes_irrelevant": 0.8916,
+              "alignment_gap": 0.0153
+            },
+            "patch_final": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_shuffled": {
+              "auc": 0.564,
+              "mean_pyes": 0.8949,
+              "mean_pyes_relevant": 0.9071,
+              "mean_pyes_irrelevant": 0.8914,
+              "alignment_gap": 0.0157
+            }
+          },
+          "0.5": {
+            "patch_internal": {
+              "auc": 0.564,
+              "mean_pyes": 0.9108,
+              "mean_pyes_relevant": 0.9213,
+              "mean_pyes_irrelevant": 0.9079,
+              "alignment_gap": 0.0134
+            },
+            "patch_final": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_shuffled": {
+              "auc": 0.567,
+              "mean_pyes": 0.9106,
+              "mean_pyes_relevant": 0.9218,
+              "mean_pyes_irrelevant": 0.9074,
+              "alignment_gap": 0.0144
+            }
+          },
+          "0.75": {
+            "patch_internal": {
+              "auc": 0.5656,
+              "mean_pyes": 0.9445,
+              "mean_pyes_relevant": 0.9514,
+              "mean_pyes_irrelevant": 0.9425,
+              "alignment_gap": 0.0089
+            },
+            "patch_final": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_shuffled": {
+              "auc": 0.5748,
+              "mean_pyes": 0.9439,
+              "mean_pyes_relevant": 0.9521,
+              "mean_pyes_irrelevant": 0.9416,
+              "alignment_gap": 0.0106
+            }
+          },
+          "1.0": {
+            "patch_internal": {
+              "auc": 0.4921,
+              "mean_pyes": 0.9922,
+              "mean_pyes_relevant": 0.9921,
+              "mean_pyes_irrelevant": 0.9922,
+              "alignment_gap": -0.0001
+            },
+            "patch_final": {
+              "auc": 0.563,
+              "mean_pyes": 0.886,
+              "mean_pyes_relevant": 0.8988,
+              "mean_pyes_irrelevant": 0.8824,
+              "alignment_gap": 0.0164
+            },
+            "patch_shuffled": {
+              "auc": 0.5366,
+              "mean_pyes": 0.9922,
+              "mean_pyes_relevant": 0.993,
+              "mean_pyes_irrelevant": 0.992,
+              "alignment_gap": 0.001
+            }
+          }
+        },
+        "edges": {
+          "patch_internal-judge@a=0.0": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "p_le0": 1.0
+          },
+          "patch_internal-judge@a=0.25": {
+            "mean": -0.0001,
+            "ci95": [
+              -0.0013,
+              0.0011
+            ],
+            "p_le0": 0.5555
+          },
+          "patch_internal-judge@a=0.5": {
+            "mean": 0.0009,
+            "ci95": [
+              -0.002,
+              0.0038
+            ],
+            "p_le0": 0.2845
+          },
+          "patch_internal-judge@a=0.75": {
+            "mean": 0.0025,
+            "ci95": [
+              -0.0056,
+              0.0104
+            ],
+            "p_le0": 0.2715
+          },
+          "patch_internal-judge@a=1.0": {
+            "mean": -0.0711,
+            "ci95": [
+              -0.1115,
+              -0.0299
+            ],
+            "p_le0": 0.9995
+          }
+        }
+      },
+      "causal_steer": {
+        "layer": 17,
+        "layer_selection": "val",
+        "proj_auc_internal": {
+          "train": 0.575,
+          "val": 0.584
+        },
+        "proj_auc_final": {
+          "train": 0.545,
+          "val": 0.556
+        },
+        "n_random": 12,
+        "protocol": {
+          "truncation": "none (pad to batch max)",
+          "yes_no_variants": 5,
+          "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"
+        },
+        "gap_summary": {
+          "gap_at_alpha-8": {
+            "internal": 0.004,
+            "final": 0.0,
+            "random_mean": 0.0034,
+            "random_std": 0.0011,
+            "random_min": 0.0005,
+            "random_max": 0.0046,
+            "internal_percentile_vs_random": 0.6667
+          },
+          "gap_at_alpha+8": {
+            "internal": 0.002,
+            "final": 0.0001,
+            "random_mean": 0.0027,
+            "random_std": 0.0012,
+            "random_min": 0.0008,
+            "random_max": 0.0047,
+            "internal_percentile_vs_random": 0.3333
+          }
+        },
+        "auc_summary": {
+          "auc_at_alpha-8": {
+            "internal": 0.561,
+            "final": 0.495,
+            "random_mean": 0.562,
+            "random_min": 0.549,
+            "random_max": 0.569
+          },
+          "auc_at_alpha+8": {
+            "internal": 0.559,
+            "final": 0.507,
+            "random_mean": 0.564,
+            "random_min": 0.557,
+            "random_max": 0.573
+          }
+        }
+      },
+      "layer_signal": {
+        "judge": 0.5738,
+        "resid_peak": {
+          "layer": 8,
+          "auc": 0.6207,
+          "selection": "val",
+          "val_auc_at_selected": 0.6123
+        },
+        "resid_final": 0.5621,
+        "topk_head_layers": [
+          15,
+          13,
+          15,
+          12,
+          15,
+          15,
+          15,
+          15,
+          15,
+          12,
+          13,
+          15,
+          13,
+          13,
+          13,
+          13,
+          12,
+          15,
+          15,
+          15
+        ]
+      }
+    },
+    "llama31_8b_instruct": {
+      "display": "LLaMA-3.1-8B-Instruct",
+      "readers": {
+        "judge": 0.63,
+        "final": 0.601,
+        "best_resid": 0.614,
+        "best_resid_layer": 12,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.642,
+        "attn_topk": 0.725,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 21,
+          "auc": 0.644
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 12,
+        "auc": {
+          "judge": {
+            "point": 0.63,
+            "ci95": [
+              0.602,
+              0.658
+            ]
+          },
+          "final": {
+            "point": 0.596,
+            "ci95": [
+              0.561,
+              0.63
+            ]
+          },
+          "best_resid": {
+            "point": 0.609,
+            "ci95": [
+              0.573,
+              0.644
+            ]
+          },
+          "attn": {
+            "point": 0.725,
+            "ci95": [
+              0.694,
+              0.755
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0131,
+            "ci95": [
+              -0.032,
+              0.058
+            ],
+            "p_le0": 0.2886
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0347,
+            "ci95": [
+              -0.077,
+              0.005
+            ],
+            "p_le0": 0.952
+          },
+          "attn-final": {
+            "mean": 0.1291,
+            "ci95": [
+              0.09,
+              0.169
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": -0.0216,
+            "ci95": [
+              -0.062,
+              0.019
+            ],
+            "p_le0": 0.8534
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 30,
+        "peak_auc": 0.63,
+        "peak_val_auc": 0.588,
+        "final_layer_auc": 0.632,
+        "judge_auc": 0.63,
+        "sanity_absdiff": 0.002
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 4096,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5959,
+          "attn_linear": 0.725,
+          "final_select20_chunks": 0.6283,
+          "final_headmean_ensemble": 0.7011,
+          "final_mlp_sameparams": 0.6713,
+          "final_mlp_wide": 0.645
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.1288,
+            "ci95": [
+              0.0881,
+              0.1697
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.0965,
+            "ci95": [
+              0.0605,
+              0.1351
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0323,
+            "ci95": [
+              0.0122,
+              0.0531
+            ],
+            "p_le0": 0.0005
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0237,
+            "ci95": [
+              0.0005,
+              0.0471
+            ],
+            "p_le0": 0.0225
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0751,
+            "ci95": [
+              0.0377,
+              0.1128
+            ],
+            "p_le0": 0.0005
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0491,
+            "ci95": [
+              0.0136,
+              0.0854
+            ],
+            "p_le0": 0.0025
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.6198,
+          "min": 0.6116,
+          "max": 0.6309
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6901,
+          "5": 0.7188,
+          "10": 0.7221,
+          "20": 0.725,
+          "40": 0.7219,
+          "80": 0.7196
+        }
+      },
+      "layer_signal": {
+        "judge": 0.6301,
+        "resid_peak": {
+          "layer": 12,
+          "auc": 0.6085,
+          "selection": "val",
+          "val_auc_at_selected": 0.6406
+        },
+        "resid_final": 0.596,
+        "topk_head_layers": [
+          15,
+          15,
+          15,
+          13,
+          15,
+          15,
+          15,
+          12,
+          15,
+          15,
+          15,
+          15,
+          13,
+          15,
+          15,
+          15,
+          14,
+          15,
+          15,
+          11
+        ]
+      }
+    },
+    "mistral_7b": {
+      "display": "Mistral-7B-v0.3",
+      "readers": {
+        "judge": 0.579,
+        "final": 0.584,
+        "best_resid": 0.609,
+        "best_resid_layer": 16,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.63,
+        "attn_topk": 0.684,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 13,
+          "auc": 0.644
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 16,
+        "auc": {
+          "judge": {
+            "point": 0.579,
+            "ci95": [
+              0.549,
+              0.611
+            ]
+          },
+          "final": {
+            "point": 0.583,
+            "ci95": [
+              0.554,
+              0.613
+            ]
+          },
+          "best_resid": {
+            "point": 0.606,
+            "ci95": [
+              0.568,
+              0.643
+            ]
+          },
+          "attn": {
+            "point": 0.684,
+            "ci95": [
+              0.653,
+              0.714
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0225,
+            "ci95": [
+              -0.017,
+              0.062
+            ],
+            "p_le0": 0.1356
+          },
+          "train_edge(final-judge)": {
+            "mean": 0.0035,
+            "ci95": [
+              -0.033,
+              0.041
+            ],
+            "p_le0": 0.4246
+          },
+          "attn-final": {
+            "mean": 0.101,
+            "ci95": [
+              0.066,
+              0.134
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.026,
+            "ci95": [
+              -0.017,
+              0.07
+            ],
+            "p_le0": 0.125
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 31,
+        "peak_auc": 0.579,
+        "peak_val_auc": 0.54,
+        "final_layer_auc": 0.579,
+        "judge_auc": 0.579,
+        "sanity_absdiff": 0.0
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 4096,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5829,
+          "attn_linear": 0.684,
+          "final_select20_chunks": 0.5943,
+          "final_headmean_ensemble": 0.6202,
+          "final_mlp_sameparams": 0.592,
+          "final_mlp_wide": 0.5962
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.1008,
+            "ci95": [
+              0.0641,
+              0.1347
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.0899,
+            "ci95": [
+              0.0565,
+              0.1217
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0109,
+            "ci95": [
+              -0.0126,
+              0.034
+            ],
+            "p_le0": 0.1755
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0635,
+            "ci95": [
+              0.0348,
+              0.0944
+            ],
+            "p_le0": 0.0
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0083,
+            "ci95": [
+              -0.0286,
+              0.0442
+            ],
+            "p_le0": 0.3245
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0128,
+            "ci95": [
+              -0.0206,
+              0.0434
+            ],
+            "p_le0": 0.217
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.581,
+          "min": 0.5685,
+          "max": 0.593
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6329,
+          "5": 0.6582,
+          "10": 0.6712,
+          "20": 0.684,
+          "40": 0.6787,
+          "80": 0.6633
+        }
+      },
+      "layer_signal": {
+        "judge": 0.5792,
+        "resid_peak": {
+          "layer": 16,
+          "auc": 0.6054,
+          "selection": "val",
+          "val_auc_at_selected": 0.6276
+        },
+        "resid_final": 0.583,
+        "topk_head_layers": [
+          14,
+          14,
+          14,
+          14,
+          16,
+          14,
+          16,
+          14,
+          14,
+          16,
+          14,
+          14,
+          14,
+          14,
+          13,
+          13,
+          16,
+          11,
+          13,
+          16
+        ]
+      }
+    },
+    "mistral_7b_instruct": {
+      "display": "Mistral-7B-Instruct-v0.3",
+      "readers": {
+        "judge": 0.646,
+        "final": 0.6,
+        "best_resid": 0.636,
+        "best_resid_layer": 13,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.632,
+        "attn_topk": 0.713,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 13,
+          "auc": 0.636
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 13,
+        "auc": {
+          "judge": {
+            "point": 0.646,
+            "ci95": [
+              0.617,
+              0.676
+            ]
+          },
+          "final": {
+            "point": 0.596,
+            "ci95": [
+              0.561,
+              0.632
+            ]
+          },
+          "best_resid": {
+            "point": 0.634,
+            "ci95": [
+              0.598,
+              0.669
+            ]
+          },
+          "attn": {
+            "point": 0.713,
+            "ci95": [
+              0.683,
+              0.743
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0369,
+            "ci95": [
+              -0.01,
+              0.085
+            ],
+            "p_le0": 0.0538
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0497,
+            "ci95": [
+              -0.09,
+              -0.012
+            ],
+            "p_le0": 0.9936
+          },
+          "attn-final": {
+            "mean": 0.1166,
+            "ci95": [
+              0.082,
+              0.153
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": -0.0129,
+            "ci95": [
+              -0.058,
+              0.032
+            ],
+            "p_le0": 0.7116
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 31,
+        "peak_auc": 0.646,
+        "peak_val_auc": 0.635,
+        "final_layer_auc": 0.646,
+        "judge_auc": 0.646,
+        "sanity_absdiff": 0.0
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 4096,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5961,
+          "attn_linear": 0.7129,
+          "final_select20_chunks": 0.6324,
+          "final_headmean_ensemble": 0.6862,
+          "final_mlp_sameparams": 0.6166,
+          "final_mlp_wide": 0.6511
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.1164,
+            "ci95": [
+              0.0801,
+              0.1546
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.0802,
+            "ci95": [
+              0.0498,
+              0.1102
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": 0.0362,
+            "ci95": [
+              0.0127,
+              0.0598
+            ],
+            "p_le0": 0.0005
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": 0.0265,
+            "ci95": [
+              0.0094,
+              0.0457
+            ],
+            "p_le0": 0.0015
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0201,
+            "ci95": [
+              -0.0212,
+              0.0613
+            ],
+            "p_le0": 0.174
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.055,
+            "ci95": [
+              0.0188,
+              0.0901
+            ],
+            "p_le0": 0.0015
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.6372,
+          "min": 0.6262,
+          "max": 0.6529
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.676,
+          "5": 0.6913,
+          "10": 0.7038,
+          "20": 0.7129,
+          "40": 0.7113,
+          "80": 0.6981
+        }
+      },
+      "layer_signal": {
+        "judge": 0.6456,
+        "resid_peak": {
+          "layer": 13,
+          "auc": 0.6338,
+          "selection": "val",
+          "val_auc_at_selected": 0.6301
+        },
+        "resid_final": 0.5961,
+        "topk_head_layers": [
+          15,
+          14,
+          15,
+          15,
+          17,
+          31,
+          15,
+          14,
+          25,
+          25,
+          15,
+          30,
+          15,
+          16,
+          31,
+          15,
+          16,
+          15,
+          14,
+          14
+        ]
+      }
+    },
+    "qwen25_7b": {
+      "display": "Qwen2.5-7B",
+      "readers": {
+        "judge": 0.652,
+        "final": 0.593,
+        "best_resid": 0.658,
+        "best_resid_layer": 22,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.652,
+        "attn_topk": 0.68,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 12,
+          "auc": 0.658
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 22,
+        "auc": {
+          "judge": {
+            "point": 0.652,
+            "ci95": [
+              0.62,
+              0.683
+            ]
+          },
+          "final": {
+            "point": 0.592,
+            "ci95": [
+              0.559,
+              0.623
+            ]
+          },
+          "best_resid": {
+            "point": 0.655,
+            "ci95": [
+              0.621,
+              0.688
+            ]
+          },
+          "attn": {
+            "point": 0.68,
+            "ci95": [
+              0.646,
+              0.712
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.0635,
+            "ci95": [
+              0.023,
+              0.103
+            ],
+            "p_le0": 0.0008
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0605,
+            "ci95": [
+              -0.096,
+              -0.025
+            ],
+            "p_le0": 0.9992
+          },
+          "attn-final": {
+            "mean": 0.0882,
+            "ci95": [
+              0.049,
+              0.128
+            ],
+            "p_le0": 0.0
+          },
+          "best_resid-judge": {
+            "mean": 0.003,
+            "ci95": [
+              -0.035,
+              0.04
+            ],
+            "p_le0": 0.4278
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 24,
+        "peak_auc": 0.625,
+        "peak_val_auc": 0.646,
+        "final_layer_auc": 0.651,
+        "judge_auc": 0.652,
+        "sanity_absdiff": 0.001
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 3584,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.5918,
+          "attn_linear": 0.6798,
+          "final_select20_chunks": 0.5742,
+          "final_headmean_ensemble": 0.6829,
+          "final_mlp_sameparams": 0.6179,
+          "final_mlp_wide": 0.6373
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.0876,
+            "ci95": [
+              0.0491,
+              0.1261
+            ],
+            "p_le0": 0.0
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.1049,
+            "ci95": [
+              0.0667,
+              0.1426
+            ],
+            "p_le0": 0.0
+          },
+          "select20chunks-final": {
+            "mean": -0.0173,
+            "ci95": [
+              -0.0386,
+              0.0037
+            ],
+            "p_le0": 0.948
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": -0.0032,
+            "ci95": [
+              -0.0312,
+              0.0246
+            ],
+            "p_le0": 0.584
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0257,
+            "ci95": [
+              -0.0111,
+              0.0617
+            ],
+            "p_le0": 0.0795
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0452,
+            "ci95": [
+              0.0113,
+              0.0783
+            ],
+            "p_le0": 0.0045
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.584,
+          "min": 0.5665,
+          "max": 0.5982
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.6892,
+          "5": 0.6797,
+          "10": 0.6725,
+          "20": 0.6798,
+          "40": 0.6625,
+          "80": 0.6623
+        }
+      },
+      "patch_internal": {
+        "layer": 22,
+        "probe_test_auc_at_layer": 0.6553,
+        "judge_natural": {
+          "auc": 0.6515,
+          "mean_pyes": 0.8642,
+          "mean_pyes_relevant": 0.931,
+          "mean_pyes_irrelevant": 0.8454,
+          "alignment_gap": 0.0857
+        },
+        "sweep": {
+          "0.0": {
+            "patch_internal": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_final": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_shuffled": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            }
+          },
+          "0.25": {
+            "patch_internal": {
+              "auc": 0.6529,
+              "mean_pyes": 0.9196,
+              "mean_pyes_relevant": 0.9682,
+              "mean_pyes_irrelevant": 0.9059,
+              "alignment_gap": 0.0622
+            },
+            "patch_final": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_shuffled": {
+              "auc": 0.6416,
+              "mean_pyes": 0.9418,
+              "mean_pyes_relevant": 0.9746,
+              "mean_pyes_irrelevant": 0.9325,
+              "alignment_gap": 0.0421
+            }
+          },
+          "0.5": {
+            "patch_internal": {
+              "auc": 0.6544,
+              "mean_pyes": 0.963,
+              "mean_pyes_relevant": 0.9909,
+              "mean_pyes_irrelevant": 0.9552,
+              "alignment_gap": 0.0357
+            },
+            "patch_final": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_shuffled": {
+              "auc": 0.6096,
+              "mean_pyes": 0.9876,
+              "mean_pyes_relevant": 0.9944,
+              "mean_pyes_irrelevant": 0.9857,
+              "alignment_gap": 0.0087
+            }
+          },
+          "0.75": {
+            "patch_internal": {
+              "auc": 0.6525,
+              "mean_pyes": 0.9907,
+              "mean_pyes_relevant": 0.9992,
+              "mean_pyes_irrelevant": 0.9883,
+              "alignment_gap": 0.0109
+            },
+            "patch_final": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_shuffled": {
+              "auc": 0.5461,
+              "mean_pyes": 0.9984,
+              "mean_pyes_relevant": 0.999,
+              "mean_pyes_irrelevant": 0.9982,
+              "alignment_gap": 0.0009
+            }
+          },
+          "1.0": {
+            "patch_internal": {
+              "auc": 0.6165,
+              "mean_pyes": 0.9992,
+              "mean_pyes_relevant": 1.0,
+              "mean_pyes_irrelevant": 0.999,
+              "alignment_gap": 0.001
+            },
+            "patch_final": {
+              "auc": 0.6515,
+              "mean_pyes": 0.8642,
+              "mean_pyes_relevant": 0.931,
+              "mean_pyes_irrelevant": 0.8454,
+              "alignment_gap": 0.0857
+            },
+            "patch_shuffled": {
+              "auc": 0.4764,
+              "mean_pyes": 0.9992,
+              "mean_pyes_relevant": 0.9994,
+              "mean_pyes_irrelevant": 0.9991,
+              "alignment_gap": 0.0003
+            }
+          }
+        },
+        "edges": {
+          "patch_internal-judge@a=0.0": {
+            "mean": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "p_le0": 1.0
+          },
+          "patch_internal-judge@a=0.25": {
+            "mean": 0.0014,
+            "ci95": [
+              -0.001,
+              0.0037
+            ],
+            "p_le0": 0.116
+          },
+          "patch_internal-judge@a=0.5": {
+            "mean": 0.0028,
+            "ci95": [
+              -0.0023,
+              0.008
+            ],
+            "p_le0": 0.138
+          },
+          "patch_internal-judge@a=0.75": {
+            "mean": 0.001,
+            "ci95": [
+              -0.0085,
+              0.0104
+            ],
+            "p_le0": 0.4235
+          },
+          "patch_internal-judge@a=1.0": {
+            "mean": -0.0355,
+            "ci95": [
+              -0.0592,
+              -0.0122
+            ],
+            "p_le0": 0.9985
+          }
+        }
+      },
+      "causal_steer": {
+        "layer": 26,
+        "layer_selection": "val",
+        "proj_auc_internal": {
+          "train": 0.661,
+          "val": 0.672
+        },
+        "proj_auc_final": {
+          "train": 0.651,
+          "val": 0.665
+        },
+        "n_random": 12,
+        "protocol": {
+          "truncation": "none (pad to batch max)",
+          "yes_no_variants": 5,
+          "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"
+        },
+        "gap_summary": {
+          "gap_at_alpha-8": {
+            "internal": 0.0,
+            "final": 0.0,
+            "random_mean": 0.0146,
+            "random_std": 0.0122,
+            "random_min": 0.0003,
+            "random_max": 0.0325,
+            "internal_percentile_vs_random": 0.0
+          },
+          "gap_at_alpha+8": {
+            "internal": 0.0,
+            "final": 0.0,
+            "random_mean": 0.0135,
+            "random_std": 0.0091,
+            "random_min": 0.0028,
+            "random_max": 0.0284,
+            "internal_percentile_vs_random": 0.0
+          }
+        },
+        "auc_summary": {
+          "auc_at_alpha-8": {
+            "internal": 0.427,
+            "final": 0.485,
+            "random_mean": 0.649,
+            "random_min": 0.641,
+            "random_max": 0.654
+          },
+          "auc_at_alpha+8": {
+            "internal": 0.5,
+            "final": 0.5,
+            "random_mean": 0.651,
+            "random_min": 0.643,
+            "random_max": 0.654
+          }
+        }
+      },
+      "layer_signal": {
+        "judge": 0.652,
+        "resid_peak": {
+          "layer": 22,
+          "auc": 0.6553,
+          "selection": "val",
+          "val_auc_at_selected": 0.6477
+        },
+        "resid_final": 0.5917,
+        "topk_head_layers": [
+          20,
+          20,
+          18,
+          18,
+          20,
+          18,
+          19,
+          18,
+          17,
+          18,
+          18,
+          18,
+          19,
+          19,
+          18,
+          17,
+          18,
+          18,
+          18,
+          20
+        ]
+      }
+    },
+    "qwen25_7b_instruct": {
+      "display": "Qwen2.5-7B-Instruct",
+      "readers": {
+        "judge": 0.66,
+        "final": 0.617,
+        "best_resid": 0.637,
+        "best_resid_layer": 23,
+        "best_resid_selection": "val",
+        "best_resid_val_auc": 0.676,
+        "attn_topk": 0.669,
+        "best_resid_test_argmax_DO_NOT_REPORT": {
+          "layer": 22,
+          "auc": 0.651
+        }
+      },
+      "significance": {
+        "n_test": 1117,
+        "n_boot": 5000,
+        "best_layer_val": 23,
+        "auc": {
+          "judge": {
+            "point": 0.66,
+            "ci95": [
+              0.632,
+              0.69
+            ]
+          },
+          "final": {
+            "point": 0.61,
+            "ci95": [
+              0.575,
+              0.644
+            ]
+          },
+          "best_resid": {
+            "point": 0.63,
+            "ci95": [
+              0.594,
+              0.667
+            ]
+          },
+          "attn": {
+            "point": 0.669,
+            "ci95": [
+              0.636,
+              0.701
+            ]
+          }
+        },
+        "edges": {
+          "internal_edge(best_resid-final)": {
+            "mean": 0.02,
+            "ci95": [
+              -0.014,
+              0.054
+            ],
+            "p_le0": 0.122
+          },
+          "train_edge(final-judge)": {
+            "mean": -0.0506,
+            "ci95": [
+              -0.088,
+              -0.013
+            ],
+            "p_le0": 0.9958
+          },
+          "attn-final": {
+            "mean": 0.0586,
+            "ci95": [
+              0.02,
+              0.096
+            ],
+            "p_le0": 0.001
+          },
+          "best_resid-judge": {
+            "mean": -0.0306,
+            "ci95": [
+              -0.068,
+              0.007
+            ],
+            "p_le0": 0.9494
+          }
+        }
+      },
+      "logit_lens": {
+        "peak_layer": 26,
+        "peak_auc": 0.665,
+        "peak_val_auc": 0.661,
+        "final_layer_auc": 0.662,
+        "judge_auc": 0.66,
+        "sanity_absdiff": 0.002
+      },
+      "capacity_control": {
+        "feature_counts": {
+          "final_linear": 3584,
+          "attn_linear": 2560
+        },
+        "readers": {
+          "final_linear": 0.6103,
+          "attn_linear": 0.669,
+          "final_select20_chunks": 0.6259,
+          "final_headmean_ensemble": 0.7187,
+          "final_mlp_sameparams": 0.6542,
+          "final_mlp_wide": 0.6588
+        },
+        "edges": {
+          "attn-final (paper headline)": {
+            "mean": 0.0583,
+            "ci95": [
+              0.0199,
+              0.0952
+            ],
+            "p_le0": 0.0015
+          },
+          "attn-select20chunks (KEY CONTROL)": {
+            "mean": 0.0429,
+            "ci95": [
+              0.0058,
+              0.0794
+            ],
+            "p_le0": 0.0125
+          },
+          "select20chunks-final": {
+            "mean": 0.0154,
+            "ci95": [
+              -0.0087,
+              0.0403
+            ],
+            "p_le0": 0.1215
+          },
+          "attn-final_headmean_ensemble": {
+            "mean": -0.0496,
+            "ci95": [
+              -0.0823,
+              -0.0175
+            ],
+            "p_le0": 0.997
+          },
+          "final_mlp_sameparams-final_linear": {
+            "mean": 0.0438,
+            "ci95": [
+              0.0078,
+              0.0802
+            ],
+            "p_le0": 0.0095
+          },
+          "final_mlp_wide-final_linear": {
+            "mean": 0.0481,
+            "ci95": [
+              0.0145,
+              0.0835
+            ],
+            "p_le0": 0.0035
+          }
+        },
+        "chunk_perm_summary": {
+          "mean": 0.6085,
+          "min": 0.5973,
+          "max": 0.6275
+        },
+        "attn_topk_sweep_auc": {
+          "1": 0.7073,
+          "5": 0.6953,
+          "10": 0.6824,
+          "20": 0.669,
+          "40": 0.6765,
+          "80": 0.6675
+        }
+      },
+      "layer_signal": {
+        "judge": 0.6604,
+        "resid_peak": {
+          "layer": 23,
+          "auc": 0.6299,
+          "selection": "val",
+          "val_auc_at_selected": 0.6731
+        },
+        "resid_final": 0.6102,
+        "topk_head_layers": [
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          22,
+          19,
+          18,
+          18,
+          18,
+          20,
+          19,
+          18,
+          19,
+          18,
+          18,
+          20,
+          18,
+          19
+        ]
+      }
+    }
+  },
+  "missing": [],
+  "provenance": {
+    "llama32_3b": {
+      "readers": "results/internals_vs_output_llama32_3b_q1500.json",
+      "significance": "results/significance_llama32_3b_q1500.json",
+      "logit_lens": "results/logit_lens_llama32_3b_q1500.json",
+      "capacity_control": "results/capacity_control_llama32_3b_q1500.json",
+      "patch_internal": "results/patch_internal_llama32_3b_q1500.json",
+      "causal_steer": "results/causal_steer_llama32_3b_q1500.json",
+      "layer_signal": "results/figures/llama32_3b_layer_signal.json"
+    },
+    "llama32_3b_instruct": {
+      "readers": "results/internals_vs_output_llama32_3b_instruct_q1500.json",
+      "significance": "results/significance_llama32_3b_instruct_q1500.json",
+      "logit_lens": "results/logit_lens_llama32_3b_instruct_q1500.json",
+      "capacity_control": "results/capacity_control_llama32_3b_instruct_q1500.json",
+      "patch_internal": "results/patch_internal_llama32_3b_instruct_q1500.json",
+      "causal_steer": "results/causal_steer_llama32_3b_instruct_q1500.json",
+      "layer_signal": "results/figures/llama32_3b_instruct_layer_signal.json"
+    },
+    "llama31_8b": {
+      "readers": "results/internals_vs_output_llama31_8b_q1500.json",
+      "significance": "results/significance_llama31_8b_q1500.json",
+      "logit_lens": "results/logit_lens_llama31_8b_q1500.json",
+      "capacity_control": "results/capacity_control_llama31_8b_q1500.json",
+      "patch_internal": "results/patch_internal_llama31_8b_q1500.json",
+      "causal_steer": "results/causal_steer_llama31_8b_q1500.json",
+      "layer_signal": "results/figures/llama31_8b_layer_signal.json"
+    },
+    "llama31_8b_instruct": {
+      "readers": "results/internals_vs_output_llama31_8b_instruct_q1500.json",
+      "significance": "results/significance_llama31_8b_instruct_q1500.json",
+      "logit_lens": "results/logit_lens_llama31_8b_instruct_q1500.json",
+      "capacity_control": "results/capacity_control_llama31_8b_instruct_q1500.json",
+      "layer_signal": "results/figures/llama31_8b_instruct_layer_signal.json"
+    },
+    "mistral_7b": {
+      "readers": "results/internals_vs_output_mistral_7b_q1500.json",
+      "significance": "results/significance_mistral_7b_q1500.json",
+      "logit_lens": "results/logit_lens_mistral_7b_q1500.json",
+      "capacity_control": "results/capacity_control_mistral_7b_q1500.json",
+      "layer_signal": "results/figures/mistral_7b_layer_signal.json"
+    },
+    "mistral_7b_instruct": {
+      "readers": "results/internals_vs_output_mistral_7b_instruct_q1500.json",
+      "significance": "results/significance_mistral_7b_instruct_q1500.json",
+      "logit_lens": "results/logit_lens_mistral_7b_instruct_q1500.json",
+      "capacity_control": "results/capacity_control_mistral_7b_instruct_q1500.json",
+      "layer_signal": "results/figures/mistral_7b_instruct_layer_signal.json"
+    },
+    "qwen25_7b": {
+      "readers": "results/internals_vs_output_qwen25_7b_q1500.json",
+      "significance": "results/significance_qwen25_7b_q1500.json",
+      "logit_lens": "results/logit_lens_qwen25_7b_q1500.json",
+      "capacity_control": "results/capacity_control_qwen25_7b_q1500.json",
+      "patch_internal": "results/patch_internal_qwen25_7b_q1500.json",
+      "causal_steer": "results/causal_steer_qwen25_7b_q1500.json",
+      "layer_signal": "results/figures/qwen25_7b_layer_signal.json"
+    },
+    "qwen25_7b_instruct": {
+      "readers": "results/internals_vs_output_qwen25_7b_instruct_q1500.json",
+      "significance": "results/significance_qwen25_7b_instruct_q1500.json",
+      "logit_lens": "results/logit_lens_qwen25_7b_instruct_q1500.json",
+      "capacity_control": "results/capacity_control_qwen25_7b_instruct_q1500.json",
+      "layer_signal": "results/figures/qwen25_7b_instruct_layer_signal.json"
+    }
+  },
+  "complete_models": [
+    "llama32_3b",
+    "llama32_3b_instruct",
+    "llama31_8b",
+    "llama31_8b_instruct",
+    "mistral_7b",
+    "mistral_7b_instruct",
+    "qwen25_7b",
+    "qwen25_7b_instruct"
+  ],
+  "n_complete": 8
+}

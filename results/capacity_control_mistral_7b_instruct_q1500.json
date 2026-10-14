@@ -1,0 +1,200 @@
+{
+  "tag": "mistral_7b_instruct",
+  "cache": "results/cache/mistral_7b_instruct_q1500_instruct",
+  "n_train": 5218,
+  "n_val": 1121,
+  "n_test": 1117,
+  "n_boot": 2000,
+  "n_layers": 32,
+  "hidden": 4096,
+  "n_attn_heads": 1024,
+  "topk": 20,
+  "feature_counts": {
+    "final_linear": 4096,
+    "attn_linear": 2560
+  },
+  "readers": {
+    "final_linear": {
+      "auc": 0.5961,
+      "ci95": [
+        0.559,
+        0.6332
+      ]
+    },
+    "attn_linear": {
+      "auc": 0.7129,
+      "ci95": [
+        0.6816,
+        0.7426
+      ]
+    },
+    "final_select20_chunks": {
+      "auc": 0.6324,
+      "ci95": [
+        0.5979,
+        0.6687
+      ]
+    },
+    "final_headmean_ensemble": {
+      "auc": 0.6862,
+      "ci95": [
+        0.6563,
+        0.7164
+      ]
+    },
+    "final_mlp_sameparams": {
+      "auc": 0.6166,
+      "ci95": [
+        0.5812,
+        0.6534
+      ]
+    },
+    "final_mlp_wide": {
+      "auc": 0.6511,
+      "ci95": [
+        0.6138,
+        0.6867
+      ]
+    }
+  },
+  "judge_auc": 0.646,
+  "final_select20_chunks_perm_auc": {
+    "perm0": 0.6302,
+    "perm1": 0.6329,
+    "perm2": 0.6396,
+    "perm3": 0.6421,
+    "perm4": 0.6529,
+    "perm5": 0.6425,
+    "perm6": 0.631,
+    "perm7": 0.6262
+  },
+  "final_select20_chunks_perm_summary": {
+    "mean": 0.6372,
+    "min": 0.6262,
+    "max": 0.6529
+  },
+  "edges": {
+    "attn-final (paper headline)": {
+      "mean": 0.1164,
+      "ci95": [
+        0.0801,
+        0.1546
+      ],
+      "p_le0": 0.0
+    },
+    "attn-select20chunks (KEY CONTROL)": {
+      "mean": 0.0802,
+      "ci95": [
+        0.0498,
+        0.1102
+      ],
+      "p_le0": 0.0
+    },
+    "select20chunks-final": {
+      "mean": 0.0362,
+      "ci95": [
+        0.0127,
+        0.0598
+      ],
+      "p_le0": 0.0005
+    },
+    "attn-final_headmean_ensemble": {
+      "mean": 0.0265,
+      "ci95": [
+        0.0094,
+        0.0457
+      ],
+      "p_le0": 0.0015
+    },
+    "final_mlp_sameparams-final_linear": {
+      "mean": 0.0201,
+      "ci95": [
+        -0.0212,
+        0.0613
+      ],
+      "p_le0": 0.174
+    },
+    "final_mlp_wide-final_linear": {
+      "mean": 0.055,
+      "ci95": [
+        0.0188,
+        0.0901
+      ],
+      "p_le0": 0.0015
+    }
+  },
+  "selected_heads": [
+    484,
+    478,
+    497,
+    480,
+    557,
+    1002,
+    488,
+    464,
+    828,
+    805,
+    509,
+    980,
+    500,
+    518,
+    1013,
+    482,
+    526,
+    506,
+    472,
+    449
+  ],
+  "selected_head_layers": [
+    15,
+    14,
+    15,
+    15,
+    17,
+    31,
+    15,
+    14,
+    25,
+    25,
+    15,
+    30,
+    15,
+    16,
+    31,
+    15,
+    16,
+    15,
+    14,
+    14
+  ],
+  "selected_chunks": [
+    24,
+    21,
+    15,
+    9,
+    27,
+    30,
+    7,
+    18,
+    16,
+    31,
+    14,
+    20,
+    26,
+    3,
+    23,
+    10,
+    11,
+    19,
+    4,
+    5
+  ],
+  "attn_topk_sweep_auc": {
+    "1": 0.676,
+    "5": 0.6913,
+    "10": 0.7038,
+    "20": 0.7129,
+    "40": 0.7113,
+    "80": 0.6981
+  }
+}

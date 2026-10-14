@@ -1,0 +1,438 @@
+{
+  "meta": {
+    "files": [
+      "significance_llama31_8b_instruct_q1500.json",
+      "significance_llama31_8b_q1500.json",
+      "significance_llama32_3b_instruct_q1500.json",
+      "significance_llama32_3b_q1500.json",
+      "significance_llama32_3b_terse_q1500.json",
+      "significance_llama32_3b_verbose_q1500.json",
+      "significance_mistral_7b_instruct_q1500.json",
+      "significance_mistral_7b_q1500.json",
+      "significance_qwen25_7b_instruct_q1500.json",
+      "significance_qwen25_7b_q1500.json",
+      "significance_qwen25_7b_terse_q1500.json",
+      "significance_qwen25_7b_verbose_q1500.json"
+    ],
+    "suffix": "_q1500",
+    "n_records": 8,
+    "n_legacy_skipped": 0,
+    "tags": [
+      "llama31_8b",
+      "llama31_8b_instruct",
+      "llama32_3b",
+      "llama32_3b_instruct",
+      "mistral_7b",
+      "mistral_7b_instruct",
+      "qwen25_7b",
+      "qwen25_7b_instruct"
+    ],
+    "note": "p_le0 is a one-sided bootstrap p from scripts/significance.py; q_bh is Benjamini-Hochberg within the edge family (across models). Per-model files are used because each model draws its own RNG sub-stream, so a model's CI is independent of what else ran (TODO.md P1-17)."
+  },
+  "edges": {
+    "internal": {
+      "edge": "internal_edge(best_resid-final)",
+      "n_models": 8,
+      "per_model": [
+        {
+          "tag": "llama31_8b_instruct",
+          "mean": 0.0131,
+          "ci95": [
+            -0.032,
+            0.058
+          ],
+          "p_le0": 0.2886,
+          "q_bh": 0.2886,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama31_8b",
+          "mean": 0.0589,
+          "ci95": [
+            0.015,
+            0.101
+          ],
+          "p_le0": 0.0044,
+          "q_bh": 0.0117,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "llama32_3b_instruct",
+          "mean": 0.0263,
+          "ci95": [
+            -0.013,
+            0.066
+          ],
+          "p_le0": 0.0978,
+          "q_bh": 0.155,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama32_3b",
+          "mean": 0.0777,
+          "ci95": [
+            0.036,
+            0.121
+          ],
+          "p_le0": 0.0002,
+          "q_bh": 0.0016,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "mistral_7b_instruct",
+          "mean": 0.0369,
+          "ci95": [
+            -0.01,
+            0.085
+          ],
+          "p_le0": 0.0538,
+          "q_bh": 0.1076,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "mistral_7b",
+          "mean": 0.0225,
+          "ci95": [
+            -0.017,
+            0.062
+          ],
+          "p_le0": 0.1356,
+          "q_bh": 0.155,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "qwen25_7b_instruct",
+          "mean": 0.02,
+          "ci95": [
+            -0.014,
+            0.054
+          ],
+          "p_le0": 0.122,
+          "q_bh": 0.155,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "qwen25_7b",
+          "mean": 0.0635,
+          "ci95": [
+            0.023,
+            0.103
+          ],
+          "p_le0": 0.0008,
+          "q_bh": 0.0032,
+          "ci_excludes_0": true
+        }
+      ],
+      "n_ci_excludes_0": 3,
+      "n_q_bh_lt_05": 3,
+      "sign_test": {
+        "n": 8,
+        "p_two_sided": 0.0078,
+        "consistent_direction": true
+      }
+    },
+    "train": {
+      "edge": "train_edge(final-judge)",
+      "n_models": 8,
+      "per_model": [
+        {
+          "tag": "llama31_8b_instruct",
+          "mean": -0.0347,
+          "ci95": [
+            -0.077,
+            0.005
+          ],
+          "p_le0": 0.952,
+          "q_bh": 0.9992,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama31_8b",
+          "mean": -0.0118,
+          "ci95": [
+            -0.053,
+            0.03
+          ],
+          "p_le0": 0.714,
+          "q_bh": 0.9992,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama32_3b_instruct",
+          "mean": -0.0023,
+          "ci95": [
+            -0.042,
+            0.037
+          ],
+          "p_le0": 0.5448,
+          "q_bh": 0.9992,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama32_3b",
+          "mean": -0.0093,
+          "ci95": [
+            -0.051,
+            0.031
+          ],
+          "p_le0": 0.6734,
+          "q_bh": 0.9992,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "mistral_7b_instruct",
+          "mean": -0.0497,
+          "ci95": [
+            -0.09,
+            -0.012
+          ],
+          "p_le0": 0.9936,
+          "q_bh": 0.9992,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "mistral_7b",
+          "mean": 0.0035,
+          "ci95": [
+            -0.033,
+            0.041
+          ],
+          "p_le0": 0.4246,
+          "q_bh": 0.9992,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "qwen25_7b_instruct",
+          "mean": -0.0506,
+          "ci95": [
+            -0.088,
+            -0.013
+          ],
+          "p_le0": 0.9958,
+          "q_bh": 0.9992,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "qwen25_7b",
+          "mean": -0.0605,
+          "ci95": [
+            -0.096,
+            -0.025
+          ],
+          "p_le0": 0.9992,
+          "q_bh": 0.9992,
+          "ci_excludes_0": true
+        }
+      ],
+      "n_ci_excludes_0": 3,
+      "n_q_bh_lt_05": 0,
+      "sign_test": {
+        "n": 8,
+        "p_two_sided": 0.0703,
+        "consistent_direction": false
+      }
+    },
+    "attn-final": {
+      "edge": "attn-final",
+      "n_models": 8,
+      "per_model": [
+        {
+          "tag": "llama31_8b_instruct",
+          "mean": 0.1291,
+          "ci95": [
+            0.09,
+            0.169
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "llama31_8b",
+          "mean": 0.1144,
+          "ci95": [
+            0.077,
+            0.151
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "llama32_3b_instruct",
+          "mean": 0.0997,
+          "ci95": [
+            0.064,
+            0.134
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "llama32_3b",
+          "mean": 0.148,
+          "ci95": [
+            0.106,
+            0.189
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "mistral_7b_instruct",
+          "mean": 0.1166,
+          "ci95": [
+            0.082,
+            0.153
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "mistral_7b",
+          "mean": 0.101,
+          "ci95": [
+            0.066,
+            0.134
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "qwen25_7b_instruct",
+          "mean": 0.0586,
+          "ci95": [
+            0.02,
+            0.096
+          ],
+          "p_le0": 0.001,
+          "q_bh": 0.001,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "qwen25_7b",
+          "mean": 0.0882,
+          "ci95": [
+            0.049,
+            0.128
+          ],
+          "p_le0": 0.0,
+          "q_bh": 0.0,
+          "ci_excludes_0": true
+        }
+      ],
+      "n_ci_excludes_0": 8,
+      "n_q_bh_lt_05": 8,
+      "sign_test": {
+        "n": 8,
+        "p_two_sided": 0.0078,
+        "consistent_direction": true
+      }
+    },
+    "resid-judge": {
+      "edge": "best_resid-judge",
+      "n_models": 8,
+      "per_model": [
+        {
+          "tag": "llama31_8b_instruct",
+          "mean": -0.0216,
+          "ci95": [
+            -0.062,
+            0.019
+          ],
+          "p_le0": 0.8534,
+          "q_bh": 0.9494,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama31_8b",
+          "mean": 0.0471,
+          "ci95": [
+            0.004,
+            0.091
+          ],
+          "p_le0": 0.0168,
+          "q_bh": 0.0672,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "llama32_3b_instruct",
+          "mean": 0.024,
+          "ci95": [
+            -0.018,
+            0.067
+          ],
+          "p_le0": 0.134,
+          "q_bh": 0.268,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "llama32_3b",
+          "mean": 0.0684,
+          "ci95": [
+            0.024,
+            0.113
+          ],
+          "p_le0": 0.0014,
+          "q_bh": 0.0112,
+          "ci_excludes_0": true
+        },
+        {
+          "tag": "mistral_7b_instruct",
+          "mean": -0.0129,
+          "ci95": [
+            -0.058,
+            0.032
+          ],
+          "p_le0": 0.7116,
+          "q_bh": 0.9488,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "mistral_7b",
+          "mean": 0.026,
+          "ci95": [
+            -0.017,
+            0.07
+          ],
+          "p_le0": 0.125,
+          "q_bh": 0.268,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "qwen25_7b_instruct",
+          "mean": -0.0306,
+          "ci95": [
+            -0.068,
+            0.007
+          ],
+          "p_le0": 0.9494,
+          "q_bh": 0.9494,
+          "ci_excludes_0": false
+        },
+        {
+          "tag": "qwen25_7b",
+          "mean": 0.003,
+          "ci95": [
+            -0.035,
+            0.04
+          ],
+          "p_le0": 0.4278,
+          "q_bh": 0.6845,
+          "ci_excludes_0": false
+        }
+      ],
+      "n_ci_excludes_0": 2,
+      "n_q_bh_lt_05": 1,
+      "sign_test": {
+        "n": 8,
+        "p_two_sided": 0.7266,
+        "consistent_direction": false
+      }
+    }
+  }
+}

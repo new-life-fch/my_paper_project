@@ -1,0 +1,181 @@
+{
+  "tag": "llama32_3b",
+  "model": "meta-llama/Llama-3.2-3B",
+  "layer": 9,
+  "layer_selection": "val",
+  "alphas": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "n_test": 1117,
+  "probe_test_auc_at_layer": 0.6133,
+  "sweep": {
+    "0.0": {
+      "patch_internal": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_final": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_shuffled": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      }
+    },
+    "0.25": {
+      "patch_internal": {
+        "auc": 0.5441,
+        "mean_pyes": 0.8199,
+        "mean_pyes_relevant": 0.8292,
+        "mean_pyes_irrelevant": 0.8173,
+        "alignment_gap": 0.0119
+      },
+      "patch_final": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_shuffled": {
+        "auc": 0.5451,
+        "mean_pyes": 0.8199,
+        "mean_pyes_relevant": 0.8294,
+        "mean_pyes_irrelevant": 0.8173,
+        "alignment_gap": 0.0121
+      }
+    },
+    "0.5": {
+      "patch_internal": {
+        "auc": 0.5426,
+        "mean_pyes": 0.8297,
+        "mean_pyes_relevant": 0.8388,
+        "mean_pyes_irrelevant": 0.8272,
+        "alignment_gap": 0.0116
+      },
+      "patch_final": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_shuffled": {
+        "auc": 0.5453,
+        "mean_pyes": 0.8295,
+        "mean_pyes_relevant": 0.8388,
+        "mean_pyes_irrelevant": 0.8269,
+        "alignment_gap": 0.0119
+      }
+    },
+    "0.75": {
+      "patch_internal": {
+        "auc": 0.5394,
+        "mean_pyes": 0.8475,
+        "mean_pyes_relevant": 0.8559,
+        "mean_pyes_irrelevant": 0.8451,
+        "alignment_gap": 0.0107
+      },
+      "patch_final": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_shuffled": {
+        "auc": 0.543,
+        "mean_pyes": 0.847,
+        "mean_pyes_relevant": 0.8561,
+        "mean_pyes_irrelevant": 0.8445,
+        "alignment_gap": 0.0117
+      }
+    },
+    "1.0": {
+      "patch_internal": {
+        "auc": 0.5114,
+        "mean_pyes": 0.8647,
+        "mean_pyes_relevant": 0.8636,
+        "mean_pyes_irrelevant": 0.865,
+        "alignment_gap": -0.0013
+      },
+      "patch_final": {
+        "auc": 0.5447,
+        "mean_pyes": 0.8142,
+        "mean_pyes_relevant": 0.8236,
+        "mean_pyes_irrelevant": 0.8115,
+        "alignment_gap": 0.0121
+      },
+      "patch_shuffled": {
+        "auc": 0.494,
+        "mean_pyes": 0.8647,
+        "mean_pyes_relevant": 0.8646,
+        "mean_pyes_irrelevant": 0.8647,
+        "alignment_gap": -0.0
+      }
+    }
+  },
+  "edges": {
+    "patch_internal-judge@a=0.0": {
+      "mean": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "p_le0": 1.0
+    },
+    "patch_internal-judge@a=0.25": {
+      "mean": -0.0006,
+      "ci95": [
+        -0.0031,
+        0.0017
+      ],
+      "p_le0": 0.687
+    },
+    "patch_internal-judge@a=0.5": {
+      "mean": -0.0022,
+      "ci95": [
+        -0.009,
+        0.004
+      ],
+      "p_le0": 0.742
+    },
+    "patch_internal-judge@a=0.75": {
+      "mean": -0.0055,
+      "ci95": [
+        -0.0239,
+        0.011
+      ],
+      "p_le0": 0.7345
+    },
+    "patch_internal-judge@a=1.0": {
+      "mean": -0.0339,
+      "ci95": [
+        -0.0804,
+        0.0125
+      ],
+      "p_le0": 0.9285
+    }
+  },
+  "judge_natural": {
+    "auc": 0.5447,
+    "mean_pyes": 0.8142,
+    "mean_pyes_relevant": 0.8236,
+    "mean_pyes_irrelevant": 0.8115,
+    "alignment_gap": 0.0121
+  }
+}

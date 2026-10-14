@@ -1,0 +1,87 @@
+[
+  {
+    "tag": "qwen25_7b_instruct",
+    "model": "Qwen2.5-7B-Inst",
+    "n_layers": 28,
+    "best_layer_val": 23,
+    "n_test": 1117,
+    "n_boot": 5000,
+    "cache": "results/cache/qwen25_7b_instruct_q1500_instruct",
+    "judge_cache": "results/cache/qwen25_7b_instruct_q1500_judge",
+    "env": {
+      "python": "3.12.3",
+      "torch": "2.8.0+cu128",
+      "transformers": "5.19.0",
+      "numpy": "2.3.2",
+      "sklearn": "1.9.1",
+      "scipy": "1.18.1",
+      "datasets": "5.1.0",
+      "nnsight": "0.7.0",
+      "joblib": "1.6.0"
+    },
+    "auc": {
+      "judge": {
+        "point": 0.66,
+        "ci95": [
+          0.632,
+          0.69
+        ]
+      },
+      "final": {
+        "point": 0.61,
+        "ci95": [
+          0.575,
+          0.644
+        ]
+      },
+      "best_resid": {
+        "point": 0.63,
+        "ci95": [
+          0.594,
+          0.667
+        ]
+      },
+      "attn": {
+        "point": 0.669,
+        "ci95": [
+          0.636,
+          0.701
+        ]
+      }
+    },
+    "edges": {
+      "internal_edge(best_resid-final)": {
+        "mean": 0.02,
+        "ci95": [
+          -0.014,
+          0.054
+        ],
+        "p_le0": 0.122
+      },
+      "train_edge(final-judge)": {
+        "mean": -0.0506,
+        "ci95": [
+          -0.088,
+          -0.013
+        ],
+        "p_le0": 0.9958
+      },
+      "attn-final": {
+        "mean": 0.0586,
+        "ci95": [
+          0.02,
+          0.096
+        ],
+        "p_le0": 0.001
+      },
+      "best_resid-judge": {
+        "mean": -0.0306,
+        "ci95": [
+          -0.068,
+          0.007
+        ],
+        "p_le0": 0.9494
+      }
+    }
+  }
+]
