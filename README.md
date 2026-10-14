@@ -34,5 +34,10 @@ python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_inst
 ```
 
 完整上下文、方案史、脚本说明、进度与下一步见 **`CLAUDE.md`**；
-缓存命名规范与旧目录对照见 **`docs/CACHE_NAMING.md`**。
-本目录是 git worktree（分支 `paper-A`）；姊妹工作区 `paper-B` 做 cheap-adaptation 主线。
+缓存命名规范与旧目录对照见 **`docs/CACHE_NAMING.md`**；
+接手时的阅读顺序与各文档时效性见 **`docs/READING_GUIDE.md`**。
+
+> 🖥️ **2026-10-13 起跑在 AutoDL 新实例上**（原 GPU 主机已回收）。当前**只有这一个 clone**：
+> `/root/autodl-tmp/my_paper_project`，分支 `paper-A`。本文此前写的"本目录是 git worktree、
+> 姊妹工作区 `paper-B` 做 cheap-adaptation 主线"是**旧主机上的情况**，新主机上不存在那个
+> 主仓库，也没有工作区 B。

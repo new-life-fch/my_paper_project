@@ -340,60 +340,6 @@
           }
         }
       },
-      "causal_steer": {
-        "layer": 13,
-        "layer_selection": "val",
-        "proj_auc_internal": {
-          "train": 0.602,
-          "val": 0.594
-        },
-        "proj_auc_final": {
-          "train": 0.577,
-          "val": 0.557
-        },
-        "n_random": 12,
-        "protocol": {
-          "truncation": "none (pad to batch max)",
-          "yes_no_variants": 5,
-          "gap_definition": "mean_pyes[relevant] - mean_pyes[irrelevant]"
-        },
-        "gap_summary": {
-          "gap_at_alpha-8": {
-            "internal": 0.0014,
-            "final": 0.0,
-            "random_mean": 0.0013,
-            "random_std": 0.0006,
-            "random_min": 0.0002,
-            "random_max": 0.0026,
-            "internal_percentile_vs_random": 0.5833
-          },
-          "gap_at_alpha+8": {
-            "internal": 0.0022,
-            "final": 0.0,
-            "random_mean": 0.0015,
-            "random_std": 0.0006,
-            "random_min": 0.0007,
-            "random_max": 0.0026,
-            "internal_percentile_vs_random": 0.8333
-          }
-        },
-        "auc_summary": {
-          "auc_at_alpha-8": {
-            "internal": 0.523,
-            "final": 0.498,
-            "random_mean": 0.535,
-            "random_min": 0.523,
-            "random_max": 0.547
-          },
-          "auc_at_alpha+8": {
-            "internal": 0.541,
-            "final": 0.481,
-            "random_mean": 0.538,
-            "random_min": 0.525,
-            "random_max": 0.55
-          }
-        }
-      },
       "layer_signal": {
         "judge": 0.5447,
         "resid_peak": {
@@ -2522,7 +2468,6 @@
       "logit_lens": "results/logit_lens_llama32_3b_q1500.json",
       "capacity_control": "results/capacity_control_llama32_3b_q1500.json",
       "patch_internal": "results/patch_internal_llama32_3b_q1500.json",
-      "causal_steer": "results/causal_steer_llama32_3b_q1500.json",
       "layer_signal": "results/figures/llama32_3b_layer_signal.json"
     },
     "llama32_3b_instruct": {

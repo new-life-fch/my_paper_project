@@ -3,6 +3,38 @@
 E-3: does the output pathway RECOVER the mid-layer signal when given the REAL
 mid-layer activation? (distinguishes "attenuation" from "misalignment")
 
+    !! v1 -- SUPERSEDED by `patch_internal_v2.py` (2026-10-14). READ BEFORE
+    !! QUOTING ANY NUMBER THIS SCRIPT PRODUCES: it has a SCALE CONFOUND. !!
+
+v1 transplants the real L* activation into the final-layer residual as
+`h_final <- a*h_L* + (1-a)*h_final` without controlling the two vectors' scales.
+Measured per-layer residual norms (mean L2 over the train cache):
+
+    model                  ||h_L*||   ||h_final||   ratio
+    LLaMA-3.2-3B      L9       7.3         70.1      9.6x
+    LLaMA-3.1-8B      L8       5.3         86.4     16.3x
+    LLaMA-3.2-3B-Ins  L18     16.9         68.1      4.0x
+    Qwen2.5-7B        L22    166.0        605.1      3.6x
+
+At alpha=1 the output-layer residual is thus REPLACED by a vector 4x-16x smaller,
+and the observed AUC collapse tracks that ratio almost monotonically
+(16.3x -> 0.563/0.492; 9.6x -> 0.545/0.511; 4.0x -> 0.607/0.633;
+3.6x -> 0.652/0.617). So v1 CANNOT separate
+
+    (i)  FORMAT: the L* representation is unusable by the output readout
+    (ii) SCALE : the injected vector was an order of magnitude too small
+
+and its headline reading ("supports misalignment, not attenuation") is
+under-determined. Use `patch_internal_v2.py`, which (a) patches ACROSS samples at
+the SAME layer -- legal, because the residual cache is `layers[i].output` and so
+shares a coordinate system with the hook point, and free of any scale issue;
+(b) norm-matches the payload for the final-layer transplant; (c) reports an
+identity control and a row-alignment check against the cache.
+
+v1 is kept only so its outputs stay comparable with the four existing
+`results/patch_internal_*_q1500.json` artifacts; TODO.md E-3/E-9 must be re-read
+in the light of the confound above.
+
 Why this experiment exists (TODO.md E-3 / R-3)
 ----------------------------------------------
 The paper's title and abstract say the relevance signal is **attenuated** on its
