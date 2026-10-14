@@ -23,6 +23,8 @@ scipy==1.18.1
 matplotlib==3.10.5
 seaborn==0.13.2
 sentence-transformers==6.1.0
+# BM25 难负例（src/data.py::_bm25_rank_all 用它的 idf/k1/b 做基线）
+rank_bm25==0.2.2
 huggingface-hub==1.33.0
 joblib==1.6.0
 pandas==3.0.6
