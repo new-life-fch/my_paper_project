@@ -226,7 +226,7 @@ WAIT_PID=<pid> bash scripts/run_patch_v2.sh  # 等别的 GPU 任务退出后再�
 | LLaMA-3.1-8B-Instruct | — | — | — | — | 缺 |
 | Mistral-7B-v0.3 (base) | — | — | — | — | 缺 |
 | Mistral-7B-Instruct-v0.3 | — | — | — | — | 缺 |
-| Qwen2.5-7B (base) | **旧固定-α（饱和）** | 0.864 → 0.000 | 0.652 → 0.427 | 0.00 | ❌ 须重跑 |
+| Qwen2.5-7B (base) | 对数几率标定 | 0.864 → 0.000 | 0.652 → 0.645 | 0.00 | ✅ |
 | Qwen2.5-7B-Instruct | — | — | — | — | 缺 |
 
 > 判读标准事先写死在 §12.1，**不得事后调整**。

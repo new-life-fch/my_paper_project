@@ -103,6 +103,41 @@ def judge(path):
         }
         ok_any = ok_any or passes
 
+    # ---- the WHOLE sweep, not just the endpoints -------------------------
+    # The pre-registered criterion is stated at the sweep endpoints. Those are
+    # the points where every direction has been pushed hardest and where the
+    # gap is therefore compressed for everyone, so a direction with a real
+    # relevance-aligned effect at MODERATE strength is invisible to the
+    # endpoint test. We do not move the criterion (that would be exactly the
+    # post-hoc adjustment the pre-registration exists to prevent), but we do
+    # report the full profile so the reader sees where the effect lives.
+    sweep_profile = []
+    for i, t in enumerate(st_targets):
+        ig = internal["alignment_gap"][i]
+        rg = [r["alignment_gap"][i] for r in randoms if r.get("alignment_gap")]
+        p, n = pct_rank(rg, ig)
+        v = [y for y in rg if y is not None]
+        sweep_profile.append({
+            "target": t,
+            "internal_gap": None if ig is None else round(ig, 4),
+            "random_mean": round(st.mean(v), 4) if v else None,
+            "random_max": round(max(v), 4) if v else None,
+            "n_random_usable": n,
+            "internal_percentile": None if p is None else round(p, 4),
+            "passes_percentile": bool(p is not None and p >= 0.95),
+        })
+    out["sweep_profile"] = sweep_profile
+    peaks = [s for s in sweep_profile if s["passes_percentile"]]
+    out["best_sweep_percentile"] = max(
+        (s["internal_percentile"] for s in sweep_profile
+         if s["internal_percentile"] is not None), default=None)
+    out["best_percentile_target"] = (
+        max((s for s in sweep_profile if s["internal_percentile"] is not None),
+            key=lambda s: s["internal_percentile"])["target"]
+        if any(s["internal_percentile"] is not None for s in sweep_profile) else None)
+    out["passes_at_any_point"] = bool(peaks)
+    out["targets_passing"] = [s["target"] for s in peaks]
+
     # The whole-sweep diagnostic that turned out to be the interesting finding:
     # the gap shrinks with intervention strength for EVERY direction.
     def gap_profile(seq):
@@ -177,14 +212,47 @@ def main():
         shr = "yes" if v["gap_shrinks_with_strength"] else "no"
         print(f"{disp:28s} {'calib':>10} {n_pct:>8.3f} {p_pct:>8.3f} "
               f"{mono:>10} {shr:>12} {v['verdict']:>8}")
+
     print()
-    print(f"  usable artifacts: {n_ok}/8   PASS: {n_pass}   NULL: {n_ok - n_pass}")
+    print("=== full-sweep profile (the endpoint test alone can hide an effect) ===")
+    print("The criterion is registered AT THE ENDPOINTS. At those points every")
+    print("direction has been pushed hardest and the gap is compressed for all of")
+    print("them, so a direction with a relevance-aligned effect at MODERATE")
+    print("strength is invisible to the endpoint test. We do not move the")
+    print("criterion; we report where the effect actually lives.")
+    print()
+    for tag, disp in MODELS:
+        v = res[tag]
+        if v.get("status") != "OK":
+            continue
+        print(f"  {disp}  (endpoint verdict: {v['verdict']}; "
+              f"best percentile anywhere: {v['best_sweep_percentile']} "
+              f"at target {v['best_percentile_target']:+.0f})")
+        print(f"    {'shift':>6} {'internal':>9} {'rand mean':>10} {'rand max':>9} "
+              f"{'n':>3} {'pctile':>7}")
+        for s in v["sweep_profile"]:
+            mark = "  ★ >=0.95" if s["passes_percentile"] else ""
+            print(f"    {s['target']:>+6.0f} {str(s['internal_gap']):>9} "
+                  f"{str(s['random_mean']):>10} {str(s['random_max']):>9} "
+                  f"{s['n_random_usable']:>3} {str(s['internal_percentile']):>7}{mark}")
+        if v["passes_at_any_point"]:
+            print(f"    -> passes the threshold at target(s) {v['targets_passing']} "
+                  f"but NOT at the registered endpoints")
+        print()
+
+    print(f"  usable artifacts: {n_ok}/8   PASS(at endpoints): {n_pass}   "
+          f"NULL(at endpoints): {n_ok - n_pass}")
+    n_any = sum(1 for t, _ in MODELS if res[t].get("passes_at_any_point"))
+    print(f"  of those, pass at SOME point in the sweep: {n_any}")
     print()
     print("  Rules fixed in advance (do not adjust):")
     print("   * PASS requires percentile >= 0.95 at an endpoint AND AUC not collapsing.")
     print("   * Any artifact without a `calibration` block is the OLD saturated")
     print("     protocol and is reported as STALE, never as evidence.")
     print("   * Both outcomes are reported; a NULL is a result, not a failure.")
+    print("   * The full-sweep profile is informational ONLY and does not change")
+    print("     the verdict; it is reported because the endpoint choice is a")
+    print("     weakness of the registered criterion, not of the experiment.")
 
     with open(os.path.join(ROOT, args.out), "w") as f:
         json.dump(res, f, indent=2)
