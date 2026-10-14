@@ -1,0 +1,25 @@
+{
+  "tag": "llama32_3b",
+  "fiqa_tag": "llama32_3b_fiqa_bm25",
+  "layer": 9,
+  "layer_source": "significance best_layer_val",
+  "n_ms_test": 1117,
+  "n_fiqa_test": 1125,
+  "ms_probe_on_ms": 0.6133,
+  "ms_direction_on_fiqa": 0.5683,
+  "fiqa_probe_on_fiqa": 0.7769,
+  "logit_lens_at_L": 0.511,
+  "logit_lens_best_layer": {
+    "layer": 25,
+    "auc": 0.56,
+    "val_auc_at_selected": 0.565
+  },
+  "fiqa_logit_lens_path": "results/logit_lens_llama32_3b_fiqa_bm25_q1500.json",
+  "fiqa_logit_lens_at_L": 0.4533,
+  "fiqa_logit_lens_best_layer": {
+    "layer": 23,
+    "auc": 0.5933,
+    "val_auc_at_selected": 0.6278
+  },
+  "fiqa_judge": 0.5972
+}

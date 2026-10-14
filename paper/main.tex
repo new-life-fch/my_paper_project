@@ -326,8 +326,21 @@ not capacity-matched in the learning sense: the probe is fitted on 5218
 training pairs while the logit lens uses a \emph{fixed} direction, so a gap
 means the model's own readout direction is not optimised for this task---not
 that the information is unreadable by any fixed direction. Second, applying
-the final norm at an intermediate layer is itself out of distribution. What
-survives both caveats is the \emph{relative} pattern: the same fixed readout
+the final norm at an intermediate layer is itself out of distribution.
+
+We can measure the first caveat rather than assert it, on the FiQA cache where
+the two can be compared on identical data at an identical layer. There, the
+model's own fixed direction scores $\auc{}=0.453$ at $L9$---\emph{below
+chance}---while a direction fitted on a \emph{different} dataset (MS MARCO) and
+carried over with no target-domain fitting at all scores $0.568$, and one
+fitted in-domain scores $0.777$. A direction that has never seen FiQA beats the
+model's own readout on FiQA. So the logit-lens deficit is a statement about the
+model's readout direction being off-task, not about the information being
+unreadable by a fixed linear map---which is precisely the distinction the
+misalignment reading requires, and it is measured here rather than assumed.
+
+What survives both caveats is the
+\emph{relative} pattern: the same fixed readout
 loses far more at intermediate layers of base models than of aligned ones,
 which is consistent with alignment having moved relevance signal toward the
 output direction (Section~\ref{sec:mech}).
