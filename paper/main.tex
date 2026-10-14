@@ -389,6 +389,51 @@ output layer.}
 \label{fig:depth}
 \end{figure}
 
+\textbf{Activation patching: the verdict does not follow the internal
+representation.}\label{sec:patch} The comparisons above establish that
+relevance is more decodable from internal layers. A stronger question is
+whether the model's own computation \emph{uses} what is decoded there. We test
+this by replacing the answer-token activation at the best internal layer $L^*$
+with another test example's real activation, preferring a partner with the
+\emph{opposite} label (all 1117 rows received an opposite-label partner), and
+asking whose label the verdict follows. Interpolating
+$h_{L^*}\!\leftarrow\!\alpha h_j + (1-\alpha) h_i$ keeps the manipulation in the
+residual stream's own coordinate system, so there is no cross-layer format
+change and no scale mismatch: both terms are in-distribution activations at the
+same layer.
+
+Three checks confirm the intervention is sound. Patching a sample with its
+\emph{own} activation reproduces the natural verdict bit-for-bit
+(max $|\Delta|=0$), so the hook is inert when the payload is the identity.
+The freshly captured activations match the cache row-by-row (relative mean
+absolute error $0.003$), ruling out a silent row misalignment. And the payload
+is not merely noise: replacing $L^*$ with a \emph{random} activation at matched
+norm gives $\auc=0.505$. Yet as $\alpha$ goes from $0$ to $1$---i.e.\ as the
+internal representation is progressively replaced by an opposite-label
+example's---the verdict barely moves: \auc{} against the target label falls only
+from $0.545$ to $0.534$, \auc{} against the \emph{source} label rises only from
+$0.455$ to $0.466$, and the relevant-minus-irrelevant gap in $P(\text{yes})$
+changes by $0.003$. A probe reads $L^*$ at $\auc=0.613$; the model's own
+forward pass from $L^*$ onward extracts almost none of that.
+
+For comparison, transplanting the same real mid-layer activation into the
+\emph{output} layer also fails to transfer discriminability, and---this is the
+point of the control---\emph{norm-matching the payload to the target layer's own
+norm does not rescue it} ($0.4987$ norm-matched vs.\ $0.4988$ raw at
+$\alpha{=}1$). An earlier version of this experiment omitted that control, and
+the observed collapse could have been an artefact of injecting a vector an order
+of magnitude too small; with the control in place, the collapse is real.
+
+The honest caveat is that cross-example patching introduces activations the
+network never produced for \emph{this} input, so part of the insensitivity could
+reflect the model ignoring out-of-distribution content rather than ignoring
+relevance specifically. At $\alpha=0.5$, where the source and target
+contributions are both present and the mixture remains closer to the data
+manifold, the gap still moves by only $0.001$. We therefore state the result in
+the weaker, defensible form: \emph{the model's verdict is largely insensitive to
+the relevance content that a linear probe can decode from $L^*$}, and this is
+not explained by the scale of the injected vector.
+
 \textbf{Mechanism: base vs.\ instruct.}\label{sec:mech} Across all four base$\to$instruct pairs,
 alignment shows a consistent triple effect: the judge improves (output
 ``says'' more), train\_edge falls toward or below zero (training a final-layer
