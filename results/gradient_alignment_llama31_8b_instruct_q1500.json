@@ -35,5 +35,5 @@
   },
   "probe_vs_random_abs_mean_percentile": 0.8125,
   "protocol": "g = grad of (yes-no logit difference) wrt the L* answer-token residual; cosine with the probe's unit relevance direction vs random unit directions. No activation is edited, so no out-of-distribution concern.",
-  "elapsed_sec": 31.2
+  "elapsed_sec": 36.3
 }

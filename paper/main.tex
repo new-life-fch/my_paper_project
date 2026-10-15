@@ -745,7 +745,9 @@ how well the output verbalizes relevance.
 alike, and the paper's two halves therefore rest on different evidence. The
 misalignment result---the verdict is not locally sensitive to the decoded
 relevance direction---holds uniformly for the \emph{residual-stream} probe
-(percentiles $0.06$--$0.81$ on 8/8 models). We ran the same measurement for the
+(percentiles $0.06$--$0.83$ on 8/8 models; the $0.83$ is an exact
+20{,}000-direction value, the rest are at the coarser 16-direction resolution of
+the original run, and only that one model sits anywhere near the threshold). We ran the same measurement for the
 \emph{attention-head} probe, which carries the paper's headline effect, and it
 comes out mixed: two of eight models show significant alignment, three are
 negative, and the cross-model sign test is not significant ($p=0.36$). So the
