@@ -1,43 +1,75 @@
-# Attention-Probe / Internals > Output
+# Internals Know More Than the Model Can Say
 
-研究问题：**LLM 内部激活是否比模型自己的输出更"知道"一段检索文档与 query 是否相关？**
+> **一句话**：同一个模型、同一个 prompt、同一个 answer token 上，
+> 「这段文档是否与 query 相关」这个信号，从**注意力头激活**里读出来，
+> 明显比从**输出层表示**（最终层 hidden）里读出来更准——**跨 8 个模型无一例外**。
 
-核心发现（LLaMA-3.2-3B, MS MARCO）：同一模型、同一 prompt、同一 answer-token——
-- 让模型直接输出判断（LLM-judge）：相关性 AUC **0.535**（≈随机）
-- 训练一个读**输出表示**（最终层 hidden）的探针：**0.593**
-- 训练一个读**内部**（注意力头激活）的探针：**0.685**
+这是一篇**可解释性 / 探针（probing）**方向的论文。它**不是**「做一个更好的 RAG reranker」，
+也**不主张**探针在重排精度上打赢 cross-encoder（那条路在本项目早期已被自己的实验证伪）。
 
-→ 优势主要来自"读内部"而非"被训练"，且相关性信号沿深度中部（L12, 0.632）最强、向输出层衰减。
-**Internals know more than the model can say.**
+## 现在的状态
 
-这是一篇可解释性 / 探针方向的工作，**不是** RAG reranker 优化（那条路已被证伪，详见 `CLAUDE.md` 第四节）。
+| 项 | 值 |
+|---|---|
+| 分支 | `paper-A`（窄版论文）／`paper-B`（宽版：机制叙事） |
+| 权威状态文档 | **[`STATUS.md`](STATUS.md)** —— 实测数据由脚本从 `results/*.json` 生成 |
+| 旧文档 | 全部在 **[`archive/`](archive/)**（`git mv` 移入，历史保留，不再维护） |
+| 论文 | `paper/main.tex` + `paper/main.pdf` |
+| 取数单一来源 | `results/PAPER_NUMBERS.json`（每个值带 provenance） |
 
-> ⚠️ 上面那几个数字（0.535 / 0.593 / 0.632）是 **P1 修复前**的口径（在 test 上选层）。
-> 现行的 **val 选层**数字与 8 模型结果见 `CLAUDE.md` §3.2 的加注与 `TODO.md` P1-1。
+## 核心结果（8 模型 × 1500 query，val 选层，配对 bootstrap + BH 校正）
 
-## 先读什么（接手必看）
+| 模型 | judge | final | best-resid | **attn（ours）** | attn − final |
+|---|---|---|---|---|---|
+| LLaMA-3.2-3B | 0.545 | 0.536 | 0.613 (L9) | **0.684** | **+0.148** |
+| LLaMA-3.1-8B | 0.574 | 0.562 | 0.621 (L8) | **0.677** | **+0.114** |
+| Mistral-7B-v0.3 | 0.579 | 0.583 | 0.606 (L16) | **0.684** | **+0.101** |
+| LLaMA-3.2-3B-Instruct | 0.614 | 0.612 | 0.638 (L18) | **0.712** | **+0.100** |
+| LLaMA-3.1-8B-Instruct | 0.630 | 0.596 | 0.609 (L12) | **0.725** | **+0.129** |
+| Mistral-7B-Instruct | 0.646 | 0.596 | 0.634 (L13) | **0.713** | **+0.117** |
+| Qwen2.5-7B | 0.652 | 0.592 | 0.655 (L22) | **0.680** | **+0.088** |
+| Qwen2.5-7B-Instruct | 0.660 | 0.610 | 0.630 (L23) | **0.669** | **+0.059** |
 
-**→ `docs/READING_GUIDE.md`** —— 阅读顺序、每份 MD 的时效性与权威性、
-项目进展记在哪、待办在哪、以及在云容器里从零开始怎么做。**先读它**，
-否则会被互相打架的口径绕晕（这个项目有 6+ 份 MD，且不是同一时间写的）。
+**`attn − final` 是唯一在 8/8 模型上全部通过 BH 校正的效应**（逐模型 q<0.001）。
+四条 edge 的存活数：`attn−final` **8/8**、`internal_edge` 3/8、`resid−judge` 1/8、`train_edge` 0/8。
 
-最短路径：**本文**（定位）→ **`CLAUDE.md`** §〇/§三（论点）+ §六（进展流水账）
-→ **`TODO.md`**（待办与已知问题，含投稿前必须处理的 P0）。
-
-## 快速开始
+## 怎么复现
 
 ```bash
-pip install -r requirements.txt   # 或 bash scripts/setup_env.sh
-export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_XET=1
-# 缓存目录命名规范见 docs/CACHE_NAMING.md
-python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q500_instruct
+# 1) 结构自检 + 证据纪律检查（纯 CPU，秒级）
+python scripts/selfcheck.py
+python scripts/build_status.py --check      # 同一量在不同 JSON 里不一致会报警
+
+# 2) 论文取数（纯 CPU）
+python scripts/collect_paper_numbers.py --n 1500    # → results/PAPER_NUMBERS.json
+python scripts/aggregate_significance.py --suffix _q1500   # BH 校正 → significance_summary
+
+# 3) 复现核心结果（纯 CPU，需要 results/cache/ 的 .pt）
+python scripts/internals_vs_output.py --cache results/cache/llama32_3b_q1500_instruct
+python scripts/significance.py --cache results/cache/llama32_3b_q1500_instruct \
+    --judge-cache results/cache/llama32_3b_q1500_judge --tag llama32_3b --n-boot 5000
+
+# 4) 出图（主图三连 + 因果/机制图）
+python scripts/plot_layer_signal.py --cache results/cache/llama32_3b_q1500_instruct \
+    --judge-cache results/cache/llama32_3b_q1500_judge --tag llama32_3b
+python scripts/plot_causal.py --json results/causal_steer_llama32_3b_q1500.json --tag llama32_3b
+
+# 5) 编译论文（需先开代理：tectonic 缓存不自足，见 STATUS §7.2 第 17 条）
+source /etc/network_turbo
+cd paper && ../paper/tools/tectonic main.tex && ls -la main.pdf   # 用 mtime 确认真的写出
 ```
 
-完整上下文、方案史、脚本说明、进度与下一步见 **`CLAUDE.md`**；
-缓存命名规范与旧目录对照见 **`docs/CACHE_NAMING.md`**；
-接手时的阅读顺序与各文档时效性见 **`docs/READING_GUIDE.md`**。
+## 需要 GPU 的部分
 
-> 🖥️ **2026-10-13 起跑在 AutoDL 新实例上**（原 GPU 主机已回收）。当前**只有这一个 clone**：
-> `/root/autodl-tmp/my_paper_project`，分支 `paper-A`。本文此前写的"本目录是 git worktree、
-> 姊妹工作区 `paper-B` 做 cheap-adaptation 主线"是**旧主机上的情况**，新主机上不存在那个
-> 主仓库，也没有工作区 B。
+激活提取、judge、因果 steering、patch、梯度对齐都要加载模型（`extract_instruct.py`、
+`llm_judge.py`、`causal_steer.py`、`patch_internal_v2.py`、`gradient_alignment.py` 等）。
+GPU 阶段**必须串行**——32 GB 显存下两个 7B 进程会 OOM（已实测）。
+队列脚本支持 `WAIT_PID=<pid>` 串接。
+
+## 阅读顺序
+
+1. **[`STATUS.md`](STATUS.md)** —— 唯一权威状态文档（实测数据自动生成，含判据与更正记录）
+2. **[`archive/README.md`](archive/README.md)** —— 旧文档清单与它们现在的作用
+3. `paper/main.tex` —— 论文正文
+4. `results/figures/README.md` —— 图的来源与重生成方式
+5. `docs/` —— 缓存命名规范、模型实测 config、文献调研（仍然有效）

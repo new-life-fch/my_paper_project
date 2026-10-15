@@ -1,8 +1,7 @@
 # STATUS — Internals > Output（唯一权威状态文档）
 
 > **建立于 2026-10-14。本文档取代此前所有分散的状态/交接类 markdown。**
-> 旧的 `CLAUDE.md` §六、`TODO.md`、`HANDOVER.md`、`HANDOVER_20261014_STOP.md`、
-> `docs/CCFB_READINESS.md`、`docs/READING_GUIDE.md` 一律**归档不再维护**——它们的
+> 旧文档已全部移入 **`archive/`**（用 `git mv`，历史保留），一律**不再维护**——它们的
 > 历史价值留在 git 里，但**口径以本文档为准**。之所以换掉它们：七份文档对同一个量
 > 给出过两个不同的值（其中一次还写进了论文同一张表），手工维护的状态文档会腐烂。
 >
@@ -263,7 +262,7 @@ v1（`patch_internal.py`）把 L\* 的真实激活按 `h_final ← α·h_L* + (1
 
 > 判读标准事先写死在 §12.1，**不得事后调整**。
 > 结论（3B，2026-10-14）：**判据未通过**（分位 0.55/0.45），
-> 因果章节只保留消融臂单调崩塌。详见 `docs/E11_JUDGEMENT.md`。
+> 因果章节只保留消融臂单调崩塌。详见 `archive/E11_JUDGEMENT.md`。
 > 顺带发现的机制：**所有方向（含随机）的 alignment gap 都随注入强度收缩到零**，
 > 即大范围扰动压掉标签可分性 —— internal 是钝的平移旋钮，不是相关性对齐的。
 
@@ -621,7 +620,7 @@ Document: {passage}\nQuestion: {query}\nIs the document relevant to the question
 都随注入强度单调收缩到零**（随机方向均值 0.0121 → 0.0016）。即大范围扰动本身压掉
 标签可分性；internal 方向并不比随机方向更能保住它 → 它是**钝的平移旋钮**。
 所以论文的正确写法是"internal 方向与判决因果耦合、且不摧毁判别力"，
-**不能**写"唯独 internal 兼具定向性与判别力"。详见 `docs/E11_JUDGEMENT.md`。
+**不能**写"唯独 internal 兼具定向性与判别力"。详见 `archive/E11_JUDGEMENT.md`。
 
 **仍然成立**：消融臂 P(yes) 0.814 → 0.691 → 0.573 → 0.456 → 0.393（单调），
 AUC 0.545 → 0.539（三方向里唯一不崩的；final 方向打到 0.481）。
@@ -664,12 +663,12 @@ AUC 0.545 → 0.539（三方向里唯一不崩的；final 方向打到 0.481）�
 
 | 旧文档 | 现在的作用 |
 |---|---|
-| `CLAUDE.md` | 保留项目背景与方案史；**§六流水账不再维护**，状态以本文档为准 |
-| `TODO.md` | 归档。条目已在本文档 §6 重新规划；它的 P0/P1/P2 编号不再使用 |
-| `HANDOVER.md` / `docs/HANDOVER_20261014_STOP.md` | 归档。新主机前提已并入 §7 |
-| `docs/CCFB_READINESS.md` | 归档。净判断已并入 §1 |
-| `docs/READING_GUIDE.md` | 归档。阅读顺序改为：**本文档 → `results/PAPER_NUMBERS.json`** |
-| `results/REPORT.md` | 归档（旧主机口径） |
+| `archive/CLAUDE.md` | 项目背景与方案史 |
+| `archive/TODO.md` | 旧待办；条目已并入本文档 §6，它的 P0/P1/P2 编号不再使用 |
+| `archive/HANDOVER.md`、`archive/HANDOVER_20261014_STOP.md` | 旧交接；新主机前提已并入 §7 |
+| `archive/CCFB_READINESS.md` | 旧的投稿就绪度评估；净判断已并入 §1 |
+| `archive/READING_GUIDE.md` | 旧阅读指引 |
+| `archive/REPORT.md` | 旧主机口径的实验总报告 |
 | `docs/CACHE_NAMING.md` | **仍然有效**（缓存命名规范） |
 | `docs/MODEL_ARCHITECTURES.md` | **仍然有效**（8 模型实测 config） |
 | `docs/RAG检索优化文献调研报告.md` | **仍然有效**（文献背景） |
@@ -690,7 +689,7 @@ AUC 0.545 → 0.539（三方向里唯一不崩的；final 方向打到 0.481）�
 - **两种结局都必须报告**。另外无论哪种结局，都要写明标定的量纲 caveat（§6 第 4 条）。
 
 > ✅ **2026-10-14 结案：4/4 端点未通过**（3B 0.545/0.455、8B 0.333/0.250、
-> Qwen 0.000/0.000、3B-Inst 0.400/0.000）。详见 `docs/E11_JUDGEMENT.md`。
+> Qwen 0.000/0.000、3B-Inst 0.400/0.000）。详见 `archive/E11_JUDGEMENT.md`。
 > 因果章节的定位不变：**不建立在定向性上**。
 >
 > ⚠️ **判据本身的教训（下次设计时必须改）**：判据注册在**端点**（±8 logit），
