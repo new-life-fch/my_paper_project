@@ -47,13 +47,14 @@ indicating that alignment moves relevance signal toward the output without
 closing the gap. Comparing base and instruct pairs, alignment reliably
 improves the output readout (the judge gets stronger), and the model's own
 readout direction still extracts less than a probe trained on the same layer on
-every model. A gradient control that edits nothing locates why, for the
-residual-stream reader: the direction the verdict is locally sensitive to is not
-the direction the probe reads relevance from, on all eight models. The same
-control on the attention-head reader---the one carrying our strongest
-effect---comes out mixed, so we claim the misalignment only where it replicates.
-In short: relevance is encoded internally, and the model's own readout extracts
-only part of it.
+every model. We tried three routes to a mechanism and report all three,
+including where they fail. For the \emph{residual-stream} reader a gradient
+control that edits nothing shows the verdict is not locally sensitive to the
+direction the probe reads relevance from, uniformly across the panel. For the
+\emph{attention-head} reader---the one carrying our strongest effect---the same
+control is mixed, and a direct causal intervention on the probe direction finds
+no effect. In short: relevance is encoded internally, the model's own readout
+extracts only part of it, and we cannot say why.
 \end{abstract}
 
 \section{Introduction}
@@ -549,6 +550,44 @@ decodability. We do not have a mechanistic account of why the two readers differ
 and we therefore restrict the misalignment claim to the residual stream and
 report the head result as an open thread rather than extending the story.
 
+\textbf{A causal test on that direction finds nothing.} Gradient alignment is a
+local, first-order statement; the stronger question is whether the verdict
+\emph{depends} on the direction the head probe reads. We test that directly and
+it comes out negative, which is why this paper does not claim a mechanism for its
+headline effect.
+
+The gradient analysis localises the leverage: for every model, one \emph{dominant
+layer} carries $45$--$76\%$ of the total gradient magnitude over the selected
+heads (LLaMA-3.2-3B L11 at $0.64$, LLaMA-3.1-8B L15 at $0.48$, Qwen2.5-7B L18 at
+$0.59$), so a causal intervention has a well-defined target rather than being
+smeared over twenty heads in four layers. We inject the probe direction into
+those heads' $o_{\text{proj}}$ outputs, calibrate each direction to the same
+yes/no logit shift, and measure the label-grouped alignment gap against random
+directions drawn from the \emph{same} head subspace (the protocol of
+\S\ref{sec:patch}, including its saturation guards).
+
+On LLaMA-3.2-3B, with 24 random directions and 512 test rows, the probe's gap is
+$-0.0083$ at a $-2$ shift ($95\%$ CI $[-0.035,+0.018]$) and $+0.0096$ at $+2$
+($[-0.006,+0.026]$): both intervals contain zero, and the permutation
+$p$-values against the pooled null of random directions are $0.44$ and $0.20$.
+The probe's gap does flip sign with the shift direction, so it is not pure noise,
+but its magnitude is not distinguishable from the random directions---at the
+$-2$ shift the largest random gap is $-0.017$, more than twice the probe's. Running the same test at two other
+settings we found that \emph{which} shift passes the $95\%$ criterion changes:
+at 12 directions and 1117 rows the negative shift passed and the positive failed;
+at 48 directions and 512 rows the reverse. A criterion satisfied on one side or
+the other depending on the configuration is not evidence of a causal effect.
+
+So our three attempts at mechanism are consistent with one another and jointly
+negative. Patching shows the verdict tracks transplanted content on some models
+and not others, with no monotone relation to the size of the head advantage.
+Gradient alignment is mixed: two of eight models align significantly, three are
+negative, and the cross-model sign test is not significant. And the direct causal
+intervention finds no effect. What survives is a clean descriptive result---the
+attention heads are the best place to read relevance, on all eight models---and
+no account of why the model's own readout fails to use them. We state that as the
+limitation it is rather than dressing up a null as a mechanism.
+
 \begin{table}[t]
 \centering\small
 \caption{Gradient alignment, all eight models. $\cos$ is between the gradient of
@@ -741,19 +780,21 @@ internals-vs-\emph{judge} gap nearly closes, yet reading attention heads still
 beats reading the output representation---the internal--output gap is robust to
 how well the output verbalizes relevance.
 
-\textbf{Limitations.} (0) The residual-stream and head readers do not behave
-alike, and the paper's two halves therefore rest on different evidence. The
-misalignment result---the verdict is not locally sensitive to the decoded
-relevance direction---holds uniformly for the \emph{residual-stream} probe
-(percentiles $0.06$--$0.83$ on 8/8 models; the $0.83$ is an exact
-20{,}000-direction value, the rest are at the coarser 16-direction resolution of
-the original run, and only that one model sits anywhere near the threshold). We ran the same measurement for the
-\emph{attention-head} probe, which carries the paper's headline effect, and it
-comes out mixed: two of eight models show significant alignment, three are
-negative, and the cross-model sign test is not significant ($p=0.36$). So the
-misalignment account explains the residual reader, not the head reader, and we
-do not know why they differ. A reader who wants one mechanism behind the whole
-paper will not find it here. (1) Probing is
+\textbf{Limitations.} (0) The paper's headline effect has no mechanism that we
+could detect, and we consider this its most important weakness. The
+residual-stream \emph{misalignment} result is solid but is a result about a
+\emph{different, weaker} reader: the residual probe beats the output
+representation on only three of eight models, so it is not the effect this paper
+is built on. For the attention-head reader, which beats the output
+representation on all eight, all three of our mechanistic probes come back
+negative or mixed---patching is model-dependent with no relation to the size of
+the advantage, gradient alignment is significant on two of eight models and
+non-significant across the panel, and the direct causal intervention on the probe
+direction has confidence intervals containing zero at both shift targets
+($p=0.44$ and $0.20$ against the pooled null). We therefore present a
+descriptive result and an honest account of the failed attempts. A reader who
+wants the mechanism behind ``the heads decode relevance better than the output''
+will not find it here. (1) Probing is
 correlational, and our causal evidence is
 weaker than our correlational evidence; the steering and activation-patching
 controls are reported in full, including where they fail to separate
@@ -783,10 +824,15 @@ read relevance from. The mechanism is best described as \emph{misalignment}
 rather than attenuation: the information is present and the downstream network
 does use the internal layer, but the direction the verdict is locally sensitive
 to is not the relevance direction---a mismatch that replicates on every model
-for the residual-stream reader. We are explicit that the same test on the
-attention-head reader, whose advantage is this paper's strongest single result,
-does \emph{not} replicate uniformly; the two readers differ and we do not know
-why. Internals know more than the model can say.
+for the residual-stream reader. That reader, however, is not the one carrying our
+strongest result. For the attention-head reader we tried three routes to a
+mechanism---patching, gradient alignment, and a direct causal intervention---and
+all three came back negative or mixed, so we make no mechanistic claim about the
+effect we are most confident in. What we can defend is the measurement: across
+eight models, three families, and both training regimes, the attention heads are
+the best place to read whether a passage is relevant, and the model's own verdict
+is the worst. Internals know more than the model can say; why the model does not
+use what its heads encode remains open.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

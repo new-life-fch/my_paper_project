@@ -1,0 +1,98 @@
+{
+  "llama32_3b": {
+    "n_rows": 512,
+    "dominant_layer": 11,
+    "head_probe_test_auc": 0.6835,
+    "per_shift": {
+      "-2": {
+        "probe_gap": -0.00826,
+        "probe_ci95": [
+          -0.03488,
+          0.01819
+        ],
+        "probe_sign_matches_shift": true,
+        "random_gaps": {
+          "random_0": -0.00128,
+          "random_1": -0.01103,
+          "random_3": -0.00057,
+          "random_4": 0.0103,
+          "random_5": 0.0136,
+          "random_6": 0.02052,
+          "random_7": 0.00031,
+          "random_8": -0.01694,
+          "random_9": 0.0002,
+          "random_10": -0.0121,
+          "random_11": 0.01911,
+          "random_12": 0.00178,
+          "random_13": 0.00813,
+          "random_14": -2e-05,
+          "random_15": -0.0081,
+          "random_16": 0.00338,
+          "random_17": -0.00027,
+          "random_18": 0.01044,
+          "random_19": 0.01165,
+          "random_20": 0.00109,
+          "random_21": 0.00354
+        },
+        "random_gap_mean": 0.00256,
+        "random_gap_min": -0.01694,
+        "random_gap_max": 0.02052,
+        "random_sign_matches_shift": "8/21",
+        "percentile": 0.5714,
+        "percentile_resolution": 0.0455,
+        "p_perm_direction_level": 0.4286,
+        "p_perm_pooled_null": 0.443,
+        "n_random_usable": 21
+      },
+      "+2": {
+        "probe_gap": 0.00961,
+        "probe_ci95": [
+          -0.00583,
+          0.02573
+        ],
+        "probe_sign_matches_shift": true,
+        "random_gaps": {
+          "random_0": 0.00075,
+          "random_1": 0.00158,
+          "random_3": -0.00035,
+          "random_4": 6e-05,
+          "random_5": 0.00664,
+          "random_6": 0.00761,
+          "random_7": 0.00179,
+          "random_8": -0.00447,
+          "random_9": -0.00184,
+          "random_10": -0.00183,
+          "random_11": 0.01212,
+          "random_12": -0.00637,
+          "random_13": -0.00304,
+          "random_14": 0.00128,
+          "random_15": 0.00823,
+          "random_16": 0.00955,
+          "random_17": -0.00047,
+          "random_18": 0.00585,
+          "random_19": 0.00488,
+          "random_20": -0.00344,
+          "random_21": 0.00043
+        },
+        "random_gap_mean": 0.00186,
+        "random_gap_min": -0.00637,
+        "random_gap_max": 0.01212,
+        "random_sign_matches_shift": "13/21",
+        "percentile": 0.9524,
+        "percentile_resolution": 0.0455,
+        "p_perm_direction_level": 0.0476,
+        "p_perm_pooled_null": 0.201,
+        "n_random_usable": 21
+      }
+    },
+    "sign_consistency": {
+      "gaps": {
+        "-2": -0.00826,
+        "+2": 0.00961
+      },
+      "probe_flips_sign": true,
+      "both_perm_p_below_0.05": false,
+      "any_perm_p_below_0.05": false
+    }
+  }
+}

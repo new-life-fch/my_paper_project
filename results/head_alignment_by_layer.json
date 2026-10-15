@@ -1,0 +1,2053 @@
+{
+  "llama32_3b": {
+    "n_rows": 256,
+    "layers": [
+      10,
+      11,
+      12,
+      14
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 11,
+        "head": 15,
+        "contrib": 0.44300314844516153,
+        "cos_mean": -0.05733884530074384,
+        "abscos_mean": 0.1002591667165762,
+        "probe_weight": 3.5966928143641037,
+        "probe_weight_norm": 0.1889514988109272
+      },
+      {
+        "slot": 1,
+        "layer": 14,
+        "head": 14,
+        "contrib": 0.3142692497583979,
+        "cos_mean": 0.032600305466242534,
+        "abscos_mean": 0.04296312971327032,
+        "probe_weight": 5.957151923212787,
+        "probe_weight_norm": 0.31295772050370735
+      },
+      {
+        "slot": 2,
+        "layer": 11,
+        "head": 21,
+        "contrib": 0.48039697456141794,
+        "cos_mean": 0.040938971941286595,
+        "abscos_mean": 0.052491167035426466,
+        "probe_weight": 4.055893185002896,
+        "probe_weight_norm": 0.21307549348186866
+      },
+      {
+        "slot": 3,
+        "layer": 11,
+        "head": 12,
+        "contrib": 0.4250251269725749,
+        "cos_mean": 0.04967141189196916,
+        "abscos_mean": 0.0638995857494824,
+        "probe_weight": 3.8072485829421523,
+        "probe_weight_norm": 0.20001300172750114
+      },
+      {
+        "slot": 4,
+        "layer": 14,
+        "head": 8,
+        "contrib": 0.2832249533502955,
+        "cos_mean": 0.0689043934797719,
+        "abscos_mean": 0.10076281806481172,
+        "probe_weight": 5.578299637129849,
+        "probe_weight_norm": 0.2930547955173338
+      },
+      {
+        "slot": 5,
+        "layer": 11,
+        "head": 10,
+        "contrib": 0.5000026629064447,
+        "cos_mean": 0.06615756618931248,
+        "abscos_mean": 0.10789776824330602,
+        "probe_weight": 3.7063166479656493,
+        "probe_weight_norm": 0.19471056380021068
+      },
+      {
+        "slot": 6,
+        "layer": 12,
+        "head": 22,
+        "contrib": 0.36351095369962594,
+        "cos_mean": -0.060423575659649884,
+        "abscos_mean": 0.09242412995920306,
+        "probe_weight": 5.454120889867135,
+        "probe_weight_norm": 0.2865310912070725
+      },
+      {
+        "slot": 7,
+        "layer": 11,
+        "head": 18,
+        "contrib": 0.486304460940294,
+        "cos_mean": -0.017808417302693183,
+        "abscos_mean": 0.06124671428188475,
+        "probe_weight": 3.864506198066125,
+        "probe_weight_norm": 0.20302101846799295
+      },
+      {
+        "slot": 8,
+        "layer": 11,
+        "head": 11,
+        "contrib": 0.5185877538437412,
+        "cos_mean": 0.022725867888350945,
+        "abscos_mean": 0.03342250896487219,
+        "probe_weight": 3.7033571348966006,
+        "probe_weight_norm": 0.19455508640500083
+      },
+      {
+        "slot": 9,
+        "layer": 10,
+        "head": 18,
+        "contrib": 0.7347542631572734,
+        "cos_mean": -0.0412607472936608,
+        "abscos_mean": 0.06520166412610907,
+        "probe_weight": 4.273547891669274,
+        "probe_weight_norm": 0.22450993761443938
+      },
+      {
+        "slot": 10,
+        "layer": 11,
+        "head": 0,
+        "contrib": 0.41714194629314333,
+        "cos_mean": 0.0002761463172814583,
+        "abscos_mean": 0.04088822071470336,
+        "probe_weight": 3.8296723785429467,
+        "probe_weight_norm": 0.2011910311023976
+      },
+      {
+        "slot": 11,
+        "layer": 11,
+        "head": 5,
+        "contrib": 0.43934521254915204,
+        "cos_mean": 0.012677378624912491,
+        "abscos_mean": 0.06367361335751623,
+        "probe_weight": 3.587292078337832,
+        "probe_weight_norm": 0.1884576331254853
+      },
+      {
+        "slot": 12,
+        "layer": 14,
+        "head": 20,
+        "contrib": 0.28618328165422524,
+        "cos_mean": -0.03264330611970241,
+        "abscos_mean": 0.041177267392160447,
+        "probe_weight": 5.626642705109096,
+        "probe_weight_norm": 0.29559448840278596
+      },
+      {
+        "slot": 13,
+        "layer": 11,
+        "head": 13,
+        "contrib": 0.4529368928208747,
+        "cos_mean": 0.10660894145592936,
+        "abscos_mean": 0.11882875369785137,
+        "probe_weight": 3.962921846826603,
+        "probe_weight_norm": 0.20819126382936387
+      },
+      {
+        "slot": 14,
+        "layer": 11,
+        "head": 1,
+        "contrib": 0.4638640424744168,
+        "cos_mean": 0.07608916861802063,
+        "abscos_mean": 0.08552906129051668,
+        "probe_weight": 3.6408312419765867,
+        "probe_weight_norm": 0.19127030180105992
+      },
+      {
+        "slot": 15,
+        "layer": 10,
+        "head": 23,
+        "contrib": 0.6868367425158884,
+        "cos_mean": -0.018631950589343006,
+        "abscos_mean": 0.04460819188908584,
+        "probe_weight": 4.010987524384394,
+        "probe_weight_norm": 0.21071638406749937
+      },
+      {
+        "slot": 16,
+        "layer": 11,
+        "head": 16,
+        "contrib": 0.4715611516195747,
+        "cos_mean": 0.004907051373238791,
+        "abscos_mean": 0.03737138415789493,
+        "probe_weight": 3.615298700797178,
+        "probe_weight_norm": 0.18992895513252217
+      },
+      {
+        "slot": 17,
+        "layer": 10,
+        "head": 17,
+        "contrib": 0.6990718584055193,
+        "cos_mean": -0.17278219674662454,
+        "abscos_mean": 0.17732268015307778,
+        "probe_weight": 4.002684826438819,
+        "probe_weight_norm": 0.21028020358115773
+      },
+      {
+        "slot": 18,
+        "layer": 11,
+        "head": 23,
+        "contrib": 0.5055875100659224,
+        "cos_mean": 0.02450529242401616,
+        "abscos_mean": 0.043664613278388734,
+        "probe_weight": 3.762725559411765,
+        "probe_weight_norm": 0.1976739940718951
+      },
+      {
+        "slot": 19,
+        "layer": 11,
+        "head": 20,
+        "contrib": 0.46030212819899885,
+        "cos_mean": 0.062316600784444495,
+        "abscos_mean": 0.07286470981332058,
+        "probe_weight": 3.7357041622414724,
+        "probe_weight_norm": 0.19625443066773077
+      }
+    ],
+    "per_layer": {
+      "10": {
+        "n_heads": 3,
+        "contrib_sum": 2.120663,
+        "contrib_max": 0.734754,
+        "cos_mean": -0.07756,
+        "probe_weight_share": 0.64551,
+        "contrib_share": 0.2248
+      },
+      "11": {
+        "n_heads": 13,
+        "contrib_sum": 6.064059,
+        "contrib_max": 0.518588,
+        "cos_mean": 0.03013,
+        "probe_weight_share": 2.56729,
+        "contrib_share": 0.6429
+      },
+      "12": {
+        "n_heads": 1,
+        "contrib_sum": 0.363511,
+        "contrib_max": 0.363511,
+        "cos_mean": -0.06042,
+        "probe_weight_share": 0.28653,
+        "contrib_share": 0.0385
+      },
+      "14": {
+        "n_heads": 3,
+        "contrib_sum": 0.883677,
+        "contrib_max": 0.314269,
+        "cos_mean": 0.02295,
+        "probe_weight_share": 0.90161,
+        "contrib_share": 0.0937
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0532,
+      "contrib_top1_share": 0.0779,
+      "contrib_top5_share": 0.3334,
+      "abscos_herfindahl": 0.0818,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.6835
+  },
+  "llama31_8b": {
+    "n_rows": 256,
+    "layers": [
+      12,
+      13,
+      15
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 15,
+        "head": 1,
+        "contrib": 1.7022381497617696,
+        "cos_mean": -0.00222323797554593,
+        "abscos_mean": 0.030726586983608972,
+        "probe_weight": 4.119297830369361,
+        "probe_weight_norm": 0.2143979097297796
+      },
+      {
+        "slot": 1,
+        "layer": 13,
+        "head": 23,
+        "contrib": 1.9999945680163007,
+        "cos_mean": 0.005140659666437239,
+        "abscos_mean": 0.04033914425404816,
+        "probe_weight": 4.6441131590729565,
+        "probe_weight_norm": 0.2417130770475331
+      },
+      {
+        "slot": 2,
+        "layer": 15,
+        "head": 13,
+        "contrib": 1.7704275408195045,
+        "cos_mean": 0.041620297959157684,
+        "abscos_mean": 0.04732933218264833,
+        "probe_weight": 4.1448180041148515,
+        "probe_weight_norm": 0.21572616326528163
+      },
+      {
+        "slot": 3,
+        "layer": 12,
+        "head": 26,
+        "contrib": 3.0399215686669763,
+        "cos_mean": -0.06161163268387096,
+        "abscos_mean": 0.07987561720558432,
+        "probe_weight": 3.140279696515131,
+        "probe_weight_norm": 0.16344275908774028
+      },
+      {
+        "slot": 4,
+        "layer": 15,
+        "head": 18,
+        "contrib": 1.7463823241534913,
+        "cos_mean": 0.04750468884653823,
+        "abscos_mean": 0.06193325976111177,
+        "probe_weight": 4.4078281359578115,
+        "probe_weight_norm": 0.22941510366894946
+      },
+      {
+        "slot": 5,
+        "layer": 15,
+        "head": 26,
+        "contrib": 1.8114179933100187,
+        "cos_mean": 0.03128498386817112,
+        "abscos_mean": 0.03680728890633869,
+        "probe_weight": 4.709603363148751,
+        "probe_weight_norm": 0.24512165866503852
+      },
+      {
+        "slot": 6,
+        "layer": 15,
+        "head": 6,
+        "contrib": 1.7117789300356483,
+        "cos_mean": 0.02085839621460551,
+        "abscos_mean": 0.03640194517681096,
+        "probe_weight": 4.243365443204578,
+        "probe_weight_norm": 0.2208552813383406
+      },
+      {
+        "slot": 7,
+        "layer": 15,
+        "head": 28,
+        "contrib": 1.7720579772967326,
+        "cos_mean": 0.04837889549295055,
+        "abscos_mean": 0.05246835454098074,
+        "probe_weight": 4.174511814567259,
+        "probe_weight_norm": 0.2172716428967793
+      },
+      {
+        "slot": 8,
+        "layer": 15,
+        "head": 21,
+        "contrib": 1.6225620624663608,
+        "cos_mean": 0.16651078281360338,
+        "abscos_mean": 0.16656108404999204,
+        "probe_weight": 4.1852260322935715,
+        "probe_weight_norm": 0.21782928790801784
+      },
+      {
+        "slot": 9,
+        "layer": 12,
+        "head": 11,
+        "contrib": 3.3229152634762764,
+        "cos_mean": 0.034578082133363094,
+        "abscos_mean": 0.05497548412567738,
+        "probe_weight": 3.4424309181576493,
+        "probe_weight_norm": 0.17916888354149133
+      },
+      {
+        "slot": 10,
+        "layer": 13,
+        "head": 20,
+        "contrib": 1.7859987330364762,
+        "cos_mean": -0.01141593146280832,
+        "abscos_mean": 0.035996006035607195,
+        "probe_weight": 4.621035198722031,
+        "probe_weight_norm": 0.24051193387609565
+      },
+      {
+        "slot": 11,
+        "layer": 15,
+        "head": 19,
+        "contrib": 1.555750754800863,
+        "cos_mean": 0.010431615972522346,
+        "abscos_mean": 0.03494676520504911,
+        "probe_weight": 4.200338319164755,
+        "probe_weight_norm": 0.21861584009478413
+      },
+      {
+        "slot": 12,
+        "layer": 13,
+        "head": 24,
+        "contrib": 1.9088939696500171,
+        "cos_mean": 0.13998657627026745,
+        "abscos_mean": 0.13998657627026745,
+        "probe_weight": 4.646963906091332,
+        "probe_weight_norm": 0.24186145044199905
+      },
+      {
+        "slot": 13,
+        "layer": 13,
+        "head": 27,
+        "contrib": 1.8519965960633944,
+        "cos_mean": -0.05738469818266665,
+        "abscos_mean": 0.06629015597771182,
+        "probe_weight": 4.996924948994789,
+        "probe_weight_norm": 0.26007594212846863
+      },
+      {
+        "slot": 14,
+        "layer": 13,
+        "head": 13,
+        "contrib": 1.8230166433036032,
+        "cos_mean": 0.1891648520435103,
+        "abscos_mean": 0.1891648520435103,
+        "probe_weight": 4.695752318707818,
+        "probe_weight_norm": 0.24440075061274458
+      },
+      {
+        "slot": 15,
+        "layer": 13,
+        "head": 9,
+        "contrib": 1.6263617421709822,
+        "cos_mean": 0.02008101007061803,
+        "abscos_mean": 0.040552403953211316,
+        "probe_weight": 4.837203013906861,
+        "probe_weight_norm": 0.2517628629506572
+      },
+      {
+        "slot": 16,
+        "layer": 12,
+        "head": 2,
+        "contrib": 3.0528943112289717,
+        "cos_mean": 0.10376932972658993,
+        "abscos_mean": 0.10489984868769203,
+        "probe_weight": 3.689242788521379,
+        "probe_weight_norm": 0.19201474982296296
+      },
+      {
+        "slot": 17,
+        "layer": 15,
+        "head": 15,
+        "contrib": 1.8666726454530362,
+        "cos_mean": 0.013193740352259028,
+        "abscos_mean": 0.032750460992307565,
+        "probe_weight": 4.260941140503692,
+        "probe_weight_norm": 0.22177004713536372
+      },
+      {
+        "slot": 18,
+        "layer": 15,
+        "head": 14,
+        "contrib": 1.7443848310253456,
+        "cos_mean": 0.001246567842009216,
+        "abscos_mean": 0.03438854376354933,
+        "probe_weight": 3.846220894714559,
+        "probe_weight_norm": 0.2001850203950569
+      },
+      {
+        "slot": 19,
+        "layer": 15,
+        "head": 7,
+        "contrib": 1.5684258249966074,
+        "cos_mean": 0.053913850735623985,
+        "abscos_mean": 0.059737226138372845,
+        "probe_weight": 4.426941634146547,
+        "probe_weight_norm": 0.23040990769333372
+      }
+    ],
+    "per_layer": {
+      "12": {
+        "n_heads": 3,
+        "contrib_sum": 9.415731,
+        "contrib_max": 3.322915,
+        "cos_mean": 0.02558,
+        "probe_weight_share": 0.53463,
+        "contrib_share": 0.2397
+      },
+      "13": {
+        "n_heads": 6,
+        "contrib_sum": 10.996262,
+        "contrib_max": 1.999995,
+        "cos_mean": 0.0476,
+        "probe_weight_share": 1.48033,
+        "contrib_share": 0.2799
+      },
+      "15": {
+        "n_heads": 11,
+        "contrib_sum": 18.872099,
+        "contrib_max": 1.866673,
+        "cos_mean": 0.03934,
+        "probe_weight_share": 2.4316,
+        "contrib_share": 0.4804
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0533,
+      "contrib_top1_share": 0.0846,
+      "contrib_top5_share": 0.3392,
+      "abscos_herfindahl": 0.1011,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.6765
+  },
+  "llama32_3b_instruct": {
+    "n_rows": 256,
+    "layers": [
+      11,
+      12,
+      13,
+      14
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 14,
+        "head": 16,
+        "contrib": 1.0639049047709932,
+        "cos_mean": 0.027666608593318175,
+        "abscos_mean": 0.06989099061018708,
+        "probe_weight": 4.134903222261473,
+        "probe_weight_norm": 0.2330181793870099
+      },
+      {
+        "slot": 1,
+        "layer": 13,
+        "head": 11,
+        "contrib": 1.3005514546965484,
+        "cos_mean": -0.0017638713014455814,
+        "abscos_mean": 0.0488054677159786,
+        "probe_weight": 4.672711238700899,
+        "probe_weight_norm": 0.2633257919511352
+      },
+      {
+        "slot": 2,
+        "layer": 13,
+        "head": 22,
+        "contrib": 1.1608403245554966,
+        "cos_mean": -0.04733078916281839,
+        "abscos_mean": 0.06391112278772453,
+        "probe_weight": 4.4066693288974115,
+        "probe_weight_norm": 0.24833327625468646
+      },
+      {
+        "slot": 3,
+        "layer": 11,
+        "head": 9,
+        "contrib": 2.28645332814696,
+        "cos_mean": -0.02674548039194958,
+        "abscos_mean": 0.07186788872330867,
+        "probe_weight": 3.825975714555143,
+        "probe_weight_norm": 0.21560889033261585
+      },
+      {
+        "slot": 4,
+        "layer": 14,
+        "head": 20,
+        "contrib": 1.1040970253215805,
+        "cos_mean": -0.020161659005101702,
+        "abscos_mean": 0.05766375320747878,
+        "probe_weight": 3.9102429765246396,
+        "probe_weight_norm": 0.2203576844181328
+      },
+      {
+        "slot": 5,
+        "layer": 11,
+        "head": 1,
+        "contrib": 2.2139385660731725,
+        "cos_mean": -0.028568166622343384,
+        "abscos_mean": 0.07297110803343722,
+        "probe_weight": 3.414708218311456,
+        "probe_weight_norm": 0.1924323374450383
+      },
+      {
+        "slot": 6,
+        "layer": 12,
+        "head": 14,
+        "contrib": 1.2244569222758543,
+        "cos_mean": -0.0558149078505069,
+        "abscos_mean": 0.09258788676446938,
+        "probe_weight": 4.5358858762205765,
+        "probe_weight_norm": 0.2556151406624952
+      },
+      {
+        "slot": 7,
+        "layer": 14,
+        "head": 23,
+        "contrib": 1.0950209832966082,
+        "cos_mean": -0.013909085030597344,
+        "abscos_mean": 0.056038323096680095,
+        "probe_weight": 3.4050781786354163,
+        "probe_weight_norm": 0.19188964655431698
+      },
+      {
+        "slot": 8,
+        "layer": 14,
+        "head": 5,
+        "contrib": 1.1135884462594312,
+        "cos_mean": -0.046556130902767154,
+        "abscos_mean": 0.06261967140069287,
+        "probe_weight": 3.8653212038622833,
+        "probe_weight_norm": 0.21782616454500395
+      },
+      {
+        "slot": 9,
+        "layer": 14,
+        "head": 21,
+        "contrib": 1.067826015688398,
+        "cos_mean": -0.006173148085221486,
+        "abscos_mean": 0.08120813795033416,
+        "probe_weight": 3.732751017555493,
+        "probe_weight_norm": 0.2103553092930859
+      },
+      {
+        "slot": 10,
+        "layer": 14,
+        "head": 2,
+        "contrib": 1.1332119146362043,
+        "cos_mean": 0.016693107286033165,
+        "abscos_mean": 0.05830146357656752,
+        "probe_weight": 3.560046048786412,
+        "probe_weight_norm": 0.2006227000322453
+      },
+      {
+        "slot": 11,
+        "layer": 14,
+        "head": 6,
+        "contrib": 1.1446429052071867,
+        "cos_mean": 0.03277438679824398,
+        "abscos_mean": 0.058034092333523093,
+        "probe_weight": 3.9356722669818898,
+        "probe_weight_norm": 0.22179072568825256
+      },
+      {
+        "slot": 12,
+        "layer": 14,
+        "head": 22,
+        "contrib": 1.1057960479965332,
+        "cos_mean": 0.04411708396002523,
+        "abscos_mean": 0.06511093167598452,
+        "probe_weight": 3.727013415179379,
+        "probe_weight_norm": 0.21003197266635887
+      },
+      {
+        "slot": 13,
+        "layer": 14,
+        "head": 0,
+        "contrib": 1.1282171268843753,
+        "cos_mean": -0.031908466399814456,
+        "abscos_mean": 0.07036334145234241,
+        "probe_weight": 3.6944144716946683,
+        "probe_weight_norm": 0.20819489304141114
+      },
+      {
+        "slot": 14,
+        "layer": 14,
+        "head": 4,
+        "contrib": 1.1188117004550766,
+        "cos_mean": -0.04656550461445119,
+        "abscos_mean": 0.06870029940973307,
+        "probe_weight": 3.951901940952532,
+        "probe_weight_norm": 0.22270533211974614
+      },
+      {
+        "slot": 15,
+        "layer": 11,
+        "head": 4,
+        "contrib": 2.1257787210546546,
+        "cos_mean": -0.06714610480635722,
+        "abscos_mean": 0.0771876927858233,
+        "probe_weight": 3.5924813110749976,
+        "probe_weight_norm": 0.20245055557327357
+      },
+      {
+        "slot": 16,
+        "layer": 14,
+        "head": 17,
+        "contrib": 1.0921297696765708,
+        "cos_mean": -0.07662663910002716,
+        "abscos_mean": 0.09635705448696703,
+        "probe_weight": 3.7409831653232284,
+        "probe_weight_norm": 0.21081922343621629
+      },
+      {
+        "slot": 17,
+        "layer": 12,
+        "head": 16,
+        "contrib": 1.1626776603768794,
+        "cos_mean": -0.019110877320728865,
+        "abscos_mean": 0.06776465188681696,
+        "probe_weight": 4.32509424417816,
+        "probe_weight_norm": 0.24373619702383936
+      },
+      {
+        "slot": 18,
+        "layer": 12,
+        "head": 21,
+        "contrib": 1.1582399217829513,
+        "cos_mean": 0.053180239511133404,
+        "abscos_mean": 0.06510032658930873,
+        "probe_weight": 4.657167999497886,
+        "probe_weight_norm": 0.26244986883850624
+      },
+      {
+        "slot": 19,
+        "layer": 11,
+        "head": 14,
+        "contrib": 2.314596651807655,
+        "cos_mean": 0.02867241232899065,
+        "abscos_mean": 0.05726875427835741,
+        "probe_weight": 3.9097134989526707,
+        "probe_weight_norm": 0.22032784625912047
+      }
+    ],
+    "per_layer": {
+      "11": {
+        "n_heads": 4,
+        "contrib_sum": 8.940767,
+        "contrib_max": 2.314597,
+        "cos_mean": -0.02345,
+        "probe_weight_share": 0.83082,
+        "contrib_share": 0.3297
+      },
+      "12": {
+        "n_heads": 3,
+        "contrib_sum": 3.545375,
+        "contrib_max": 1.224457,
+        "cos_mean": -0.00725,
+        "probe_weight_share": 0.7618,
+        "contrib_share": 0.1308
+      },
+      "13": {
+        "n_heads": 2,
+        "contrib_sum": 2.461392,
+        "contrib_max": 1.300551,
+        "cos_mean": -0.02455,
+        "probe_weight_share": 0.51166,
+        "contrib_share": 0.0908
+      },
+      "14": {
+        "n_heads": 11,
+        "contrib_sum": 12.167247,
+        "contrib_max": 1.144643,
+        "cos_mean": -0.01097,
+        "probe_weight_share": 2.34761,
+        "contrib_share": 0.4487
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0554,
+      "contrib_top1_share": 0.0854,
+      "contrib_top5_share": 0.3777,
+      "abscos_herfindahl": 0.0655,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.7116
+  },
+  "llama31_8b_instruct": {
+    "n_rows": 256,
+    "layers": [
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 15,
+        "head": 24,
+        "contrib": 3.2915953007002106,
+        "cos_mean": 0.15694259929948845,
+        "abscos_mean": 0.15700373842292975,
+        "probe_weight": 3.7689682931359836,
+        "probe_weight_norm": 0.21684676477301013
+      },
+      {
+        "slot": 1,
+        "layer": 15,
+        "head": 13,
+        "contrib": 3.2796023879201783,
+        "cos_mean": -0.1022096343628386,
+        "abscos_mean": 0.1022096343628386,
+        "probe_weight": 3.6914214574254873,
+        "probe_weight_norm": 0.21238512457486092
+      },
+      {
+        "slot": 2,
+        "layer": 15,
+        "head": 3,
+        "contrib": 3.338987354257445,
+        "cos_mean": -0.009058190583116422,
+        "abscos_mean": 0.023544866393818913,
+        "probe_weight": 3.6688889696570244,
+        "probe_weight_norm": 0.21108872282911603
+      },
+      {
+        "slot": 3,
+        "layer": 13,
+        "head": 25,
+        "contrib": 2.8417782797178597,
+        "cos_mean": 0.05346803138657803,
+        "abscos_mean": 0.05726887749286681,
+        "probe_weight": 5.138483911774967,
+        "probe_weight_norm": 0.29564154576090534
+      },
+      {
+        "slot": 4,
+        "layer": 15,
+        "head": 12,
+        "contrib": 3.2559592486457447,
+        "cos_mean": 0.05797014656221411,
+        "abscos_mean": 0.06158927801941048,
+        "probe_weight": 4.022053498483998,
+        "probe_weight_norm": 0.23140796659887267
+      },
+      {
+        "slot": 5,
+        "layer": 15,
+        "head": 21,
+        "contrib": 3.034803459185275,
+        "cos_mean": -0.027274735369959828,
+        "abscos_mean": 0.03379260057289262,
+        "probe_weight": 3.7235939119308163,
+        "probe_weight_norm": 0.2142361596942046
+      },
+      {
+        "slot": 6,
+        "layer": 15,
+        "head": 14,
+        "contrib": 3.3892285251515344,
+        "cos_mean": -0.12599256827101513,
+        "abscos_mean": 0.1292707346231178,
+        "probe_weight": 3.9037839044353144,
+        "probe_weight_norm": 0.2246033514241626
+      },
+      {
+        "slot": 7,
+        "layer": 12,
+        "head": 18,
+        "contrib": 3.934664854082248,
+        "cos_mean": 0.09998738408113522,
+        "abscos_mean": 0.10242748069748607,
+        "probe_weight": 3.966295452141904,
+        "probe_weight_norm": 0.22819993962200302
+      },
+      {
+        "slot": 8,
+        "layer": 15,
+        "head": 15,
+        "contrib": 3.3533124337087195,
+        "cos_mean": 0.14790814068794156,
+        "abscos_mean": 0.14800713253955278,
+        "probe_weight": 4.09679494307046,
+        "probe_weight_norm": 0.2357081992335044
+      },
+      {
+        "slot": 9,
+        "layer": 15,
+        "head": 16,
+        "contrib": 3.3335314546657413,
+        "cos_mean": 0.06083257114963643,
+        "abscos_mean": 0.06765206864125389,
+        "probe_weight": 3.987951812109584,
+        "probe_weight_norm": 0.229445933546734
+      },
+      {
+        "slot": 10,
+        "layer": 15,
+        "head": 29,
+        "contrib": 3.2783574549233174,
+        "cos_mean": 0.24909286128060465,
+        "abscos_mean": 0.25090745661788033,
+        "probe_weight": 3.6830054240880647,
+        "probe_weight_norm": 0.21190090994117308
+      },
+      {
+        "slot": 11,
+        "layer": 15,
+        "head": 31,
+        "contrib": 3.221159381457765,
+        "cos_mean": 0.20674216159793365,
+        "abscos_mean": 0.20674216159793365,
+        "probe_weight": 3.8168076791279435,
+        "probe_weight_norm": 0.2195991933620159
+      },
+      {
+        "slot": 12,
+        "layer": 13,
+        "head": 19,
+        "contrib": 2.9767495993477624,
+        "cos_mean": 0.09918021390673296,
+        "abscos_mean": 0.10014384122290021,
+        "probe_weight": 4.502628391784205,
+        "probe_weight_norm": 0.25905773776650837
+      },
+      {
+        "slot": 13,
+        "layer": 15,
+        "head": 1,
+        "contrib": 3.1039071912357237,
+        "cos_mean": -0.06207243884361716,
+        "abscos_mean": 0.06303261067599596,
+        "probe_weight": 3.678926875003093,
+        "probe_weight_norm": 0.2116662515133867
+      },
+      {
+        "slot": 14,
+        "layer": 15,
+        "head": 5,
+        "contrib": 3.0585849441640827,
+        "cos_mean": -0.02721801026606637,
+        "abscos_mean": 0.040084234716667194,
+        "probe_weight": 3.3153391631763798,
+        "probe_weight_norm": 0.19074731219398935
+      },
+      {
+        "slot": 15,
+        "layer": 15,
+        "head": 19,
+        "contrib": 2.920579055083998,
+        "cos_mean": 0.10115049920389897,
+        "abscos_mean": 0.10206452853729417,
+        "probe_weight": 3.6259277814749815,
+        "probe_weight_norm": 0.20861696028204268
+      },
+      {
+        "slot": 16,
+        "layer": 14,
+        "head": 19,
+        "contrib": 3.373496318766369,
+        "cos_mean": 0.015293090617778985,
+        "abscos_mean": 0.034163752524593236,
+        "probe_weight": 4.368821316809986,
+        "probe_weight_norm": 0.2513591770317996
+      },
+      {
+        "slot": 17,
+        "layer": 15,
+        "head": 28,
+        "contrib": 3.1190479307278682,
+        "cos_mean": -0.016250094291829033,
+        "abscos_mean": 0.024396921188541094,
+        "probe_weight": 3.4106509867927555,
+        "probe_weight_norm": 0.19623105707809127
+      },
+      {
+        "slot": 18,
+        "layer": 15,
+        "head": 17,
+        "contrib": 3.0658667639561834,
+        "cos_mean": -0.011626673080500314,
+        "abscos_mean": 0.04887470998837688,
+        "probe_weight": 3.1068659926041406,
+        "probe_weight_norm": 0.1787528540121861
+      },
+      {
+        "slot": 19,
+        "layer": 11,
+        "head": 1,
+        "contrib": 4.685988259577675,
+        "cos_mean": -0.015990350654726544,
+        "abscos_mean": 0.037035626869646884,
+        "probe_weight": 3.774061117770826,
+        "probe_weight_norm": 0.217139779322279
+      }
+    ],
+    "per_layer": {
+      "11": {
+        "n_heads": 1,
+        "contrib_sum": 4.685988,
+        "contrib_max": 4.685988,
+        "cos_mean": -0.01599,
+        "probe_weight_share": 0.21714,
+        "contrib_share": 0.0712
+      },
+      "12": {
+        "n_heads": 1,
+        "contrib_sum": 3.934665,
+        "contrib_max": 3.934665,
+        "cos_mean": 0.09999,
+        "probe_weight_share": 0.2282,
+        "contrib_share": 0.0597
+      },
+      "13": {
+        "n_heads": 2,
+        "contrib_sum": 5.818528,
+        "contrib_max": 2.97675,
+        "cos_mean": 0.07632,
+        "probe_weight_share": 0.5547,
+        "contrib_share": 0.0884
+      },
+      "14": {
+        "n_heads": 1,
+        "contrib_sum": 3.373496,
+        "contrib_max": 3.373496,
+        "cos_mean": 0.01529,
+        "probe_weight_share": 0.25136,
+        "contrib_share": 0.0512
+      },
+      "15": {
+        "n_heads": 15,
+        "contrib_sum": 48.044523,
+        "contrib_max": 3.389229,
+        "cos_mean": 0.03993,
+        "probe_weight_share": 3.19324,
+        "contrib_share": 0.7295
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0507,
+      "contrib_top1_share": 0.0712,
+      "contrib_top5_share": 0.2845,
+      "abscos_herfindahl": 0.0826,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.725
+  },
+  "mistral_7b": {
+    "n_rows": 256,
+    "layers": [
+      11,
+      13,
+      14,
+      16
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 14,
+        "head": 1,
+        "contrib": 7.214931267743893,
+        "cos_mean": -0.021354703732673095,
+        "abscos_mean": 0.050430923937606884,
+        "probe_weight": 3.7143184026303904,
+        "probe_weight_norm": 0.23061601081062666
+      },
+      {
+        "slot": 1,
+        "layer": 14,
+        "head": 26,
+        "contrib": 7.347746333268859,
+        "cos_mean": 0.1405453419097506,
+        "abscos_mean": 0.14066589573672625,
+        "probe_weight": 3.567392396291475,
+        "probe_weight_norm": 0.2214936131609739
+      },
+      {
+        "slot": 2,
+        "layer": 14,
+        "head": 21,
+        "contrib": 7.447352770216975,
+        "cos_mean": 0.010261386221607778,
+        "abscos_mean": 0.040289783667216444,
+        "probe_weight": 3.9519562857233876,
+        "probe_weight_norm": 0.2453705618953099
+      },
+      {
+        "slot": 3,
+        "layer": 14,
+        "head": 14,
+        "contrib": 6.792495285645309,
+        "cos_mean": 0.05113194001798847,
+        "abscos_mean": 0.06344576792672463,
+        "probe_weight": 3.676399714517501,
+        "probe_weight_norm": 0.22826170091043768
+      },
+      {
+        "slot": 4,
+        "layer": 16,
+        "head": 23,
+        "contrib": 5.724919280566226,
+        "cos_mean": 0.03486798607596956,
+        "abscos_mean": 0.042582663997745254,
+        "probe_weight": 3.5373827981633603,
+        "probe_weight_norm": 0.2196303658417794
+      },
+      {
+        "slot": 5,
+        "layer": 14,
+        "head": 12,
+        "contrib": 7.221344459685569,
+        "cos_mean": -0.052773393517364986,
+        "abscos_mean": 0.056670751998870006,
+        "probe_weight": 4.135347333218483,
+        "probe_weight_norm": 0.2567570148611489
+      },
+      {
+        "slot": 6,
+        "layer": 16,
+        "head": 13,
+        "contrib": 5.756550608744913,
+        "cos_mean": -0.06557481925751694,
+        "abscos_mean": 0.0668965459219368,
+        "probe_weight": 3.34941807694971,
+        "probe_weight_norm": 0.20795994088609285
+      },
+      {
+        "slot": 7,
+        "layer": 14,
+        "head": 29,
+        "contrib": 7.635315387283259,
+        "cos_mean": 0.0010686281416415876,
+        "abscos_mean": 0.051057277776468124,
+        "probe_weight": 3.724414133157594,
+        "probe_weight_norm": 0.2312428383595934
+      },
+      {
+        "slot": 8,
+        "layer": 14,
+        "head": 20,
+        "contrib": 7.067499665367613,
+        "cos_mean": 0.10735570498102875,
+        "abscos_mean": 0.1077144674949058,
+        "probe_weight": 3.6474307787457185,
+        "probe_weight_norm": 0.22646306663062293
+      },
+      {
+        "slot": 9,
+        "layer": 16,
+        "head": 17,
+        "contrib": 5.465151988358667,
+        "cos_mean": 0.12043566974594233,
+        "abscos_mean": 0.12660313387708097,
+        "probe_weight": 3.862423848503703,
+        "probe_weight_norm": 0.23981163794976598
+      },
+      {
+        "slot": 10,
+        "layer": 14,
+        "head": 15,
+        "contrib": 7.334701370922584,
+        "cos_mean": 0.03401989149562775,
+        "abscos_mean": 0.048274387074339245,
+        "probe_weight": 4.116427933061627,
+        "probe_weight_norm": 0.25558233996305335
+      },
+      {
+        "slot": 11,
+        "layer": 14,
+        "head": 3,
+        "contrib": 7.731851928461754,
+        "cos_mean": 0.05705205731123826,
+        "abscos_mean": 0.06360345131520093,
+        "probe_weight": 3.6211868849538167,
+        "probe_weight_norm": 0.2248336257915877
+      },
+      {
+        "slot": 12,
+        "layer": 14,
+        "head": 23,
+        "contrib": 7.100305380850752,
+        "cos_mean": 0.09451208549229212,
+        "abscos_mean": 0.09670985868110363,
+        "probe_weight": 3.774361482744885,
+        "probe_weight_norm": 0.2343439883590731
+      },
+      {
+        "slot": 13,
+        "layer": 14,
+        "head": 24,
+        "contrib": 6.9418962457570075,
+        "cos_mean": -0.09316126170214087,
+        "abscos_mean": 0.0972630042888648,
+        "probe_weight": 3.659806128709542,
+        "probe_weight_norm": 0.227231432056436
+      },
+      {
+        "slot": 14,
+        "layer": 13,
+        "head": 11,
+        "contrib": 10.117250435674698,
+        "cos_mean": -0.08365171970438999,
+        "abscos_mean": 0.08760944149667593,
+        "probe_weight": 3.030521992129552,
+        "probe_weight_norm": 0.18816019972974204
+      },
+      {
+        "slot": 15,
+        "layer": 13,
+        "head": 3,
+        "contrib": 10.35022253298159,
+        "cos_mean": 0.05234416380873485,
+        "abscos_mean": 0.06397219580547733,
+        "probe_weight": 2.897060578988628,
+        "probe_weight_norm": 0.17987379685326477
+      },
+      {
+        "slot": 16,
+        "layer": 16,
+        "head": 21,
+        "contrib": 5.438841744073947,
+        "cos_mean": 0.15240021606180698,
+        "abscos_mean": 0.15405822712325282,
+        "probe_weight": 3.510879720886409,
+        "probe_weight_norm": 0.2179848327201472
+      },
+      {
+        "slot": 17,
+        "layer": 11,
+        "head": 30,
+        "contrib": 12.305943531170135,
+        "cos_mean": 0.02486662938768629,
+        "abscos_mean": 0.068469070873546,
+        "probe_weight": 3.312622848101222,
+        "probe_weight_norm": 0.20567538475113867
+      },
+      {
+        "slot": 18,
+        "layer": 13,
+        "head": 17,
+        "contrib": 10.114606235588404,
+        "cos_mean": 0.04777873121013827,
+        "abscos_mean": 0.06848912325045649,
+        "probe_weight": 3.09262745205403,
+        "probe_weight_norm": 0.19201622709863952
+      },
+      {
+        "slot": 19,
+        "layer": 16,
+        "head": 26,
+        "contrib": 5.771468477929073,
+        "cos_mean": -0.09945668414702907,
+        "abscos_mean": 0.10060841248115872,
+        "probe_weight": 3.561474207902443,
+        "probe_weight_norm": 0.22112616243393396
+      }
+    ],
+    "per_layer": {
+      "11": {
+        "n_heads": 1,
+        "contrib_sum": 12.305944,
+        "contrib_max": 12.305944,
+        "cos_mean": 0.02487,
+        "probe_weight_share": 0.20568,
+        "contrib_share": 0.0816
+      },
+      "13": {
+        "n_heads": 3,
+        "contrib_sum": 30.582079,
+        "contrib_max": 10.350223,
+        "cos_mean": 0.00549,
+        "probe_weight_share": 0.56005,
+        "contrib_share": 0.2027
+      },
+      "14": {
+        "n_heads": 11,
+        "contrib_sum": 79.83544,
+        "contrib_max": 7.731852,
+        "cos_mean": 0.02988,
+        "probe_weight_share": 2.5822,
+        "contrib_share": 0.5291
+      },
+      "16": {
+        "n_heads": 5,
+        "contrib_sum": 28.156932,
+        "contrib_max": 5.771468,
+        "cos_mean": 0.02853,
+        "probe_weight_share": 1.10651,
+        "contrib_share": 0.1866
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0528,
+      "contrib_top1_share": 0.0816,
+      "contrib_top5_share": 0.3355,
+      "abscos_herfindahl": 0.0692,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.684
+  },
+  "mistral_7b_instruct": {
+    "n_rows": 256,
+    "layers": [
+      14,
+      15,
+      16,
+      17,
+      25,
+      30,
+      31
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 15,
+        "head": 4,
+        "contrib": 16.178373880004976,
+        "cos_mean": 0.06621659035190353,
+        "abscos_mean": 0.07213790268096873,
+        "probe_weight": 3.6780368909789205,
+        "probe_weight_norm": 0.21461125155496868
+      },
+      {
+        "slot": 1,
+        "layer": 14,
+        "head": 30,
+        "contrib": 24.295547178614726,
+        "cos_mean": 0.05584853478184278,
+        "abscos_mean": 0.07238001882497658,
+        "probe_weight": 3.603774961025469,
+        "probe_weight_norm": 0.21027811238246957
+      },
+      {
+        "slot": 2,
+        "layer": 15,
+        "head": 17,
+        "contrib": 17.8610416252546,
+        "cos_mean": 0.03460607528494769,
+        "abscos_mean": 0.04470309756323429,
+        "probe_weight": 3.627775241652024,
+        "probe_weight_norm": 0.21167851439463223
+      },
+      {
+        "slot": 3,
+        "layer": 15,
+        "head": 0,
+        "contrib": 16.362055503304862,
+        "cos_mean": 0.07683184887096761,
+        "abscos_mean": 0.08598475097589833,
+        "probe_weight": 3.398418163732828,
+        "probe_weight_norm": 0.19829566615133243
+      },
+      {
+        "slot": 4,
+        "layer": 17,
+        "head": 13,
+        "contrib": 16.209325477719347,
+        "cos_mean": 0.02966427720578929,
+        "abscos_mean": 0.04987445194788291,
+        "probe_weight": 3.2195811476832104,
+        "probe_weight_norm": 0.18786063328559371
+      },
+      {
+        "slot": 5,
+        "layer": 31,
+        "head": 10,
+        "contrib": 0.7499847278114606,
+        "cos_mean": 0.03538388960795312,
+        "abscos_mean": 0.045059598795533604,
+        "probe_weight": 5.115276535501132,
+        "probe_weight_norm": 0.2984733247309764
+      },
+      {
+        "slot": 6,
+        "layer": 15,
+        "head": 8,
+        "contrib": 16.43664969277788,
+        "cos_mean": 0.007172241356280954,
+        "abscos_mean": 0.04400148028058229,
+        "probe_weight": 3.5193665299467347,
+        "probe_weight_norm": 0.20535293094124232
+      },
+      {
+        "slot": 7,
+        "layer": 14,
+        "head": 16,
+        "contrib": 25.286715803420975,
+        "cos_mean": -0.1121689734970156,
+        "abscos_mean": 0.11450546958193014,
+        "probe_weight": 3.2052476677509456,
+        "probe_weight_norm": 0.18702428330907606
+      },
+      {
+        "slot": 8,
+        "layer": 25,
+        "head": 28,
+        "contrib": 3.1683848383983233,
+        "cos_mean": 0.04002835146849118,
+        "abscos_mean": 0.04360450390331798,
+        "probe_weight": 3.2693997349657873,
+        "probe_weight_norm": 0.19076751804078407
+      },
+      {
+        "slot": 9,
+        "layer": 25,
+        "head": 5,
+        "contrib": 3.1346201223006025,
+        "cos_mean": 0.07384632392044546,
+        "abscos_mean": 0.07477271283238446,
+        "probe_weight": 3.3328504014265916,
+        "probe_weight_norm": 0.19446982645823058
+      },
+      {
+        "slot": 10,
+        "layer": 15,
+        "head": 29,
+        "contrib": 16.73468837579931,
+        "cos_mean": -0.08794571503287209,
+        "abscos_mean": 0.09785258678264322,
+        "probe_weight": 3.547843463999411,
+        "probe_weight_norm": 0.2070145430018725
+      },
+      {
+        "slot": 11,
+        "layer": 30,
+        "head": 20,
+        "contrib": 1.0859569210851903,
+        "cos_mean": 0.04418307894121845,
+        "abscos_mean": 0.04428594893600756,
+        "probe_weight": 4.97256574646078,
+        "probe_weight_norm": 0.2901462355923475
+      },
+      {
+        "slot": 12,
+        "layer": 15,
+        "head": 20,
+        "contrib": 15.282345797254075,
+        "cos_mean": 0.03733571281841975,
+        "abscos_mean": 0.04670277374073709,
+        "probe_weight": 3.386323709998862,
+        "probe_weight_norm": 0.19758996201359352
+      },
+      {
+        "slot": 13,
+        "layer": 16,
+        "head": 6,
+        "contrib": 14.366879957278204,
+        "cos_mean": 0.046368483823102415,
+        "abscos_mean": 0.051793741829592996,
+        "probe_weight": 4.114995871741626,
+        "probe_weight_norm": 0.2401075465947688
+      },
+      {
+        "slot": 14,
+        "layer": 31,
+        "head": 21,
+        "contrib": 0.7598816277292868,
+        "cos_mean": 0.15506140497014903,
+        "abscos_mean": 0.15506140497014903,
+        "probe_weight": 5.411301930211885,
+        "probe_weight_norm": 0.3157462293629959
+      },
+      {
+        "slot": 15,
+        "layer": 15,
+        "head": 2,
+        "contrib": 18.25968534503012,
+        "cos_mean": -0.04997306800691127,
+        "abscos_mean": 0.05366939480923003,
+        "probe_weight": 3.6922061409141467,
+        "probe_weight_norm": 0.2154380188094387
+      },
+      {
+        "slot": 16,
+        "layer": 16,
+        "head": 14,
+        "contrib": 12.685617426178524,
+        "cos_mean": 0.036526792614735244,
+        "abscos_mean": 0.04658119989730182,
+        "probe_weight": 3.910269165970075,
+        "probe_weight_norm": 0.228161865826824
+      },
+      {
+        "slot": 17,
+        "layer": 15,
+        "head": 26,
+        "contrib": 17.123772129226154,
+        "cos_mean": 0.055055485425028375,
+        "abscos_mean": 0.06398173592099601,
+        "probe_weight": 3.656998034850336,
+        "probe_weight_norm": 0.21338364689006858
+      },
+      {
+        "slot": 18,
+        "layer": 14,
+        "head": 24,
+        "contrib": 24.575042558853085,
+        "cos_mean": 0.01201749409710744,
+        "abscos_mean": 0.05194172206826143,
+        "probe_weight": 3.5131555144580595,
+        "probe_weight_norm": 0.20499052190431255
+      },
+      {
+        "slot": 19,
+        "layer": 14,
+        "head": 1,
+        "contrib": 23.040232737313808,
+        "cos_mean": -0.0027034573466119213,
+        "abscos_mean": 0.06670422335883738,
+        "probe_weight": 3.4449577152707804,
+        "probe_weight_norm": 0.20101122113308484
+      }
+    ],
+    "per_layer": {
+      "14": {
+        "n_heads": 4,
+        "contrib_sum": 97.197538,
+        "contrib_max": 25.286716,
+        "cos_mean": -0.01175,
+        "probe_weight_share": 0.8033,
+        "contrib_share": 0.3427
+      },
+      "15": {
+        "n_heads": 8,
+        "contrib_sum": 134.238612,
+        "contrib_max": 18.259685,
+        "cos_mean": 0.01741,
+        "probe_weight_share": 1.66336,
+        "contrib_share": 0.4733
+      },
+      "16": {
+        "n_heads": 2,
+        "contrib_sum": 27.052497,
+        "contrib_max": 14.36688,
+        "cos_mean": 0.04145,
+        "probe_weight_share": 0.46827,
+        "contrib_share": 0.0954
+      },
+      "17": {
+        "n_heads": 1,
+        "contrib_sum": 16.209325,
+        "contrib_max": 16.209325,
+        "cos_mean": 0.02966,
+        "probe_weight_share": 0.18786,
+        "contrib_share": 0.0572
+      },
+      "25": {
+        "n_heads": 2,
+        "contrib_sum": 6.303005,
+        "contrib_max": 3.168385,
+        "cos_mean": 0.05694,
+        "probe_weight_share": 0.38524,
+        "contrib_share": 0.0222
+      },
+      "30": {
+        "n_heads": 1,
+        "contrib_sum": 1.085957,
+        "contrib_max": 1.085957,
+        "cos_mean": 0.04418,
+        "probe_weight_share": 0.29015,
+        "contrib_share": 0.0038
+      },
+      "31": {
+        "n_heads": 2,
+        "contrib_sum": 1.509866,
+        "contrib_max": 0.759882,
+        "cos_mean": 0.09522,
+        "probe_weight_share": 0.61422,
+        "contrib_share": 0.0053
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0656,
+      "contrib_top1_share": 0.0892,
+      "contrib_top5_share": 0.4071,
+      "abscos_herfindahl": 0.072,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.7129
+  },
+  "qwen25_7b": {
+    "n_rows": 256,
+    "layers": [
+      17,
+      18,
+      19,
+      20
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 20,
+        "head": 12,
+        "contrib": 0.09977303878146879,
+        "cos_mean": -0.017571121301453677,
+        "abscos_mean": 0.05783648181812107,
+        "probe_weight": 5.696926308641596,
+        "probe_weight_norm": 0.23172985113554181
+      },
+      {
+        "slot": 1,
+        "layer": 20,
+        "head": 2,
+        "contrib": 0.0857580985955782,
+        "cos_mean": 0.08229753062806461,
+        "abscos_mean": 0.09936556567903777,
+        "probe_weight": 6.182491710869082,
+        "probe_weight_norm": 0.25148085233842987
+      },
+      {
+        "slot": 2,
+        "layer": 18,
+        "head": 2,
+        "contrib": 0.16104144953769117,
+        "cos_mean": 0.03890724140882324,
+        "abscos_mean": 0.05065900736058437,
+        "probe_weight": 5.25496300816371,
+        "probe_weight_norm": 0.21375242185551765
+      },
+      {
+        "slot": 3,
+        "layer": 18,
+        "head": 11,
+        "contrib": 0.1487922059312793,
+        "cos_mean": 0.06496192403365271,
+        "abscos_mean": 0.07194035488927053,
+        "probe_weight": 5.0234130029387964,
+        "probe_weight_norm": 0.2043338256978297
+      },
+      {
+        "slot": 4,
+        "layer": 20,
+        "head": 0,
+        "contrib": 0.08770045272799792,
+        "cos_mean": 0.027415131128416148,
+        "abscos_mean": 0.034143274586037844,
+        "probe_weight": 5.41668167448639,
+        "probe_weight_norm": 0.2203305379206575
+      },
+      {
+        "slot": 5,
+        "layer": 18,
+        "head": 0,
+        "contrib": 0.16688195632363909,
+        "cos_mean": -0.13815315425921038,
+        "abscos_mean": 0.13815315425921038,
+        "probe_weight": 4.900263686065761,
+        "probe_weight_norm": 0.199324567841862
+      },
+      {
+        "slot": 6,
+        "layer": 19,
+        "head": 17,
+        "contrib": 0.11098967753000336,
+        "cos_mean": 0.11744852621280277,
+        "abscos_mean": 0.11760915976549648,
+        "probe_weight": 6.179692737359274,
+        "probe_weight_norm": 0.2513670004682071
+      },
+      {
+        "slot": 7,
+        "layer": 18,
+        "head": 21,
+        "contrib": 0.16324457647284568,
+        "cos_mean": 0.09854999773556483,
+        "abscos_mean": 0.09878036997561326,
+        "probe_weight": 4.62849767822601,
+        "probe_weight_norm": 0.18827013372624457
+      },
+      {
+        "slot": 8,
+        "layer": 17,
+        "head": 23,
+        "contrib": 0.29457520189176983,
+        "cos_mean": 0.10983528139007347,
+        "abscos_mean": 0.11029942130911613,
+        "probe_weight": 6.145648828069048,
+        "probe_weight_norm": 0.24998222039479642
+      },
+      {
+        "slot": 9,
+        "layer": 18,
+        "head": 17,
+        "contrib": 0.15019073124562665,
+        "cos_mean": -0.00912728423412739,
+        "abscos_mean": 0.039230814016370685,
+        "probe_weight": 5.009685997074483,
+        "probe_weight_norm": 0.20377546196743548
+      },
+      {
+        "slot": 10,
+        "layer": 18,
+        "head": 25,
+        "contrib": 0.1677609664484223,
+        "cos_mean": 0.05918253821802166,
+        "abscos_mean": 0.06006082100905303,
+        "probe_weight": 5.5811090331999855,
+        "probe_weight_norm": 0.22701883355465827
+      },
+      {
+        "slot": 11,
+        "layer": 18,
+        "head": 18,
+        "contrib": 0.1457006322132417,
+        "cos_mean": 0.05471633867777164,
+        "abscos_mean": 0.058786062697491925,
+        "probe_weight": 5.10044591598874,
+        "probe_weight_norm": 0.20746723913983312
+      },
+      {
+        "slot": 12,
+        "layer": 19,
+        "head": 2,
+        "contrib": 0.10718569590413063,
+        "cos_mean": -0.15241854420836015,
+        "abscos_mean": 0.15241854420836015,
+        "probe_weight": 6.189318330996572,
+        "probe_weight_norm": 0.2517585339478097
+      },
+      {
+        "slot": 13,
+        "layer": 19,
+        "head": 21,
+        "contrib": 0.09960076789087874,
+        "cos_mean": 0.11842425333029316,
+        "abscos_mean": 0.11844863005106979,
+        "probe_weight": 6.858003685857645,
+        "probe_weight_norm": 0.278958176236218
+      },
+      {
+        "slot": 14,
+        "layer": 18,
+        "head": 3,
+        "contrib": 0.16157567513075363,
+        "cos_mean": 0.005795739790876588,
+        "abscos_mean": 0.030946121537859295,
+        "probe_weight": 5.22415667382727,
+        "probe_weight_norm": 0.2124993343337454
+      },
+      {
+        "slot": 15,
+        "layer": 17,
+        "head": 16,
+        "contrib": 0.2671813366873891,
+        "cos_mean": -0.035878064360361256,
+        "abscos_mean": 0.0636375951810034,
+        "probe_weight": 5.648768043051897,
+        "probe_weight_norm": 0.22977095135143913
+      },
+      {
+        "slot": 16,
+        "layer": 18,
+        "head": 12,
+        "contrib": 0.15319938658712387,
+        "cos_mean": 0.11306568824468416,
+        "abscos_mean": 0.11936600537025893,
+        "probe_weight": 4.69687605458612,
+        "probe_weight_norm": 0.19105151268682247
+      },
+      {
+        "slot": 17,
+        "layer": 18,
+        "head": 13,
+        "contrib": 0.15364677941168103,
+        "cos_mean": 0.015028516938588598,
+        "abscos_mean": 0.05188266732580809,
+        "probe_weight": 5.328215801201011,
+        "probe_weight_norm": 0.21673207402339761
+      },
+      {
+        "slot": 18,
+        "layer": 18,
+        "head": 1,
+        "contrib": 0.16431079044710623,
+        "cos_mean": 0.0025971081307423053,
+        "abscos_mean": 0.03617982886600497,
+        "probe_weight": 4.987866610257024,
+        "probe_weight_norm": 0.20288793016780368
+      },
+      {
+        "slot": 19,
+        "layer": 20,
+        "head": 23,
+        "contrib": 0.08132776976195638,
+        "cos_mean": -0.08247171195539889,
+        "abscos_mean": 0.08578206665137336,
+        "probe_weight": 5.291404326729747,
+        "probe_weight_norm": 0.21523471965418872
+      }
+    ],
+    "per_layer": {
+      "17": {
+        "n_heads": 2,
+        "contrib_sum": 0.561757,
+        "contrib_max": 0.294575,
+        "cos_mean": 0.03698,
+        "probe_weight_share": 0.47975,
+        "contrib_share": 0.1891
+      },
+      "18": {
+        "n_heads": 11,
+        "contrib_sum": 1.736345,
+        "contrib_max": 0.167761,
+        "cos_mean": 0.02777,
+        "probe_weight_share": 2.26711,
+        "contrib_share": 0.5845
+      },
+      "19": {
+        "n_heads": 3,
+        "contrib_sum": 0.317776,
+        "contrib_max": 0.11099,
+        "cos_mean": 0.02782,
+        "probe_weight_share": 0.78208,
+        "contrib_share": 0.107
+      },
+      "20": {
+        "n_heads": 4,
+        "contrib_sum": 0.354559,
+        "contrib_max": 0.099773,
+        "cos_mean": 0.00242,
+        "probe_weight_share": 0.91878,
+        "contrib_share": 0.1194
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0565,
+      "contrib_top1_share": 0.0992,
+      "contrib_top5_share": 0.3571,
+      "abscos_herfindahl": 0.0738,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.6798
+  },
+  "qwen25_7b_instruct": {
+    "n_rows": 256,
+    "layers": [
+      18,
+      19,
+      20,
+      22
+    ],
+    "per_head": [
+      {
+        "slot": 0,
+        "layer": 18,
+        "head": 5,
+        "contrib": 0.29793962304789534,
+        "cos_mean": 0.023351507393993557,
+        "abscos_mean": 0.05689380359978194,
+        "probe_weight": 4.767024180233301,
+        "probe_weight_norm": 0.19999630801844803
+      },
+      {
+        "slot": 1,
+        "layer": 18,
+        "head": 11,
+        "contrib": 0.32572711308339897,
+        "cos_mean": 0.040642632153592366,
+        "abscos_mean": 0.05196943012177409,
+        "probe_weight": 4.7912891486774365,
+        "probe_weight_norm": 0.2010143234342569
+      },
+      {
+        "slot": 2,
+        "layer": 18,
+        "head": 2,
+        "contrib": 0.3563776002590975,
+        "cos_mean": -0.08147472506844691,
+        "abscos_mean": 0.08480121085895363,
+        "probe_weight": 5.190949850661438,
+        "probe_weight_norm": 0.21778173677952542
+      },
+      {
+        "slot": 3,
+        "layer": 18,
+        "head": 7,
+        "contrib": 0.3368892032747397,
+        "cos_mean": -0.03961616463812292,
+        "abscos_mean": 0.05354807088836034,
+        "probe_weight": 5.26251739200445,
+        "probe_weight_norm": 0.22078429004995156
+      },
+      {
+        "slot": 4,
+        "layer": 18,
+        "head": 21,
+        "contrib": 0.32801484121314284,
+        "cos_mean": -0.030064749176684988,
+        "abscos_mean": 0.06276964186512901,
+        "probe_weight": 5.161185926069698,
+        "probe_weight_norm": 0.216533017493567
+      },
+      {
+        "slot": 5,
+        "layer": 18,
+        "head": 19,
+        "contrib": 0.31677790229126207,
+        "cos_mean": 0.040171249874839374,
+        "abscos_mean": 0.047730970684236124,
+        "probe_weight": 4.85624855798939,
+        "probe_weight_norm": 0.2037396383355994
+      },
+      {
+        "slot": 6,
+        "layer": 22,
+        "head": 7,
+        "contrib": 0.0924355180422911,
+        "cos_mean": -0.03696857574747592,
+        "abscos_mean": 0.06260989180660612,
+        "probe_weight": 5.746470772357183,
+        "probe_weight_norm": 0.2410881286008308
+      },
+      {
+        "slot": 7,
+        "layer": 19,
+        "head": 18,
+        "contrib": 0.244747359185282,
+        "cos_mean": -0.0694330935297792,
+        "abscos_mean": 0.0828577900786253,
+        "probe_weight": 5.9495585738582575,
+        "probe_weight_norm": 0.24960849874542076
+      },
+      {
+        "slot": 8,
+        "layer": 18,
+        "head": 1,
+        "contrib": 0.3388273984648793,
+        "cos_mean": -0.0771866896096076,
+        "abscos_mean": 0.08054636268084213,
+        "probe_weight": 4.897202918746529,
+        "probe_weight_norm": 0.2054578425315518
+      },
+      {
+        "slot": 9,
+        "layer": 18,
+        "head": 18,
+        "contrib": 0.3240713767430361,
+        "cos_mean": 0.09057947814424683,
+        "abscos_mean": 0.10031110251757636,
+        "probe_weight": 5.089894272095238,
+        "probe_weight_norm": 0.21354203883511116
+      },
+      {
+        "slot": 10,
+        "layer": 18,
+        "head": 20,
+        "contrib": 0.31788156318053395,
+        "cos_mean": -0.009225245232164857,
+        "abscos_mean": 0.056742499476651644,
+        "probe_weight": 5.27380624050835,
+        "probe_weight_norm": 0.2212579037630771
+      },
+      {
+        "slot": 11,
+        "layer": 20,
+        "head": 8,
+        "contrib": 0.15974177044927862,
+        "cos_mean": 0.05917214646037973,
+        "abscos_mean": 0.0810938066525499,
+        "probe_weight": 6.29812038929425,
+        "probe_weight_norm": 0.264232103234877
+      },
+      {
+        "slot": 12,
+        "layer": 19,
+        "head": 25,
+        "contrib": 0.23759815791845185,
+        "cos_mean": 0.020034188151573658,
+        "abscos_mean": 0.04552414435265546,
+        "probe_weight": 5.851172853361291,
+        "probe_weight_norm": 0.24548081234879643
+      },
+      {
+        "slot": 13,
+        "layer": 18,
+        "head": 13,
+        "contrib": 0.30632133754319957,
+        "cos_mean": 0.11765888169923475,
+        "abscos_mean": 0.12688921886167664,
+        "probe_weight": 5.141429884904976,
+        "probe_weight_norm": 0.21570417015723747
+      },
+      {
+        "slot": 14,
+        "layer": 19,
+        "head": 8,
+        "contrib": 0.2383028025403613,
+        "cos_mean": 0.0047732253197128845,
+        "abscos_mean": 0.04246574030486801,
+        "probe_weight": 5.8632294781779475,
+        "probe_weight_norm": 0.24598663744204716
+      },
+      {
+        "slot": 15,
+        "layer": 18,
+        "head": 10,
+        "contrib": 0.3305518140645048,
+        "cos_mean": -0.006266623477478323,
+        "abscos_mean": 0.034358061541007935,
+        "probe_weight": 5.525552361932604,
+        "probe_weight_norm": 0.23181969093663216
+      },
+      {
+        "slot": 16,
+        "layer": 18,
+        "head": 9,
+        "contrib": 0.40403514781805105,
+        "cos_mean": 0.007067981881269101,
+        "abscos_mean": 0.044667694619646814,
+        "probe_weight": 4.943845161403465,
+        "probe_weight_norm": 0.20741467681147177
+      },
+      {
+        "slot": 17,
+        "layer": 20,
+        "head": 21,
+        "contrib": 0.15564076791404163,
+        "cos_mean": 0.027706181731946406,
+        "abscos_mean": 0.04254218461185473,
+        "probe_weight": 5.3848157428002645,
+        "probe_weight_norm": 0.2259152098252968
+      },
+      {
+        "slot": 18,
+        "layer": 18,
+        "head": 17,
+        "contrib": 0.32496678755149344,
+        "cos_mean": -0.02179347201873544,
+        "abscos_mean": 0.052615409698138715,
+        "probe_weight": 4.561011402132672,
+        "probe_weight_norm": 0.1913532230524445
+      },
+      {
+        "slot": 19,
+        "layer": 19,
+        "head": 22,
+        "contrib": 0.2595238157286095,
+        "cos_mean": -0.07220222783499275,
+        "abscos_mean": 0.08091382497422142,
+        "probe_weight": 5.655388727742075,
+        "probe_weight_norm": 0.23726686150398513
+      }
+    ],
+    "per_layer": {
+      "18": {
+        "n_heads": 13,
+        "contrib_sum": 4.308382,
+        "contrib_max": 0.404035,
+        "cos_mean": 0.00414,
+        "probe_weight_share": 2.7464,
+        "contrib_share": 0.7563
+      },
+      "19": {
+        "n_heads": 4,
+        "contrib_sum": 0.980172,
+        "contrib_max": 0.259524,
+        "cos_mean": -0.02921,
+        "probe_weight_share": 0.97834,
+        "contrib_share": 0.1721
+      },
+      "20": {
+        "n_heads": 2,
+        "contrib_sum": 0.315383,
+        "contrib_max": 0.159742,
+        "cos_mean": 0.04344,
+        "probe_weight_share": 0.49015,
+        "contrib_share": 0.0554
+      },
+      "22": {
+        "n_heads": 1,
+        "contrib_sum": 0.092436,
+        "contrib_max": 0.092436,
+        "cos_mean": -0.03697,
+        "probe_weight_share": 0.24109,
+        "contrib_share": 0.0162
+      }
+    },
+    "concentration": {
+      "contrib_herfindahl": 0.0535,
+      "contrib_top1_share": 0.0709,
+      "contrib_top5_share": 0.3101,
+      "abscos_herfindahl": 0.0753,
+      "uniform_reference": 0.05
+    },
+    "head_probe_test_auc": 0.669
+  }
+}
