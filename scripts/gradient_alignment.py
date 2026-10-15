@@ -95,6 +95,8 @@ def main():
                     help="float32 keeps the gradient clean; float16 halves the "
                          "footprint, which a 7B model needs for the backward pass "
                          "(fp32 7B = 28 GB weights, leaving no room on 32 GB)")
+    ap.add_argument("--save-matrix", action="store_true",
+                    help="also write the gradient matrix for exact percentile recomputation")
     ap.add_argument("--out", default="results/gradient_alignment.json")
     args = ap.parse_args()
     args.cache = resolve_cache(args.cache)
@@ -267,6 +269,14 @@ def main():
     report["elapsed_sec"] = round(time.time() - t0, 1)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     json.dump(report, open(args.out, "w"), indent=2)
+    if args.save_matrix:
+        # The reported percentile is quantised to 1/(n_random+1): with the default
+        # n_random=16 it cannot separate e.g. 0.81 from a 0.95 threshold, and one
+        # model sits exactly there. Save the matrix so the percentile can be
+        # recomputed exactly (scripts/analyze_head_alignment.py) with no GPU pass.
+        npz = args.out.replace(".json", "_matrix.npz")
+        np.savez_compressed(npz, G=G.astype(np.float32), w=w_hat.astype(np.float32))
+        print(f"  saved gradient matrix -> {npz} ({G.shape})")
     print(f"\nwrote {args.out}")
     return 0
 

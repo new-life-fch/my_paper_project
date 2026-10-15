@@ -1,0 +1,109 @@
+{
+  "n_random": 20000,
+  "seed": 42,
+  "source": "results/gradient_alignment_heads_*_q1500_matrix.npz",
+  "per_model": {
+    "llama31_8b_instruct": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": 0.042675,
+      "probe_frac_positive": 1.0,
+      "null_mean_abs": 0.013571,
+      "null_p95_abs": 0.03344,
+      "null_max_abs": 0.077245,
+      "percentile": 0.98725,
+      "p_perm_two_sided": 0.01275,
+      "p_one_sided_positive": 0.00595
+    },
+    "llama31_8b": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": 0.037233,
+      "probe_frac_positive": 0.9961,
+      "null_mean_abs": 0.013148,
+      "null_p95_abs": 0.032333,
+      "null_max_abs": 0.061072,
+      "percentile": 0.97545,
+      "p_perm_two_sided": 0.02455,
+      "p_one_sided_positive": 0.01215
+    },
+    "llama32_3b_instruct": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": -0.012371,
+      "probe_frac_positive": 0.2422,
+      "null_mean_abs": 0.007131,
+      "null_p95_abs": 0.017465,
+      "null_max_abs": 0.033444,
+      "percentile": 0.8321,
+      "p_perm_two_sided": 0.1679,
+      "p_one_sided_positive": 0.91565
+    },
+    "llama32_3b": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": -0.003158,
+      "probe_frac_positive": 0.3047,
+      "null_mean_abs": 0.009377,
+      "null_p95_abs": 0.023022,
+      "null_max_abs": 0.045195,
+      "percentile": 0.21125,
+      "p_perm_two_sided": 0.78875,
+      "p_one_sided_positive": 0.6082
+    },
+    "mistral_7b_instruct": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": 0.010029,
+      "probe_frac_positive": 0.8086,
+      "null_mean_abs": 0.012408,
+      "null_p95_abs": 0.030821,
+      "null_max_abs": 0.063838,
+      "percentile": 0.48115,
+      "p_perm_two_sided": 0.51885,
+      "p_one_sided_positive": 0.2599
+    },
+    "mistral_7b": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": 0.023052,
+      "probe_frac_positive": 0.9336,
+      "null_mean_abs": 0.011554,
+      "null_p95_abs": 0.028168,
+      "null_max_abs": 0.062586,
+      "percentile": 0.8911,
+      "p_perm_two_sided": 0.1089,
+      "p_one_sided_positive": 0.05515
+    },
+    "qwen25_7b_instruct": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": -0.002232,
+      "probe_frac_positive": 0.4219,
+      "null_mean_abs": 0.010674,
+      "null_p95_abs": 0.026109,
+      "null_max_abs": 0.052938,
+      "percentile": 0.13165,
+      "p_perm_two_sided": 0.86835,
+      "p_one_sided_positive": 0.5658
+    },
+    "qwen25_7b": {
+      "n_rows": 256,
+      "dim": 2560,
+      "probe_mean_cos": 0.026123,
+      "probe_frac_positive": 0.9883,
+      "null_mean_abs": 0.012495,
+      "null_p95_abs": 0.030737,
+      "null_max_abs": 0.071777,
+      "percentile": 0.902,
+      "p_perm_two_sided": 0.098,
+      "p_one_sided_positive": 0.048
+    }
+  },
+  "cross_model": {
+    "n_models": 8,
+    "n_positive": 5,
+    "sign_test_p_one_sided": 0.36328,
+    "n_percentile_ge_0_95": 2
+  }
+}
