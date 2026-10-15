@@ -1,0 +1,94 @@
+{
+  "claim": "attn-final edge per model with CI and BH q",
+  "source": "results/significance_summary_q1500.json",
+  "values": {
+    "llama32_3b": {
+      "tag": "llama32_3b",
+      "mean": 0.148,
+      "ci95": [
+        0.106,
+        0.189
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "llama32_3b_instruct": {
+      "tag": "llama32_3b_instruct",
+      "mean": 0.0997,
+      "ci95": [
+        0.064,
+        0.134
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "llama31_8b": {
+      "tag": "llama31_8b",
+      "mean": 0.1144,
+      "ci95": [
+        0.077,
+        0.151
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "llama31_8b_instruct": {
+      "tag": "llama31_8b_instruct",
+      "mean": 0.1291,
+      "ci95": [
+        0.09,
+        0.169
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "mistral_7b": {
+      "tag": "mistral_7b",
+      "mean": 0.101,
+      "ci95": [
+        0.066,
+        0.134
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "mistral_7b_instruct": {
+      "tag": "mistral_7b_instruct",
+      "mean": 0.1166,
+      "ci95": [
+        0.082,
+        0.153
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "qwen25_7b": {
+      "tag": "qwen25_7b",
+      "mean": 0.0882,
+      "ci95": [
+        0.049,
+        0.128
+      ],
+      "p_le0": 0.0,
+      "q_bh": 0.0,
+      "ci_excludes_0": true
+    },
+    "qwen25_7b_instruct": {
+      "tag": "qwen25_7b_instruct",
+      "mean": 0.0586,
+      "ci95": [
+        0.02,
+        0.096
+      ],
+      "p_le0": 0.001,
+      "q_bh": 0.001,
+      "ci_excludes_0": true
+    }
+  }
+}

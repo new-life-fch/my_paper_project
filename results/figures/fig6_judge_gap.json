@@ -1,0 +1,34 @@
+{
+  "claim": "judge vs attn vs final, per model",
+  "source": "significance_<tag>_q1500.json",
+  "judge": {
+    "llama32_3b": 0.545,
+    "llama32_3b_instruct": 0.614,
+    "llama31_8b": 0.574,
+    "llama31_8b_instruct": 0.63,
+    "mistral_7b": 0.579,
+    "mistral_7b_instruct": 0.646,
+    "qwen25_7b": 0.652,
+    "qwen25_7b_instruct": 0.66
+  },
+  "final": {
+    "llama32_3b": 0.536,
+    "llama32_3b_instruct": 0.612,
+    "llama31_8b": 0.562,
+    "llama31_8b_instruct": 0.596,
+    "mistral_7b": 0.583,
+    "mistral_7b_instruct": 0.596,
+    "qwen25_7b": 0.592,
+    "qwen25_7b_instruct": 0.61
+  },
+  "attn": {
+    "llama32_3b": 0.684,
+    "llama32_3b_instruct": 0.712,
+    "llama31_8b": 0.677,
+    "llama31_8b_instruct": 0.725,
+    "mistral_7b": 0.684,
+    "mistral_7b_instruct": 0.713,
+    "qwen25_7b": 0.68,
+    "qwen25_7b_instruct": 0.669
+  }
+}

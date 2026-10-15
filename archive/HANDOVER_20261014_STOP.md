@@ -160,7 +160,7 @@ logit_lens → plot_layer_signal），加上第二轮：
 | 16 | `run_queue.sh` 产物存在就 SKIP | 会永远复用 test-argmax 旧产物；已改为检查"是否当前代码产出" |
 | 17 | **误删了仓库里恢复出来的论文图** | 烟雾测试清理时连带删掉 `llama32_3b_layer_signal.png`；已从 git 恢复（教训：清理前先确认哪些文件在 git 里） |
 | 18 | commit message 声称的改动**漏 add** | 一条 message 写了"补 rank_bm25"但 `requirements.txt` 没被 add；已单独补提交。教训：提交前用 `git diff --cached --stat` 对账 |
-| 19 | 我自己引入过 TODO 悬挂引用（P4-6） | `selfcheck` 第 4 项抓到；已修。**改完文档必须跑 selfcheck** |
+| 19 | 我自己引入过 TODO 悬挂引用（当时指向一个并不存在的待办编号） | `selfcheck` 第 4 项抓到；已修。**改完文档必须跑 selfcheck** |
 | 20 | 一条 commit 因 `-m "…中文…"` 引号被 shell 拆错而失败 | 改用 `git commit -F -` 从 stdin 读 message |
 
 ---

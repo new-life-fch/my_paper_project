@@ -92,11 +92,18 @@ if not any("legacy cache name in code" in m for m in fails):
 
 # ------------------------------------------------------ 4. TODO references
 print("\n[4] every S/P/R reference resolves to a real TODO item")
-todo_path = "TODO.md"
-if os.path.exists(todo_path):
+# TODO.md was archived to archive/TODO.md on 2026-10-15. The S/P/R ids are still
+# cited from script headers and comments, so keep resolving them against the
+# archived copy rather than dropping the check.
+todo_candidates = ["TODO.md", "archive/TODO.md"]
+todo_path = next((p for p in todo_candidates if os.path.exists(p)), None)
+if todo_path:
     todo = open(todo_path, encoding="utf-8").read()
     defined = set(re.findall(r'^#{2,3} ([SPR]\d+-\d+)\.', todo, re.M))
-    docs = ["README.md", "TODO.md", "CLAUDE.md", "HANDOVER.md",
+    docs = ["README.md", "STATUS.md", "TODO.md", "archive/TODO.md",
+            "archive/CLAUDE.md", "archive/HANDOVER.md",
+            "archive/READING_GUIDE.md", "archive/CCFB_READINESS.md",
+            "archive/HANDOVER_20261014_STOP.md", "archive/E11_JUDGEMENT.md",
             "docs/READING_GUIDE.md", "docs/CACHE_NAMING.md",
             "results/figures/README.md", "results/cache/README.md",
             ".claude/skills/write-paper/SKILL.md"]
@@ -112,9 +119,9 @@ if os.path.exists(todo_path):
         for x in dangling:
             bad(f"dangling TODO reference -> {x}")
     else:
-        ok(f"{len(defined)} items, 0 dangling references")
+        ok(f"{len(defined)} items (from {todo_path}), 0 dangling references")
 else:
-    warn("TODO.md not found")
+    warn("TODO.md not found (looked in " + ", ".join(todo_candidates) + ")")
 
 # ------------------------------------------------- 5. alias table soundness
 print("\n[5] alias table never maps a 1500q cache onto a 500q sibling")

@@ -1,0 +1,34 @@
+{
+  "claim": "depth curve, per-head heatmap, head-vs-layer",
+  "source": "results/figures/qwen25_7b_layer_signal.json",
+  "resid_peak": {
+    "layer": 22,
+    "auc": 0.6553,
+    "selection": "val",
+    "val_auc_at_selected": 0.6477
+  },
+  "judge": 0.652,
+  "resid_final": 0.5917,
+  "topk_head_layers": [
+    20,
+    20,
+    18,
+    18,
+    20,
+    18,
+    19,
+    18,
+    17,
+    18,
+    18,
+    18,
+    19,
+    19,
+    18,
+    17,
+    18,
+    18,
+    18,
+    20
+  ]
+}

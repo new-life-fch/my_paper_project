@@ -1,0 +1,34 @@
+{
+  "claim": "depth curve, per-head heatmap, head-vs-layer",
+  "source": "results/figures/llama32_3b_layer_signal.json",
+  "resid_peak": {
+    "layer": 9,
+    "auc": 0.6133,
+    "selection": "val",
+    "val_auc_at_selected": 0.6134
+  },
+  "judge": 0.5447,
+  "resid_final": 0.5355,
+  "topk_head_layers": [
+    11,
+    14,
+    11,
+    11,
+    14,
+    11,
+    12,
+    11,
+    11,
+    10,
+    11,
+    11,
+    14,
+    11,
+    11,
+    10,
+    11,
+    10,
+    11,
+    11
+  ]
+}

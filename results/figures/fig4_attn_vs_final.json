@@ -1,0 +1,38 @@
+{
+  "claim": "attn vs final, paired",
+  "source": "significance_<tag>_q1500.json",
+  "values": {
+    "llama32_3b": {
+      "final": 0.536,
+      "attn": 0.684
+    },
+    "llama32_3b_instruct": {
+      "final": 0.612,
+      "attn": 0.712
+    },
+    "llama31_8b": {
+      "final": 0.562,
+      "attn": 0.677
+    },
+    "llama31_8b_instruct": {
+      "final": 0.596,
+      "attn": 0.725
+    },
+    "mistral_7b": {
+      "final": 0.583,
+      "attn": 0.684
+    },
+    "mistral_7b_instruct": {
+      "final": 0.596,
+      "attn": 0.713
+    },
+    "qwen25_7b": {
+      "final": 0.592,
+      "attn": 0.68
+    },
+    "qwen25_7b_instruct": {
+      "final": 0.61,
+      "attn": 0.669
+    }
+  }
+}
