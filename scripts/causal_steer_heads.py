@@ -237,152 +237,198 @@ def main():
     qid = qte[:n_rows]
 
     yes_ids, no_ids = yes_no_ids(tok)
-    steer = {"vec": None, "alpha": 0.0}
+    dev = next(model.model.parameters()).device
+    st = {"vecs": None}      # [N, H], one injection direction per batch row
 
     def hook(_m, _inp, out):
-        if steer["alpha"] == 0.0 or steer["vec"] is None:
+        if st["vecs"] is None:
             return out
         h = out[0] if isinstance(out, tuple) else out        # [B,S,H]
-        v = torch.as_tensor(steer["vec"], dtype=h.dtype, device=h.device)
-        norm = h[:, -1, :].norm(dim=-1, keepdim=True)
-        h[:, -1, :] = h[:, -1, :] + (steer["alpha"] * norm) * v
+        v = st["vecs"].to(device=h.device, dtype=h.dtype)     # [B,H]
+        norm = h[:, -1, :].norm(dim=-1, keepdim=True)         # [B,1]
+        h[:, -1, :] = h[:, -1, :] + norm * v
         return out
 
     handle = model.model.layers[dom_layer].self_attn.o_proj.register_forward_hook(hook)
-    dev = next(model.model.parameters()).device
 
     @torch.no_grad()
-    def run(dvec, alpha, subset):
-        steer["vec"], steer["alpha"] = dvec, alpha
-        pyes, ldiff = [], []
-        for i in range(0, len(subset), args.batch_size):
-            batch = subset[i:i + args.batch_size]
+    def run_multi(subset, dir_idx, alphas):
+        """One pass over (row, direction) pairs.
+
+        Injection direction varies PER BATCH ROW, so a whole grid of directions is
+        measured in a single sweep instead of one sweep per direction. That is the
+        difference between ~9 and ~90 minutes: the naive version re-ran the
+        natural baseline once per direction, i.e. 49 identical forward passes over
+        the same corpus.
+
+        Because the corpus and the label layout are identical across directions,
+        the pairs are naturally matched, which is what the clustered bootstrap
+        wants anyway.
+        """
+        n = len(subset)
+        order = np.arange(n)                       # which row each slot encodes
+        # Clear the injection BEFORE the natural pass. Leaving the previous
+        # direction set made the "natural" baseline contaminated, which silently
+        # destroyed the per-direction slope (measured slope 0.0367 instead of the
+        # true 0.193) and therefore every alpha derived from it.
+        st["vecs"] = None
+        # natural pass (no injection)
+        pyes0, ld0 = [], []
+        for i in range(0, n, args.batch_size):
+            batch = [subset[j] for j in order[i:i + args.batch_size]]
             prompts = [build_prompt(x["query"], x["passage"]) for x in batch]
             enc = tok(prompts, return_tensors="pt", padding=True).to(dev)
             lg = model(**enc).logits[:, -1, :].float()
             ly = torch.logsumexp(lg[:, yes_ids], dim=1)
             ln = torch.logsumexp(lg[:, no_ids], dim=1)
-            ldiff.append((ly - ln).cpu().numpy())
-            pyes.append(torch.sigmoid(ly - ln).cpu().numpy())
-        return np.concatenate(pyes), np.concatenate(ldiff)
+            ld0.append((ly - ln).cpu().numpy())
+        ld0 = np.concatenate(ld0)
+
+        if len(dir_idx) == 0:
+            return ld0, np.zeros((0, n), dtype=np.float64)
+        # injected passes
+        all_dirs = np.stack([dirs[i] for i in dir_idx])            # [K, H]
+        scal = np.asarray(alphas, dtype=np.float32)                # [K] or [1]
+        if scal.size == 1:
+            scal = np.repeat(scal, len(dir_idx))
+        out_ld = np.zeros((len(dir_idx), n), dtype=np.float64)
+        step = max(1, args.batch_size)
+        for k in range(len(dir_idx)):
+            vec = torch.from_numpy(all_dirs[k] * scal[k]).float()
+            lds = []
+            for i in range(0, n, step):
+                idxs = order[i:i + step]
+                batch = [subset[j] for j in idxs]
+                prompts = [build_prompt(x["query"], x["passage"]) for x in batch]
+                enc = tok(prompts, return_tensors="pt", padding=True).to(dev)
+                st["vecs"] = vec.unsqueeze(0).repeat(len(batch), 1)
+                lg = model(**enc).logits[:, -1, :].float()
+                st["vecs"] = None
+                ly = torch.logsumexp(lg[:, yes_ids], dim=1)
+                ln = torch.logsumexp(lg[:, no_ids], dim=1)
+                lds.append((ly - ln).cpu().numpy())
+            out_ld[k] = np.concatenate(lds)
+        return ld0, out_ld
 
     try:
-        # natural baseline
-        p0, d0 = run(None, 0.0, rows)
-        base = float(d0.mean())
-        print(f"[{args.tag}] natural mean logit-diff = {base:+.3f}")
-
+        rows = rows[:len(rows)]
+        n = len(rows)
+        # calibration set: natural logit-diff and the per-row activation norm scale
         calib = rows[:args.calib_rows]
+        dir_names = ["head_probe"] + [f"random_{i}" for i in range(args.n_random)]
+        dirs = [d_layer] + randoms
+        K = len(dirs)
 
-        # Calibration by regression, not by a linear scan.
-        #
-        # A scan looked reasonable but failed in practice: the mean logit-diff
-        # response to a single-layer head injection is NOT monotone in alpha
-        # (measured on LLaMA-3.2-3B L11: the shift went -0.20 at alpha=8 and
-        # -3.35 at alpha=16), because at larger alpha the perturbation drives a
-        # few rows into the saturating part of the nonlinearity. A scan therefore
-        # rejects directions that are perfectly usable. We instead fit the
-        # response over a small alpha grid and use the fitted slope.
+        # Fit the per-direction slope over an alpha GRID, not at a single alpha.
+        # A one-point estimate folds any nonlinearity into the "slope" (measured:
+        # the probe direction's slope came out 0.037 at alpha=1 where a direct
+        # 32-row measurement of the same direction gave ~0.19), and the resulting
+        # alpha is then wrong by the same factor. Each grid point is one cheap
+        # pass over the calibration subset.
         CAL_ALPHAS = [1.0, 4.0, 16.0]
+        nat_cal_ld, _ = run_multi(calib, [], [])
+        nat_cal = float(nat_cal_ld.mean())
+        xs = np.array(CAL_ALPHAS, dtype=np.float64)
+        cal_curves = np.zeros((K, len(xs)))
+        for j, a in enumerate(CAL_ALPHAS):
+            _, ld = run_multi(calib, list(range(K)),
+                              np.full(K, a, dtype=np.float32))
+            cal_curves[:, j] = ld.mean(axis=1) - nat_cal
+        # least squares through the origin (the response must vanish at alpha=0)
+        slopes = (cal_curves * xs).sum(axis=1) / (xs * xs).sum()
+        # report linearity so a direction whose response is not linear is visible
+        fit_err = np.abs(cal_curves - slopes[:, None] * xs[None, :]).mean(axis=1)
+        print(f"[{args.tag}] natural mean logit-diff (calib) = {nat_cal:+.3f}")
+        print(f"[{args.tag}] slopes {np.round(slopes, 4)}")
+        print(f"[{args.tag}] mean |fit error| {np.round(fit_err, 4)} "
+              f"(large values mean the alpha grid is not in the linear regime)")
 
-        def calibrate(dvec, target):
-            """alpha whose FITTED response equals `target`. Returns (alpha, fitted,
-            slope). alpha is None when the fitted slope is too flat to reach the
-            target within max-alpha."""
-            _, dnat = run(dvec, 0.0, calib)
-            b = float(dnat.mean())
-            xs, ys = [], []
-            for a in CAL_ALPHAS:
-                _, da = run(dvec, a, calib)
-                xs.append(a)
-                ys.append(float(da.mean()) - b)
-            xs = np.array(xs); ys = np.array(ys)
-            # slope through the origin: the response must vanish at alpha=0
-            slope = float((xs * ys).sum() / (xs * xs).sum())
-            if not np.isfinite(slope) or abs(slope) < 1e-6:
-                return None, None, slope
-            a = target / slope
-            if not np.isfinite(a) or abs(a) > args.max_alpha:
-                return None, None, slope
-            return float(a), float(slope * a), slope
+        nat_ld, _ = run_multi(rows, [], [])
+        base = float(nat_ld.mean())
+        print(f"[{args.tag}] natural mean logit-diff (all {n} rows) = {base:+.3f}")
 
         targets = [float(t) for t in args.shift_targets.split(",")]
-        dirs = {"head_probe": d_layer}
-        for i, r in enumerate(randoms):
-            dirs[f"random_{i}"] = r
+        per_dir = {}
+        for ki, dname in enumerate(dir_names):
+            per_dir[dname] = {"slope_per_unit_alpha": round(float(slopes[ki]), 5),
+                              "per_target": {}}
+        for t in targets:
+            alphas = np.array([t / slopes[k] if abs(slopes[k]) > 1e-6 else np.nan
+                               for k in range(K)], dtype=np.float32)
+            ok = np.isfinite(alphas) & (np.abs(alphas) <= args.max_alpha)
+            used = [k for k in range(K) if ok[k]]
+            _, ld = run_multi(rows, used, [alphas[k] for k in used])
+            for j, k in enumerate(used):
+                p = 1.0 / (1.0 + np.exp(-ld[j]))
+                pos, neg = y == 1, y == 0
+                gap = float(p[pos].mean() - p[neg].mean())
+                lo, hi = boot_gap(p, y, qid, n_boot=5000)
+                try:
+                    aucv = float(roc_auc_score(y, p))
+                except ValueError:
+                    aucv = None
+                per_dir[dir_names[k]]["per_target"][f"{t:+.0f}"] = {
+                    "alpha": round(float(alphas[k]), 4),
+                    "fitted_shift": round(float(slopes[k] * alphas[k]), 4),
+                    "alignment_gap": round(gap, 5),
+                    "gap_ci95": [round(lo, 5) if lo is not None else None,
+                                 round(hi, 5) if hi is not None else None],
+                    "auc": round(aucv, 5) if aucv is not None else None,
+                    "mean_pyes": round(float(p.mean()), 5),
+                    "frac_saturated": round(float(((p < 1e-4) | (p > 1 - 1e-4)).mean()), 4),
+                    "pyes": [round(float(x), 5) for x in p],
+                }
+            for k in range(K):
+                if not ok[k]:
+                    per_dir[dir_names[k]]["per_target"][f"{t:+.0f}"] = {
+                        "alpha": None, "degenerate": True,
+                        "slope_per_unit_alpha": round(float(slopes[k]), 5),
+                        "note": "|alpha| exceeds max-alpha; near-flat direction, "
+                                "excluded from the null"}
+            print(f"  shift {t:+.0f}: "
+                  + " ".join(f"{dir_names[k]}="
+                             + (f"{per_dir[dir_names[k]]['per_target'][f'{t:+.0f}']['alignment_gap']:+.4f}"
+                                if ok[k] else "n/a") for k in range(min(4, K)))
+                  + f" ... ({int(ok.sum())}/{K} usable)")
 
         out = {"tag": args.tag, "model": args.model, "n_rows": int(n_rows),
                "dominant_layer": dom_layer, "n_heads_in_direction": len(slots),
                "head_probe_test_auc": round(head_auc, 4),
                "natural_mean_logitdiff": round(base, 4),
                "shift_targets": targets,
-               "per_direction": {}}
-
-        for dname, dvec in dirs.items():
-            rec = {"per_target": {}}
-            for t in targets:
-                a, got, slope = calibrate(dvec, t)
-                if a is None or not np.isfinite(a) or abs(a) > args.max_alpha:
-                    rec["per_target"][f"{t:+.0f}"] = {
-                        "alpha": None, "degenerate": True,
-                        "slope_per_unit_alpha": round(float(slope), 5),
-                        "note": "could not reach target within max-alpha; "
-                                "near-flat direction, excluded from the null"}
-                    continue
-                p, dd = run(dvec, a, rows)
-                pos, neg = y == 1, y == 0
-                gap = float(p[pos].mean() - p[neg].mean())
-                try:
-                    auc = float(roc_auc_score(y, p))
-                except ValueError:
-                    auc = None
-                # Query-clustered bootstrap of the GAP ITSELF: resample queries
-                # and recompute
-                #   mean P(yes)|relevant - mean P(yes)|irrelevant
-                # on each resample. Bootstrapping a per-row "contribution" instead
-                # produced CIs of width ~2e-5 (measured), which is not a property
-                # of the data but of collapsing the two group means too early.
-                lo, hi = boot_gap(p, y, qid, n_boot=5000)
-                rec["per_target"][f"{t:+.0f}"] = {
-                    "alpha": round(float(a), 4),
-                    "fitted_shift": round(float(got), 4) if got is not None else None,
-                    "slope_per_unit_alpha": round(float(slope), 5),
-                    "alignment_gap": round(gap, 5),
-                    "gap_ci95": [round(lo, 5), round(hi, 5)],
-                    "auc": round(auc, 5) if auc is not None else None,
-                    "mean_pyes": round(float(p.mean()), 5),
-                    "frac_saturated": round(float(((p < 1e-4) | (p > 1 - 1e-4)).mean()), 4),
-                    "pyes": [round(float(x), 5) for x in p],
-                }
-            out["per_direction"][dname] = rec
-            print(f"  {dname:14s} " + " ".join(
-                f"{t:+.0f}:" + (f"{rec['per_target'][f'{t:+.0f}']['alignment_gap']:+.4f}"
-                                if not rec['per_target'][f'{t:+.0f}'].get('degenerate')
-                                else "n/a")
-                for t in targets))
-
+               "protocol": "vectorised injection: all directions measured in one "
+                           "sweep over a fixed corpus, so the (row, direction) "
+                           "pairs are matched. alpha is derived from a per-direction "
+                           "slope measured on a calibration subset, then the "
+                           "alignment gap is measured on the full row set.",
+               "per_direction": per_dir}
         # ---------------- registered criterion: percentile vs random null -----
         verdict = {}
         for t in targets:
             k = f"{t:+.0f}"
-            null = [out["per_direction"][f"random_{i}"]["per_target"][k]["alignment_gap"]
-                    for i in range(args.n_random)
-                    if not out["per_direction"][f"random_{i}"]["per_target"][k].get("degenerate")]
-            mine = out["per_direction"]["head_probe"]["per_target"][k]
-            if mine.get("degenerate") or len(null) < 5:
-                verdict[k] = {"passes": None, "reason":
-                              f"degenerate probe point or too few usable random "
-                              f"directions (n={len(null)})"}
+            null = []
+            for i_ in range(args.n_random):
+                v = per_dir.get(f"random_{i_}", {}).get("per_target", {}).get(k)
+                if v and not v.get("degenerate"):
+                    null.append(v["alignment_gap"])
+            mine = per_dir["head_probe"]["per_target"].get(k)
+            if mine is None or mine.get("degenerate") or len(null) < 5:
+                verdict[k] = {"passes": None,
+                              "reason": f"degenerate probe point or too few usable "
+                                        f"random directions (n={len(null)})"}
                 continue
             null = np.array(null)
             pct = float((np.abs(null) < abs(mine["alignment_gap"])).mean())
+            expect = -1 if t < 0 else 1
             verdict[k] = {
                 "passes": bool(pct >= 0.95),
                 "percentile": round(pct, 4),
+                "percentile_resolution": round(1.0 / (len(null) + 1), 4),
                 "probe_gap": mine["alignment_gap"],
+                "probe_sign_matches_shift": bool(np.sign(mine["alignment_gap"]) == expect),
                 "null_abs_mean": round(float(np.abs(null).mean()), 5),
                 "null_abs_max": round(float(np.abs(null).max()), 5),
-                "n_null_usable": int(len(null)),
+                "n_random_usable": int(len(null)),
             }
         out["registered_criterion"] = {
             "statement": "head-probe alignment gap >= 95th percentile of the same "
