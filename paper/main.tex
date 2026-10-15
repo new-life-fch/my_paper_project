@@ -47,10 +47,13 @@ indicating that alignment moves relevance signal toward the output without
 closing the gap. Comparing base and instruct pairs, alignment reliably
 improves the output readout (the judge gets stronger), and the model's own
 readout direction still extracts less than a probe trained on the same layer on
-every model. A gradient control that edits nothing locates why: the direction
-the verdict is locally sensitive to is not the direction a probe reads relevance
-from, on all eight models. In short: relevance is encoded internally, and the
-model's own readout extracts only part of it.
+every model. A gradient control that edits nothing locates why, for the
+residual-stream reader: the direction the verdict is locally sensitive to is not
+the direction the probe reads relevance from, on all eight models. The same
+control on the attention-head reader---the one carrying our strongest
+effect---comes out mixed, so we claim the misalignment only where it replicates.
+In short: relevance is encoded internally, and the model's own readout extracts
+only part of it.
 \end{abstract}
 
 \section{Introduction}
@@ -497,7 +500,9 @@ direction is never an outlier: the cosine is $+0.019$ at most and $-0.010$ at
 least, while the random-direction spread reaches magnitudes of $0.016$ to
 $0.037$, placing the probe direction between the $0.06$ and $0.81$ percentile of
 that null (Table~\ref{tab:grad}). The output readout is therefore, to first
-order, \emph{not pointed at the direction from which a probe reads relevance}.
+order, \emph{not pointed at the direction from which the residual-stream probe
+reads relevance}---and we stress \emph{residual-stream} because, as the next
+paragraph shows, the head probe does not reproduce this.
 Crucially this holds for the Qwen models too, i.e.\ \emph{even where the verdict
 is demonstrably driven by $L^*$ content}. That is the misalignment, measured
 without perturbing anything: the information is present and the downstream
@@ -775,8 +780,11 @@ improves what the model says without making its output the better place to
 read relevance from. The mechanism is best described as \emph{misalignment}
 rather than attenuation: the information is present and the downstream network
 does use the internal layer, but the direction the verdict is locally sensitive
-to is not the relevance direction---a mismatch we can measure at every depth we
-tried and on every model in our set. Internals know more than the model can say.
+to is not the relevance direction---a mismatch that replicates on every model
+for the residual-stream reader. We are explicit that the same test on the
+attention-head reader, whose advantage is this paper's strongest single result,
+does \emph{not} replicate uniformly; the two readers differ and we do not know
+why. Internals know more than the model can say.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
