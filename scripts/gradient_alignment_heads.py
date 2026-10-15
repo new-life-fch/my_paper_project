@@ -79,7 +79,15 @@ def load(cache, scheme, split):
             d.get("query_ids"))
 
 
-def build_prompt(passage, query):
+def build_prompt(query, passage):
+    """Argument order matches extract_instruct.py::build_instruct_prompt.
+
+    The project convention is builder(query, passage); several call sites pass
+    these by POSITION, so a swapped signature silently produces a reversed
+    prompt. selfcheck.py evaluates every *prompt* function as
+    builder("QUERY", "PASSAGE") and compares the result to the frozen string,
+    which is how this was caught.
+    """
     return (f"Document: {passage}\nQuestion: {query}\n"
             f"Is the document relevant to the question? Answer:")
 
@@ -233,7 +241,7 @@ def main():
 
     n_rows = min(args.n_rows, len(rows))
     rows = rows[:n_rows]
-    texts = [build_prompt(r["passage"], r["query"]) for r in rows]
+    texts = [build_prompt(r["query"], r["passage"]) for r in rows]
 
     yes_ids = [tok.encode(v, add_special_tokens=False)[0] for v in
                ("yes", "Yes", "YES", " yes", " YES")]
