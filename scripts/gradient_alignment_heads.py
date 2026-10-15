@@ -110,6 +110,12 @@ def main():
     args = ap.parse_args()
 
     t0 = time.time()
+    # docs/CACHE_NAMING.md: every reader of a cache must go through the alias
+    # table, otherwise an old directory name silently turns into a "file not
+    # found" much later (or worse, into a different cache being read).
+    sys.path.insert(0, ROOT)
+    from src.cache_paths import resolve_cache
+    args.cache = resolve_cache(args.cache)
     meta = json.load(open(os.path.join(args.cache, "meta.json")))
     n_layers, n_heads = int(meta["n_layers"]), int(meta["n_heads"])
     hidden = int(meta["hidden"]) if "hidden" in meta else None
