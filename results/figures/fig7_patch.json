@@ -1,0 +1,296 @@
+{
+  "claim": "patching behaviour and gradient percentiles",
+  "source": "results/patch_v2_*.json + gradient_alignment_*.json",
+  "per_model": {
+    "llama32_3b": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.4553,
+        0.4571,
+        0.4602,
+        0.4633,
+        0.4659
+      ],
+      "auc_vs_target": [
+        0.5447,
+        0.5429,
+        0.5398,
+        0.5367,
+        0.5341
+      ],
+      "follow_gap": [
+        -0.0121,
+        -0.0117,
+        -0.0109,
+        -0.0101,
+        -0.0094
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.003202,
+      "norm_matched_at_1": 0.4987,
+      "raw_at_1": 0.4988,
+      "judge_auc": 0.5447
+    },
+    "llama32_3b_instruct": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.3933,
+        0.4306,
+        0.4944,
+        0.5622,
+        0.6079
+      ],
+      "auc_vs_target": [
+        0.6067,
+        0.5694,
+        0.5056,
+        0.4378,
+        0.3921
+      ],
+      "follow_gap": [
+        -0.0213,
+        -0.0116,
+        -0.0016,
+        0.0085,
+        0.0184
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.002098,
+      "norm_matched_at_1": 0.3489,
+      "raw_at_1": 0.3489,
+      "judge_auc": 0.6067
+    },
+    "llama31_8b": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.437,
+        0.4407,
+        0.4443,
+        0.448,
+        0.4497
+      ],
+      "auc_vs_target": [
+        0.563,
+        0.5593,
+        0.5557,
+        0.552,
+        0.5503
+      ],
+      "follow_gap": [
+        -0.0164,
+        -0.0148,
+        -0.0129,
+        -0.0113,
+        -0.0103
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.003089,
+      "norm_matched_at_1": 0.5152,
+      "raw_at_1": 0.5153,
+      "judge_auc": 0.563
+    },
+    "llama31_8b_instruct": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.3681,
+        0.3752,
+        0.3829,
+        0.3919,
+        0.4017
+      ],
+      "auc_vs_target": [
+        0.6319,
+        0.6248,
+        0.6171,
+        0.6081,
+        0.5983
+      ],
+      "follow_gap": [
+        -0.0367,
+        -0.0337,
+        -0.0306,
+        -0.0276,
+        -0.0246
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.003372,
+      "norm_matched_at_1": 0.4264,
+      "raw_at_1": 0.4264,
+      "judge_auc": 0.6319
+    },
+    "mistral_7b": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.4208,
+        0.4447,
+        0.4792,
+        0.523,
+        0.5622
+      ],
+      "auc_vs_target": [
+        0.5792,
+        0.5553,
+        0.5208,
+        0.477,
+        0.4378
+      ],
+      "follow_gap": [
+        -0.0244,
+        -0.0149,
+        -0.0033,
+        0.0087,
+        0.0184
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.002555,
+      "norm_matched_at_1": 0.4509,
+      "raw_at_1": 0.451,
+      "judge_auc": 0.5792
+    },
+    "mistral_7b_instruct": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.3543,
+        0.3538,
+        0.3546,
+        0.3555,
+        0.3588
+      ],
+      "auc_vs_target": [
+        0.6457,
+        0.6462,
+        0.6454,
+        0.6445,
+        0.6412
+      ],
+      "follow_gap": [
+        -0.0413,
+        -0.0394,
+        -0.0375,
+        -0.0353,
+        -0.0331
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.002596,
+      "norm_matched_at_1": 0.45,
+      "raw_at_1": 0.4499,
+      "judge_auc": 0.6457
+    },
+    "qwen25_7b": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.3485,
+        0.416,
+        0.5069,
+        0.5967,
+        0.6629
+      ],
+      "auc_vs_target": [
+        0.6515,
+        0.584,
+        0.4931,
+        0.4033,
+        0.3371
+      ],
+      "follow_gap": [
+        -0.0857,
+        -0.0536,
+        -0.0037,
+        0.0507,
+        0.0901
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.003526,
+      "norm_matched_at_1": 0.3534,
+      "raw_at_1": 0.3534,
+      "judge_auc": 0.6515
+    },
+    "qwen25_7b_instruct": {
+      "alpha": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "auc_vs_source": [
+        0.3384,
+        0.4054,
+        0.497,
+        0.6008,
+        0.6596
+      ],
+      "auc_vs_target": [
+        0.6616,
+        0.5946,
+        0.503,
+        0.3992,
+        0.3404
+      ],
+      "follow_gap": [
+        -0.1207,
+        -0.0827,
+        -0.0147,
+        0.0416,
+        0.1076
+      ],
+      "identity_max_absdiff": 0.0,
+      "row_alignment_rel_mae": 0.003485,
+      "norm_matched_at_1": 0.3821,
+      "raw_at_1": 0.3821,
+      "judge_auc": 0.6616
+    }
+  },
+  "gradient_percentiles": {
+    "llama32_3b": 0.5625,
+    "llama32_3b_instruct": 0.0625,
+    "llama31_8b": 0.625,
+    "llama31_8b_instruct": 0.8125,
+    "mistral_7b": 0.375,
+    "mistral_7b_instruct": 0.5625,
+    "qwen25_7b": 0.375,
+    "qwen25_7b_instruct": 0.5625
+  }
+}

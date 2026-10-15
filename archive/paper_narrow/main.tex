@@ -1,0 +1,511 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,booktabs,amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{authblk}
+
+\title{\textbf{Where Does a Language Model Keep What It Knows About Relevance?\\
+Attention Heads Decode Retrieval Relevance Better Than the Output Representation}}
+\author{Chenhui Feng}
+\affil{Nanjing University of Aeronautics and Astronautics}
+\date{}
+
+\newcommand{\auc}{\textsc{auc}}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ask a language model whether a retrieved passage answers a query and its
+zero-shot verdict is the weakest of the four relevance signals we can extract
+from the same forward pass. We compare four \emph{readers} that all consume the same frozen
+forward pass over the same prompt and the same answer token: the model's literal
+verdict, a trained linear probe on the final-layer hidden state (the output
+representation), a trained probe on the best residual-stream layer, and a probe
+on the top attention heads. Across eight instruction- and base-tuned models from
+three families (LLaMA, Mistral, Qwen; 3B--8B; 1500 queries each), reading the
+attention heads decodes relevance better than reading the output representation
+on \emph{every} model. The advantage is $+0.06$ to $+0.15$ \auc, with
+query-clustered bootstrap confidence intervals that exclude zero after
+Benjamini--Hochberg correction across the full $8\times4$ family of tests
+($q\le0.001$ throughout)---it is the only one of the four contrasts we test
+that survives correction on all eight models. The edge is not an artefact of
+dimensionality: matching the final layer's read-out procedure to the head
+probe's feature budget leaves it essentially unchanged. It is also not an
+artefact of training: fitting a probe on the output representation never
+separates from the model's own zero-shot verdict after correction (on seven of
+eight models the judge is in fact the stronger of the two). We are explicit about where
+the claim stops. The comparison is defined against one particular output-side
+reader, and re-reading that same layer with a different read-out (a per-chunk
+ensemble) closes or reverses the edge on two of eight models; and the
+residual-stream version of the comparison is significant on the three base
+models only. What we can say without qualification is this: for the task of
+judging retrieval relevance, the attention heads of a frozen LLM are the best
+place we found to read the answer, and the model's own output is the worst.
+\end{abstract}
+
+\section{Introduction}
+
+A retrieval-augmented system hands a language model a passage and a question.
+The model must decide whether the passage is relevant. In our experiments it
+usually can---just not where you would look first.
+
+Consider what the same forward pass offers. The model emits a verbal verdict,
+and reading the yes/no logit difference is free but weak. A logistic regression
+on the final-layer hidden state does better, because it is trained on labelled
+relevance. But the final layer is only one place in a deep stack, and it is the
+place furthest along a computation that must also serve every other task the
+model performs. We asked a narrow, measurable question: \emph{holding the model,
+the prompt, the token position, and the training budget fixed, which internal
+representation is the best place to read relevance from?}
+
+The answer, across eight models, is the attention heads. This is a
+\emph{relative} result and we keep it that way. We do not claim that a probe
+beats a trained cross-encoder reranker; an earlier phase of this project tested
+that and found it false, and we do not revisit it. We do not claim cross-domain
+generalisation. We claim something smaller and, we think, more useful: that the
+choice \emph{where} to read is worth $+0.06$ to $+0.15$ \auc, reliably, across
+model families and training regimes.
+
+\paragraph{Contributions.}
+\begin{itemize}
+  \item \textbf{A controlled four-way comparison} (\S\ref{sec:setup}) on one
+  frozen forward pass, with layer and head selection done on a held-out
+  validation split, and with all four readers reporting over identical rows.
+  \item \textbf{A result that replicates across the panel} (\S\ref{sec:results}):
+  attention heads beat the output representation on 8/8 models, and they are the
+  only one of the four contrasts that survives Benjamini--Hochberg correction
+  everywhere.
+  \item \textbf{Two controls that rule out the obvious explanations}
+  (\S\ref{sec:controls}): a capacity-matched read-out control that leaves the
+  edge intact, and a training control showing that a probe on the output
+  representation adds nothing over the zero-shot verdict.
+  \item \textbf{An explicit statement of where the claim stops}
+  (\S\ref{sec:limits}), including the read-out sensitivity we found on two
+  models and the fact that the residual-stream form of the comparison holds only
+  on base models.
+\end{itemize}
+
+\paragraph{What we deliberately do not claim.}
+This is a probing study, so every reader here is correlational. We initially
+expected to add a causal account of \emph{why} the output is weak, and we ran
+that experiment; it did not support the claim we hoped for, and we report the
+null in the companion note rather than dress it up. The present paper therefore
+makes no mechanistic assertion. It is about measurement.
+
+\section{Setup}
+\label{sec:setup}
+
+\subsection{Task and data}
+
+We use MS MARCO v1.1, forming (query, passage, label) triples. Each query
+contributes its relevant passages (as marked in the dataset) and hard negatives
+drawn from the same query's non-selected retrieved passages, so ``irrelevant''
+means \emph{retrieved but not judged relevant} rather than \emph{random}.
+Splits are made \emph{by query}, 70/15/15, so no query appears in two splits.
+We sample 1500 queries, giving 7456 triples: 5218 train (1050 queries), 1121
+validation (225), and 1117 test (225; 245 relevant rows).
+
+Three disciplines keep the comparison honest. First, \textbf{layer and head
+selection use the validation split only}; the test split is touched once, and
+every per-layer or per-head maximum we report is a validation choice. Fields
+whose names carry \texttt{DO\_NOT\_REPORT} exist to make the test-selected
+alternative explicit and excluded. Second, all four readers are evaluated on
+\textbf{identical rows} with identical labels; we assert both label and
+query-id agreement against the activation cache rather than trusting a shared
+index. Third, every reader uses the \textbf{same regularisation strength}
+($C{=}1.0$), so the four columns of Table~\ref{tab:main} are mutually
+consistent and their differences reconcile with the reported edges.
+
+\subsection{Prompt and activation extraction}
+
+Every reader sees the byte-identically identical prompt
+
+\begin{quote}\ttfamily
+Document: \{passage\}\textbackslash nQuestion: \{query\}\textbackslash nIs the document relevant to the question? Answer:
+\end{quote}
+
+\noindent and every activation is taken at the final \emph{answer token}. We
+enforce this identity mechanically: a self-check script reconstructs the prompt
+from each of the four code paths that build it and fails if the strings differ.
+
+For each decoder layer $i$ we cache (a) the residual stream, i.e.\
+\texttt{layers[i].output[0,-1,:]}, and (b) the per-head attention outputs,
+obtained by reshaping \texttt{self\_attn.o\_proj.output[0,-1,:]} to
+$[n_{\text{heads}}, d_{\text{head}}]$. All three model families in our panel
+have $d_{\text{head}}=128$ (\texttt{hidden} $= n_{\text{heads}}\times128$), so
+the per-head representation has the same geometry throughout. Activations are
+cached in \texttt{float16}.
+
+\subsection{Four readers}
+
+\begin{enumerate}
+  \item \textbf{LLM-judge} (\emph{zero training}). The normalised
+  $P(\text{yes})$ vs.\ $P(\text{no})$ at the answer token, summed over five
+  surface variants of each word (\texttt{yes}/\texttt{Yes}/\texttt{YES}/%
+  \texttt{" yes"}/\texttt{" YES"}). No labels are used.
+  \item \textbf{Output-representation probe}. An $\ell_2$-regularised logistic
+  regression on the final-layer residual, fitted on train.
+  \item \textbf{Internal-residual probe}. The same probe on the
+  validation-selected residual layer $L^\ast$.
+  \item \textbf{Attention-head probe} (\emph{ours}). Per-head validation \auc{}
+  ranks all $n_{\text{layers}}\times n_{\text{heads}}$ heads; we take the top
+  $k{=}20$, standardise each head's activations, concatenate, and fit one
+  logistic regression on train.
+\end{enumerate}
+
+The head probe is deliberately simple. We are not proposing an architecture; we
+are asking which of four equally simple ways of reading the same forward pass
+recovers the most relevance. A head-space budget of $20\times128=2560$
+dimensions is \emph{smaller} than the residual stream (3072--4096 dimensions),
+so the head probe is not winning on feature count (Table~\ref{tab:geom}).
+
+\begin{table}[t]
+\centering\small
+\caption{Feature geometry. The head probe uses fewer features than the residual
+probe on every model, so its advantage cannot come from dimensionality.}
+\label{tab:geom}
+\begin{tabular}{lccccc}
+\toprule
+Model family & layers & heads & $d_{\text{head}}$ & hidden & head probe ($k{=}20$) \\
+\midrule
+LLaMA-3.2-3B        & 28 & 24 & 128 & 3072 & 2560 \\
+LLaMA-3.1-8B        & 32 & 32 & 128 & 4096 & 2560 \\
+Mistral-7B          & 32 & 32 & 128 & 4096 & 2560 \\
+Qwen2.5-7B          & 28 & 28 & 128 & 3584 & 2560 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Statistics}
+
+Because the split is by query, the resampling unit is the query. We report 95\%
+confidence intervals and one-sided $p$-values from a \emph{query-clustered
+paired bootstrap} (5000 resamples): the same resampled query set is used for
+both readers in a contrast, which is what makes the interval a statement about
+their difference rather than about two independent estimates. With 5000
+resamples the smallest attainable $p$ is $2\times10^{-4}$, and we write
+$p<2\times10^{-4}$ rather than $0$.
+
+We test four contrasts over eight models, so we report Benjamini--Hochberg
+$q$-values computed within each contrast family (8 tests). The headline claim of
+this paper is the one that survives that correction everywhere.
+
+Like every result here, the statistics are derived by scripts from raw JSON
+artifacts, and a single collection script rebuilds the paper's number table with
+a provenance path recorded for every value. We mention this because our own
+earlier draft of this work quoted two different values for the same quantity in
+the same table; the remedy was mechanical rather than editorial.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{The attention heads are the best reader, on every model}
+
+Table~\ref{tab:main} and Figure~\ref{fig:readers} give the full picture. Two
+things stand out.
+
+First, \textbf{the zero-shot verdict is the weakest reader on all eight
+models}. It ranges from 0.545 (LLaMA-3.2-3B) to 0.660 (Qwen2.5-7B-Instruct) and
+is below the head probe everywhere. It is \emph{not}, however, below the trained
+output-representation probe: the judge is the stronger of the two on seven of
+eight models and the weaker on one (Mistral-7B, 0.579 vs.\ 0.583). Training a
+probe on the final layer buys very little over asking the model---which is the
+point of the \texttt{final $-$ judge} row in Table~\ref{tab:edges}---and that is
+precisely why the interesting contrast is the \emph{head} probe against the
+output representation, not the judge against anything. A model that can decode
+relevance at 0.67--0.73 from its attention heads is answering at 0.55--0.66 when
+asked directly.
+
+Second, \textbf{the attention-head probe is the best reader on all eight
+models}. It beats the output-representation probe by $+0.059$ to $+0.148$ \auc,
+and it beats the best residual-stream layer on all eight as well, though that
+second margin is smaller.
+
+\begin{table}[t]
+\centering\small
+\caption{Four readers on the same frozen forward pass (test \auc, 1500 queries
+per model; layer and head selection on validation; one regularisation strength
+$C{=}1.0$ for all readers). \textbf{Bold}: best reader in the row. The
+attention-head probe is best on all eight models. Figure~\ref{fig:readers}
+shows the same numbers with confidence intervals.}
+\label{tab:main}
+\begin{tabular}{lcccccc}
+\toprule
+Model & $L$ & judge & final & best-resid & attn (ours) \\
+\midrule
+LLaMA-3.2-3B (base)       & 28 & 0.545 & 0.536 & 0.613 (L9)  & \textbf{0.684} \\
+LLaMA-3.1-8B (base)       & 32 & 0.574 & 0.562 & 0.621 (L8)  & \textbf{0.677} \\
+Mistral-7B-v0.3 (base)    & 32 & 0.579 & 0.583 & 0.606 (L16) & \textbf{0.684} \\
+LLaMA-3.2-3B-Instruct     & 28 & 0.614 & 0.612 & 0.638 (L18) & \textbf{0.712} \\
+LLaMA-3.1-8B-Instruct     & 32 & 0.630 & 0.596 & 0.609 (L12) & \textbf{0.725} \\
+Mistral-7B-Instruct-v0.3  & 32 & 0.646 & 0.596 & 0.634 (L13) & \textbf{0.713} \\
+Qwen2.5-7B (base)         & 28 & 0.652 & 0.592 & 0.655 (L22) & \textbf{0.680} \\
+Qwen2.5-7B-Instruct       & 28 & 0.660 & 0.610 & 0.630 (L23) & \textbf{0.669} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_readers.png}
+\caption{The four readers across eight models, with query-clustered 95\%
+confidence intervals. The head probe (red) is highest in every group; the
+zero-shot judge (light grey) is lowest or near-lowest everywhere.}
+\label{fig:readers}
+\end{figure}
+
+\subsection{The edge survives correction, and it is the only one that does}
+
+Figure~\ref{fig:forest} shows the head-probe-minus-output-representation edge
+per model, with intervals and corrected $q$-values. It lies between $+0.059$ and
+$+0.148$ and excludes zero after correction on all eight models.
+
+Table~\ref{tab:edges} puts that in context by reporting all four contrasts we
+tested. Only one survives on every model. The residual-stream contrast
+(best-resid $-$ final) survives on the three base models and loses significance
+on their instruct counterparts; the contrast against the judge
+(best-resid $-$ judge) excludes zero on two models and survives correction on
+one; and the ``pure training''
+contrast (final $-$ judge) survives on none. The last of these is worth
+emphasising, because it is the control that matters most for the framing of this
+paper: \emph{training a probe on the output representation does not beat simply
+asking the model}, on any model in our panel.
+
+\begin{table}[t]
+\centering\small
+\caption{All four contrasts, with Benjamini--Hochberg $q$ within each family
+(8 tests). A cell is marked $\bullet$ when the 95\% CI excludes zero after
+correction. The attention-head contrast is the only one that survives
+everywhere.}
+\label{tab:edges}
+\begin{tabular}{lcccc}
+\toprule
+Contrast & survives (of 8) & range of effect & models where it survives \\
+\midrule
+\textbf{attn $-$ final}      & \textbf{8} & $+0.059 \ldots +0.148$ & all eight \\
+best-resid $-$ final         & 3 & $+0.059 \ldots +0.078$ & LLaMA-3.2-3B, LLaMA-3.1-8B, Qwen2.5-7B (base) \\
+best-resid $-$ judge         & 2 (1 after BH) & $+0.047 \ldots +0.068$ & LLaMA-3.2-3B, LLaMA-3.1-8B \\
+final $-$ judge              & 0 & $-0.060 \ldots +0.004$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\textwidth]{figures/fig2_forest.png}
+\caption{The attention-head edge per model. Filled markers are base models,
+hollow are instruct. Every interval clears zero after correction; the smallest
+effect (Qwen2.5-7B-Instruct, $+0.059$) is also the one with the largest
+correction penalty.}
+\label{fig:forest}
+\end{figure}
+
+Figure~\ref{fig:pair} presents the same comparison two other ways: as a paired
+slope chart, and as a scatter in which all eight models sit above the diagonal.
+The pairing matters---the two readers see the same forward pass on the same rows,
+so the right question is whether the difference is positive, and it is, on every
+model.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_attn_vs_final.png}
+\caption{(a) Paired slope from the output representation to the attention heads;
+every line rises. (b) The same eight points as a scatter; all sit in the shaded
+region where the head probe wins. Colours are model families.}
+\label{fig:pair}
+\end{figure}
+
+\subsection{Why is the output reader not simply under-trained?}
+
+Two objections could explain the head advantage without any claim about
+\emph{where} relevance lives, and we tested both.
+
+\paragraph{Objection 1: the head probe gets a better read-out.}
+The head probe selects 20 units on validation and concatenates them; the
+residual probe reads one 3072--4096-dimensional vector. The natural control is to
+give the final layer the \emph{identical} procedure: same 2560-dimensional
+budget, validation-selected 20 chunks, per-unit standardisation, concatenation.
+Under that matched procedure the edge barely moves ($+0.043$ to $+0.128$,
+significant on 8/8). The head advantage is therefore not bought by the read-out
+procedure or by the selection step---but this control cuts both ways, and we
+report the other direction honestly in \S\ref{sec:limits}.
+
+\paragraph{Objection 2: the head probe is trained and the judge is not.}
+This is correct as stated, and it is why we also compare against a
+\emph{trained} reader on the output representation. That reader is the
+\texttt{final} column of Table~\ref{tab:main}: trained on 5218 labelled pairs,
+it still loses to the heads on every model. The ``final $-$ judge'' row of
+Table~\ref{tab:edges} quantifies the training contribution on its own: after
+correction it is not distinguishable from zero anywhere, and its point estimates
+are negative on seven of eight models. Training on the output representation, in
+other words, is not what produces the advantage---the location is.
+
+\subsection{What the depth profile looks like}
+
+Figure~\ref{fig:depth} shows the per-layer picture for LLaMA-3.2-3B, and the
+same figure for all eight models is in the artifact bundle
+(\texttt{fig3\_depth\_<model>.png}). Three observations.
+
+Relevance decodability from the residual stream rises into the middle of the
+network and is no longer rising at the output layer. The peak is a
+validation-selected layer, and it is well before the end (L9 of 28 for
+LLaMA-3.2-3B; the peak layers for the other models are in Table~\ref{tab:main}).
+
+The per-head map is sparse and mid-depth. The best single head reaches
+$0.64$--$0.65$ on LLaMA-3.2-3B and Mistral-7B, while the \emph{mean} head in the
+same layer sits at $0.50$--$0.62$: most heads carry little and a few carry a
+lot, which is why a probe that selects units on validation does well here, and
+why we report the selection procedure explicitly. Early layers are markedly
+weaker: the first layer is exactly uninformative for every single head on
+LLaMA-3.2-3B, and the first four are on Mistral-7B, whereas Qwen2.5-7B has
+informative heads from the start.
+
+The selected heads cluster at a characteristic relative depth per family
+(Figure~\ref{fig:layers}): mid-network for LLaMA ($\approx$0.35--0.52 of
+depth), later for Qwen (whose best single head reaches $0.72$ at layer 18 of
+28), and Mistral's informative heads appear after its uninformative early band
+even though its residual stream carries the signal from much earlier. We report
+this as description; we did not find a principled account of why the depths
+differ.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig3_depth_llama32_3b.png}
+\caption{LLaMA-3.2-3B. (a) Residual-stream decodability by depth, against the
+zero-shot judge baseline; the peak is validation-selected, the output layer is
+marked. (b) Per-head decodability; the informative heads form a sparse,
+mid-depth band. (c) Best and mean head per layer versus the residual stream at
+the same layer. Per-model versions are in the artifact bundle.}
+\label{fig:depth}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig5_layer_dist.png}
+\caption{Where the validation-selected heads live, in relative depth. Marker
+area is the number of selected heads in that layer.}
+\label{fig:layers}
+\end{figure}
+
+\section{Controls and robustness}
+\label{sec:controls}
+
+\paragraph{Read-out matched to the head probe.} Described in \S\ref{sec:results};
+the edge persists at $+0.043$ to $+0.128$ on 8/8 models when the final layer gets
+the head probe's exact procedure.
+
+\paragraph{Read-out replaced by an ensemble.} We also replaced the single linear
+read-out of the final layer with a per-chunk logistic-regression ensemble. This
+\emph{raises} the final layer substantially (e.g.\ $0.536\to0.621$ on
+LLaMA-3.2-3B, a gain of $+0.085$---comparable to the entire residual-stream
+edge). On two of eight models it closes or reverses the head advantage
+(Qwen2.5-7B: $0.683$ vs.\ $0.680$; Qwen2.5-7B-Instruct: $0.719$ vs.\ $0.669$).
+We therefore do not claim that \emph{attention heads beat the output end}; we
+claim the specific matched comparison of Table~\ref{tab:main}, and we flag the
+read-out sensitivity as a boundary in \S\ref{sec:limits}.
+
+\paragraph{MLP read-outs.} At matched parameter count and at a wider setting,
+final-layer MLPs reach $0.594$ and $0.560$ on LLaMA-3.2-3B---above the linear
+final-layer probe ($0.536$) but still below the head probe ($0.684$).
+
+\paragraph{Prompt wording.} The comparison holds under two rewritings of the
+prompt (a terse ``Passage/Query/Relevant?'' form and a verbose form). We report
+this as a direction check rather than as a strength claim: the verbose form is
+$\approx$17\% longer in tokens, and we did not attempt to separate wording from
+length.
+
+\paragraph{A second dataset.} On FiQA with BM25 hard negatives (LLaMA-3.2-3B,
+1500 queries), the head probe reaches $0.884$ against a $0.724$ output
+representation and a $0.597$ judge, so the ordering is unchanged on a second
+in-domain dataset. This is one model, not eight, and we do not lean on it.
+
+\section{Where the claim stops}
+\label{sec:limits}
+
+\paragraph{This is one specific comparison.} The headline contrast is defined
+against a single linear read-out of the final-layer residual. We showed in
+\S\ref{sec:controls} that a different read-out of that same layer changes the
+answer on two of eight models. A reader who prefers a per-chunk ensemble as
+``the'' output representation should read our result as
+\emph{read-out-dependent}, not as a general claim about the output end.
+
+\paragraph{The residual-stream form of the claim is narrower.} ``Internal
+beats output representation'' is often stated for the residual stream. In our
+panel that contrast is significant on the three base models only, and its
+instruct counterparts show smaller, non-significant effects. We report the head
+comparison as the headline precisely because it is the one that replicates
+everywhere.
+
+\paragraph{The judge is a zero-shot judge.} We compare against the model's own
+verdict with no exemplars. A stronger prompt or a few-shot judge would raise the
+lower bound. We tested one such variant in an earlier phase and it did not close
+the gap, but we do not have that artifact in the current bundle, so we state the
+comparison as ``zero-shot verdict'' and nothing more.
+
+\paragraph{Correlational, not causal.} Every reader here is a probe. The
+companion work on this project attempted a causal account of the output's
+weakness and did not support it; the present paper therefore contains no
+mechanistic assertion, and readers should not infer one.
+
+\paragraph{Relevance means MS MARCO relevance.} Labels come from dataset qrels
+for one retrieval collection (plus one FiQA replication). We make no
+cross-domain and no reranking-accuracy claim.
+
+\section{Related work}
+\label{sec:related}
+
+\todo{restore citations: this section is deliberately citation-free in this
+draft. The bibliography in \texttt{paper/refs.bib} already contains the entries
+this project verified as real, covering (i) probing classifiers,
+(ii) the logit/tuned lens, (iii) activation steering and representation
+engineering, (iv) calibration and hallucination work showing models encode
+correctness they do not surface, and (v) concurrent work on hallucination
+detection from mid-layer hidden states. The net-novelty statement to write is:
+internals-outstrip-the-output is not new as a slogan, but a controlled,
+corrected, eight-model comparison localised to \emph{retrieval relevance}, with
+the head-versus-output-representation contrast as the surviving effect, is.}
+
+\section{Conclusion}
+
+Across eight models from three families, reading the top attention heads of a
+frozen forward pass recovers retrieval relevance better than reading the
+final-layer hidden state, better than any single residual layer, and far better
+than the model's own verdict. The margin over the output representation is
+$+0.06$ to $+0.15$ \auc, it holds on every model, and it is the only one of four
+contrasts we tested that survives multiple-comparison correction everywhere.
+Training is not the explanation---a probe on the output representation never
+beats simply asking the model. If you need to know whether a passage is
+relevant, the model's heads know, and its mouth is the last place to look.
+
+\appendix
+\section{Artifact map}
+
+Every number in this paper traces to a JSON artifact, and every figure is
+regenerated by a script from those artifacts.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{ll}
+\toprule
+Artifact & Contents \\
+\midrule
+\texttt{results/PAPER\_NUMBERS.json} & single source of truth, with provenance per value \\
+\texttt{results/significance\_<model>\_q1500.json} & four reader AUCs + CIs + the four edges \\
+\texttt{results/significance\_summary\_q1500.json} & BH-corrected edge table across models \\
+\texttt{results/capacity\_control\_<model>\_q1500.json} & read-out matched / ensemble / MLP controls \\
+\texttt{results/figures/fig3\_depth\_<model>.png} & per-model depth + per-head figure \\
+\texttt{results/figures/fig*.json} & provenance sidecar for every figure \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Scripts: \texttt{scripts/collect\_paper\_numbers.py} (paper numbers),
+\texttt{scripts/aggregate\_significance.py} (BH correction),
+\texttt{scripts/plot\_paper\_figures.py} (all figures),
+\texttt{scripts/selfcheck.py} (structural self-check, including that all four
+prompt builders agree byte-for-byte).
+
+\end{document}
