@@ -123,40 +123,75 @@ def fig_patch(outdir):
     return p
 
 
-def fig_gradient(outdir):
-    """Gradient cosine vs the random-direction spread, per model."""
-    fig, ax = plt.subplots(figsize=(9.5, 4.4))
-    prov = {}
+def _panel(ax, loader, title, label_left, prov, xlim=(-0.05, 0.05)):
     for i, (name, tag, fam, regime) in enumerate(MODELS):
-        d = load_grad(tag)
+        try:
+            d = loader(tag)
+        except FileNotFoundError:
+            continue
         pc = d["probe_direction_cosine"]["mean"]
         rc = d["random_directions_cosine"]
-        ys = np.random.default_rng(7 + i).normal(i, 0.085,
-                                                 size=len(rc["per_direction_means"]))
+        ys = np.random.default_rng(7 + i).normal(
+            i, 0.085, size=len(rc["per_direction_means"]))
         ax.scatter(rc["per_direction_means"], ys, s=14, color="#95a5a6",
-                   alpha=0.75, zorder=2, label="16 random directions" if i == 0 else None)
+                   alpha=0.75, zorder=2,
+                   label="random directions" if i == 0 else None)
         ax.scatter([pc], [i], s=95, color=FAM_COL[fam], zorder=4,
                    marker="o" if regime == "base" else "D",
                    edgecolor="k", lw=0.6,
-                   label="probe direction" if i == 0 else None)
+                   label=label_left if i == 0 else None)
         prov[tag] = {"probe_cos": pc, "random_means": rc["per_direction_means"],
                      "percentile": d["probe_vs_random_abs_mean_percentile"]}
     ax.axvline(0, color="k", lw=0.9, ls=":")
     ax.set_yticks(range(len(MODELS)))
     ax.set_yticklabels([m[0] for m in MODELS], fontsize=8)
-    ax.set_xlabel(r"$\cos(\ \nabla_{h_{L^*}}(\mathrm{yes}-\mathrm{no}),\ \hat w_{\mathrm{probe}}\ )$")
-    ax.set_title("The output readout is not pointed at the direction a probe reads relevance from\n"
-                 "(grey = 16 random directions per model, colour = the probe direction; "
-                 "nothing is edited)")
-    ax.legend(fontsize=8, loc="lower right")
+    ax.set_title(title, fontsize=9)
+    ax.legend(fontsize=7.5, loc="lower right")
     ax.grid(axis="x", alpha=0.25)
-    ax.set_xlim(-0.045, 0.045)
-    fig.tight_layout()
+    ax.set_xlim(*xlim)
+
+
+def fig_gradient(outdir):
+    """Residual-stream vs head-probe gradient alignment, side by side."""
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4.6), sharey=True)
+    prov_r, prov_h = {}, {}
+
+    def load_head(tag):
+        return json.load(open(os.path.join(
+            ROOT, f"results/gradient_alignment_heads_{tag}_q{NQ}.json")))
+
+    _panel(axes[0], load_grad,
+           "(a) probe reads the RESIDUAL STREAM at $L^*$",
+           "residual-probe direction", prov_r, xlim=(-0.05, 0.05))
+    axes[0].set_xlabel(r"$\cos(\nabla_{h_{L^*}}(\mathrm{yes}-\mathrm{no}),\ \hat w)$")
+    _panel(axes[1], load_head,
+           "(b) probe reads the SELECTED ATTENTION HEADS",
+           "head-probe direction", prov_h, xlim=(-0.05, 0.05))
+    # Annotate panel (b) with the high-resolution percentile from
+    # analyze_head_alignment.py: the runtime percentile is quantised to 1/17 with
+    # only 16 random directions, which cannot decide a 0.95 threshold.
+    try:
+        hi = json.load(open(os.path.join(ROOT, "results/head_alignment_highres.json")))
+        for i, (name, tag, _f, _r) in enumerate(MODELS):
+            e = hi["per_model"].get(tag)
+            if e:
+                axes[1].text(0.049, i, f"pct={e['percentile']:.3f}",
+                             fontsize=6.5, va="center", ha="right", color="#444")
+    except FileNotFoundError:
+        pass
+    axes[1].set_xlabel(r"$\cos(\nabla_{\mathrm{heads}}(\mathrm{yes}-\mathrm{no}),\ \hat w)$")
+
+    fig.suptitle("Is the verdict locally sensitive to the direction a probe reads "
+                 "relevance from? (nothing is edited; grey = random directions)",
+                 fontsize=10)
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
     p = os.path.join(outdir, "fig8_gradient.png")
     fig.savefig(p, dpi=150); plt.close(fig)
-    sidecar("fig8_gradient", {"claim": "probe direction is never a gradient outlier",
-                              "source": "results/gradient_alignment_*_q1500.json",
-                              "per_model": prov})
+    sidecar("fig8_gradient", {
+        "claim": "gradient alignment for the residual probe (a) and the head probe (b)",
+        "source": "results/gradient_alignment_*_q1500.json + "
+                  "results/gradient_alignment_heads_*_q1500.json",
+        "residual_probe": prov_r, "head_probe": prov_h})
     return p
 
 

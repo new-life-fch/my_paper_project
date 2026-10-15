@@ -517,6 +517,33 @@ threshold---which is the misalignment result in its cleanest form.}
 \label{fig:gradient}
 \end{figure}
 
+\textbf{The same test on the reader that carries the headline.} The comparison
+above is taken on the \emph{residual stream}, but the paper's strongest effect is
+the \emph{attention-head} probe. We therefore repeated the measurement with the
+gradient taken with respect to the selected heads' $o_{\text{proj}}$ outputs,
+across the (two to four) layers those heads occupy, and projected into the
+probe's own coordinate system by dividing each head's gradient by that head's
+training standard deviation---the chain rule through the probe's
+standardisation. Panel~(b) of Figure~\ref{fig:gradient} shows the result, and it
+is \emph{not} a uniform replication of panel~(a). With 20{,}000 random
+directions the head-probe direction reaches the $0.99$ and $0.98$ percentile on
+LLaMA-3.1-8B-Instruct and LLaMA-3.1-8B (permutation $p=0.006$ and $0.012$), and
+$0.90$/$0.89$ on Qwen2.5-7B and Mistral-7B ($p=0.048$/$0.055$); but it sits at
+the $0.13$--$0.83$ percentile on the remaining four models and is negative on
+three. Five of eight models have a positive mean cosine, which a sign test does
+not distinguish from chance ($p=0.36$).
+
+We read this as a genuine difference between the two readers rather than as
+noise, and it changes what the paper may claim. For the residual-stream probe the
+verdict is never locally aligned with the decoded relevance direction---that
+result is uniform across the panel and is what we call misalignment. For the
+head probe the picture is mixed: on the two LLaMA-3.1-8B models the verdict
+\emph{is} measurably sensitive to the direction the probe reads, which suggests
+the head probe's advantage may partly reflect alignment rather than only
+decodability. We do not have a mechanistic account of why the two readers differ,
+and we therefore restrict the misalignment claim to the residual stream and
+report the head result as an open thread rather than extending the story.
+
 \begin{table}[t]
 \centering\small
 \caption{Gradient alignment, all eight models. $\cos$ is between the gradient of
@@ -709,17 +736,17 @@ internals-vs-\emph{judge} gap nearly closes, yet reading attention heads still
 beats reading the output representation---the internal--output gap is robust to
 how well the output verbalizes relevance.
 
-\textbf{Limitations.} (0) The mechanism evidence and the headline effect are
-measured on \emph{different readers}, and this is the largest gap in the paper.
-The strongest quantitative result is that a probe on the \emph{attention heads}
-beats one on the output representation (8/8 models); but every mechanism
-measurement above---the readout direction, the patching, and the gradient
-alignment---is taken on the \emph{residual stream} at $L^*$. We did not measure
-the gradient alignment of the head-probe direction, so the misalignment account
-is established for the residual-stream reader and only \emph{conjectured} to
-carry over to the head reader that the rest of the paper leans on. Closing this
-would require differentiating the verdict with respect to the selected heads'
-outputs, which span several layers rather than one. (1) Probing is
+\textbf{Limitations.} (0) The residual-stream and head readers do not behave
+alike, and the paper's two halves therefore rest on different evidence. The
+misalignment result---the verdict is not locally sensitive to the decoded
+relevance direction---holds uniformly for the \emph{residual-stream} probe
+(percentiles $0.06$--$0.81$ on 8/8 models). We ran the same measurement for the
+\emph{attention-head} probe, which carries the paper's headline effect, and it
+comes out mixed: two of eight models show significant alignment, three are
+negative, and the cross-model sign test is not significant ($p=0.36$). So the
+misalignment account explains the residual reader, not the head reader, and we
+do not know why they differ. A reader who wants one mechanism behind the whole
+paper will not find it here. (1) Probing is
 correlational, and our causal evidence is
 weaker than our correlational evidence; the steering and activation-patching
 controls are reported in full, including where they fail to separate
