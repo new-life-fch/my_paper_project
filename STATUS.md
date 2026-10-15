@@ -56,6 +56,17 @@
 
 ---
 
+**两个版本在磁盘上怎么共存**（用 git worktree，共享一个 `.git`）：
+
+```bash
+git worktree list
+# /root/autodl-tmp/my_paper_project  [paper-A]    ← 窄版（本目录）
+# /root/autodl-tmp/pw_wide           [paper-wide] ← 宽版
+```
+
+**改论文前先确认自己在哪个目录/分支**：两边的 `paper/main.tex` 同名但内容不同。
+编译命令相同（`cd paper && ../paper/tools/tectonic main.tex`），
+但**必须先 `source /etc/network_turbo`**，否则会静默不写出 PDF（§7.2 第 17 条）。
 
 ## 1. 论文最终要主张什么、证据够不够
 

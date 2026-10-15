@@ -26,6 +26,17 @@
 但那条解释是用残差流探针做的，而最强效应是注意力头——审稿人会问两个 reader 的关系，
 目前答不上来，所以宽版把它写进 Limitations 而不是掩盖。
 
+两个分支用 **git worktree** 共存（共享一个 `.git`），所以磁盘上有两个目录：
+
+```bash
+git worktree list
+# /root/autodl-tmp/my_paper_project  [paper-A]    ← 窄版（本目录）
+# /root/autodl-tmp/pw_wide           [paper-wide] ← 宽版
+```
+
+**注意两边 `paper/main.tex` 同名但内容不同**，改论文前先确认目录。
+详见 `STATUS.md` §0.1。
+
 ## 现在的状态
 
 | 项 | 值 |
