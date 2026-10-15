@@ -7,11 +7,32 @@
 这是一篇**可解释性 / 探针（probing）**方向的论文。它**不是**「做一个更好的 RAG reranker」，
 也**不主张**探针在重排精度上打赢 cross-encoder（那条路在本项目早期已被自己的实验证伪）。
 
+## 两版论文（同一实验库，两种主张跨度）
+
+| | **窄版** `paper-A`（← 你在这里） | **宽版** `paper-wide` |
+|---|---|---|
+| 主张 | 读注意力头 > 读输出层表示，8/8 模型，唯一过 BH 校正的对比 | 窄版全部 **+** 机制：为什么输出端读不出来 |
+| 机制/因果 | **不主张**（正文明确写"本文不含机制断言"） | **主张 misalignment** |
+| 关键证据 | `attn−final` 8/8（q<0.001）；capacity 对照；训练贡献 0/8 | 窄版证据 + patch v2（8 模型）+ 梯度对齐（8 模型） |
+| 图 | `fig1`–`fig6` | 窄版全套 **+** `fig7`（patch）、`fig8`（梯度对齐） |
+| 代价 | 故事小，但每条都硬 | 机制证据**只覆盖残差流**，头条效应在**注意力头**——已写进 Limitations (0) |
+
+两个分支用 **git worktree** 共存（共享一个 `.git`），所以磁盘上有两个目录：
+
+```bash
+git worktree list
+# /root/autodl-tmp/my_paper_project  [paper-A]    ← 窄版（本目录）
+# /root/autodl-tmp/pw_wide           [paper-wide] ← 宽版
+```
+
+**注意两边 `paper/main.tex` 同名但内容不同**，改论文前先确认目录。
+详见 `STATUS.md` §0.1。
+
 ## 现在的状态
 
 | 项 | 值 |
 |---|---|
-| 分支 | `paper-A`（窄版论文）／`paper-B`（宽版：机制叙事） |
+| 分支 | **`paper-A`（← 你在这里，窄版论文）** ／ `paper-wide`（宽版：加机制叙事） |
 | 权威状态文档 | **[`STATUS.md`](STATUS.md)** —— 实测数据由脚本从 `results/*.json` 生成 |
 | 旧文档 | 全部在 **[`archive/`](archive/)**（`git mv` 移入，历史保留，不再维护） |
 | 论文 | `paper/main.tex` + `paper/main.pdf` |
